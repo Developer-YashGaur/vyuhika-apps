@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import OrbFallback from "@/components/OrbFallback";
-import { site } from "@/lib/site";
+import { externalLinkProps, site } from "@/lib/site";
 
 // HeroOrb checks the browser (screen size, WebGL), so it only runs client-side.
 const HeroOrb = dynamic(() => import("@/components/HeroOrb"), {
@@ -67,7 +67,7 @@ export default function Hero() {
           <a href="#apps" className="btn-glow">
             Explore apps
           </a>
-          <a href={site.links.youtube} target="_blank" rel="noopener noreferrer" className="btn-ghost">
+          <a href={site.links.youtube} {...externalLinkProps} className="btn-ghost">
             Follow the journey
           </a>
         </motion.div>

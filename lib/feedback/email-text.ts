@@ -1,5 +1,6 @@
 import { FEEDBACK_TYPES } from "@/lib/feedback/rules";
 import type { Feedback } from "@/lib/feedback/schema";
+import { site } from "@/lib/site";
 
 // Small text helpers for the feedback emails, plus the plain-text versions of both emails
 // (sent alongside the HTML for clients and people that prefer plain text).
@@ -86,6 +87,7 @@ export function confirmationText(feedback: Feedback, siteUrl: string, excerptCha
     "--",
     "Vyuhika: Intelligence, built in public.",
     "You're receiving this email because you sent feedback on Vyuhika Apps and included your email address. We won't add you to any mailing list.",
+    `Built by ${site.owner.name}: ${site.owner.portfolio}`,
   );
   return lines.join("\n");
 }

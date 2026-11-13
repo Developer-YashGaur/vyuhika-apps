@@ -13,7 +13,8 @@
     "screenshots:feedback": "node scripts/screenshots-feedback.mjs",
     "email:images": "node scripts/generate-email-images.mjs",
     "email:test": "node --env-file=.env.local --import tsx scripts/send-test-emails.ts",
-    "screenshots:emails": "node scripts/screenshots-emails.mjs"
+    "screenshots:emails": "node scripts/screenshots-emails.mjs",
+    "screenshots:links": "node scripts/screenshots-links.mjs"
   },
   "dependencies": {
     "@google/genai": "^3.3.0",

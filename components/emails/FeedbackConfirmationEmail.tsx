@@ -1,7 +1,8 @@
-import { Button, Heading, Section, Text } from "@react-email/components";
+import { Button, Heading, Link, Section, Text } from "@react-email/components";
 import EmailLayout, { MultilineText, colors } from "@/components/emails/EmailLayout";
 import type { Feedback } from "@/lib/feedback/schema";
 import { excerpt, feedbackTypeLabel } from "@/lib/feedback/email-text";
+import { site } from "@/lib/site";
 
 // Confirmation to the visitor, sent only when they left an email address.
 // It repeats only a short excerpt of their message, so the form can't be used to send long texts to others.
@@ -17,7 +18,18 @@ export default function FeedbackConfirmationEmail({ feedback, assetBaseUrl }: Pr
       assetBaseUrl={assetBaseUrl}
       headerImage="header.gif"
       headerAlt="Vyuhika: a softly glowing neural network orb on a deep-space background"
-      footer="You're receiving this email because you sent feedback on Vyuhika Apps and included your email address. We won't add you to any mailing list."
+      footer={
+        <>
+          You&apos;re receiving this email because you sent feedback on Vyuhika Apps and included your email
+          address. We won&apos;t add you to any mailing list.
+          <br />
+          <br />
+          Built by{" "}
+          <Link href={site.owner.portfolio} style={{ color: colors.cyan, textDecoration: "underline" }}>
+            {site.owner.name}
+          </Link>
+        </>
+      }
     >
       <Heading
         as="h1"
