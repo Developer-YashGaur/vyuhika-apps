@@ -5,22 +5,24 @@ import { useMotionValueEvent, useScroll } from "framer-motion";
 import { site } from "@/lib/site";
 
 // Fixed top bar. It's see-through at the top of the page and turns into
-// frosted glass once you start scrolling.
-export default function Navbar() {
+// frosted glass once you start scrolling. Pages pass `onHome` so the links
+// jump within the home page, or go back to it from other pages.
+export default function Navbar({ onHome = false }: { onHome?: boolean }) {
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
+  const home = onHome ? "" : "/";
 
   useMotionValueEvent(scrollY, "change", (y) => setScrolled(y > 24));
 
   return (
     <header className={`navbar ${scrolled ? "is-scrolled" : ""}`}>
-      <nav aria-label="Main" className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
-        <a href="#top" className="wordmark-sm font-display">
+      <nav aria-label="Main" className="gutter flex h-16 items-center justify-between">
+        <a href={`${home}#top`} className="wordmark-sm font-display">
           Vyuhika
         </a>
         <ul className="flex items-center gap-6 text-sm font-medium text-mist sm:gap-8">
           <li>
-            <a href="#apps" className="nav-link">Apps</a>
+            <a href={`${home}#apps`} className="nav-link">Apps</a>
           </li>
           <li>
             <a href={site.links.youtube} target="_blank" rel="noopener noreferrer" className="nav-link">

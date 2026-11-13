@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Instrument_Sans, Unbounded } from "next/font/google";
 import Backdrop from "@/components/Backdrop";
 import MotionProvider from "@/components/MotionProvider";
-import Navbar from "@/components/Navbar";
 import ScrollProgress from "@/components/ScrollProgress";
 import SmoothScroll from "@/components/SmoothScroll";
 import { site } from "@/lib/site";
@@ -34,7 +33,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <SmoothScroll />
           <Backdrop />
           <ScrollProgress />
-          <Navbar />
           <div className="relative z-10">{children}</div>
         </MotionProvider>
       </body>

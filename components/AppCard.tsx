@@ -62,7 +62,7 @@ export default function AppCard({ app, featured = false }: { app: AppInfo; featu
         >
           {app.name}
         </h3>
-        <p className={`mt-3 leading-relaxed text-mist ${featured ? "max-w-md text-lg" : "text-[0.95rem]"}`}>
+        <p className={`mt-3 leading-relaxed text-mist ${featured ? "max-w-md text-lg" : "measure text-[0.95rem]"}`}>
           {app.description}
         </p>
         <p className="mt-6 text-sm font-semibold">
@@ -77,7 +77,7 @@ export default function AppCard({ app, featured = false }: { app: AppInfo; featu
   );
 
   return (
-    <motion.li variants={cardReveal} className={`bento-cell ${featured ? "sm:col-span-2 lg:row-span-2" : ""}`}>
+    <motion.li variants={cardReveal} className={`bento-cell ${featured ? "sm:col-span-2 lg:row-span-2 2xl:row-span-1" : ""}`}>
       <motion.div
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}

@@ -1,0 +1,53 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1017 >>
+stream
+BT /F1 10 Tf 60 750 Td 14 TL
+(Priya Sharma) Tj T*
+(Frontend Developer · Bengaluru · priya.sharma@example.com) Tj T*
+() Tj T*
+(SUMMARY) Tj T*
+(Frontend developer with 4 years of experience building fast, accessible web apps with React and TypeScript.) Tj T*
+() Tj T*
+(EXPERIENCE) Tj T*
+(Frontend Developer, ShopLane \(2022 to now\)) Tj T*
+(- Built the checkout flow in React and TypeScript used by 20,000 daily shoppers) Tj T*
+(- Improved page speed by rewriting the product list with virtualised rendering) Tj T*
+(- Worked with the backend team to design REST APIs for orders and payments) Tj T*
+(- Wrote unit tests with Jest and React Testing Library) Tj T*
+() Tj T*
+(Junior Web Developer, PixelCraft Studio \(2020 to 2022\)) Tj T*
+(- Built marketing sites with HTML, CSS and JavaScript) Tj T*
+(- Wrote SQL reports for the sales team) Tj T*
+(- Used Git and worked in two-week Agile sprints) Tj T*
+() Tj T*
+(SKILLS) Tj T*
+(React, TypeScript, JavaScript, HTML, CSS, Tailwind, REST APIs, SQL, Git, Jest, Agile) Tj T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001310 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1407
+%%EOF
