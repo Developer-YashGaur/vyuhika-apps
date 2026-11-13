@@ -10,7 +10,7 @@ import {
   SYSTEM_INSTRUCTION,
   buildUserPrompt,
 } from "@/lib/analyze/prompt";
-import { createRateLimiter } from "@/lib/analyze/rate-limit";
+import { DAY_MS, MINUTE_MS, createRateLimiter } from "@/lib/rate-limit";
 import { enforceHonesty, mentions } from "@/lib/analyze/schema";
 import { sampleJobDescription, sampleResume } from "@/lib/samples";
 import { MAX_CHARS, MIN_CHARS } from "@/lib/validation";
@@ -214,26 +214,31 @@ describe("parseAnalyzeInput (length limits)", () => {
 
 describe("createRateLimiter", () => {
   const start = 1_000_000_000_000;
+  const analyzeLimits = () =>
+    createRateLimiter([
+      { name: "day", max: 30, windowMs: DAY_MS },
+      { name: "minute", max: 5, windowMs: MINUTE_MS },
+    ]);
 
   it("allows 5 requests a minute, then blocks until the minute has passed", () => {
-    const limiter = createRateLimiter({ perMinute: 5, perDay: 30 });
+    const limiter = analyzeLimits();
     for (let i = 0; i < 5; i++) expect(limiter.check("1.2.3.4", start + i).allowed).toBe(true);
 
     const blocked = limiter.check("1.2.3.4", start + 10);
-    expect(blocked).toEqual({ allowed: false, reason: "minute", retryAfterSeconds: 60 });
+    expect(blocked).toEqual({ allowed: false, limit: "minute", retryAfterSeconds: 60 });
 
     expect(limiter.check("5.6.7.8", start + 10).allowed).toBe(true); // other visitors are not affected
     expect(limiter.check("1.2.3.4", start + 60_000).allowed).toBe(true);
   });
 
   it("enforces the daily cap", () => {
-    const limiter = createRateLimiter({ perMinute: 5, perDay: 30 });
+    const limiter = analyzeLimits();
     // 30 requests spread out so the per-minute limit never triggers.
     for (let i = 0; i < 30; i++) expect(limiter.check("ip", start + i * 61_000).allowed).toBe(true);
 
     const blocked = limiter.check("ip", start + 30 * 61_000);
     expect(blocked.allowed).toBe(false);
-    expect(blocked.allowed === false && blocked.reason).toBe("day");
+    expect(blocked.allowed === false && blocked.limit).toBe("day");
 
     // A day after the first request, one slot frees up again.
     expect(limiter.check("ip", start + 24 * 60 * 60_000).allowed).toBe(true);

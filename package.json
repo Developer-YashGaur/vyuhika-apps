@@ -9,10 +9,15 @@
     "lint": "eslint",
     "test": "vitest run",
     "screenshots": "node scripts/screenshots.mjs",
-    "screenshots:matcher": "node scripts/screenshots-matcher.mjs"
+    "screenshots:matcher": "node scripts/screenshots-matcher.mjs",
+    "screenshots:feedback": "node scripts/screenshots-feedback.mjs",
+    "email:images": "node scripts/generate-email-images.mjs",
+    "email:test": "node --env-file=.env.local --import tsx scripts/send-test-emails.ts",
+    "screenshots:emails": "node scripts/screenshots-emails.mjs"
   },
   "dependencies": {
     "@google/genai": "^3.3.0",
+    "@react-email/components": "^1.0.12",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "framer-motion": "^14.13.0",
@@ -22,6 +27,7 @@
     "pdfjs-dist": "^6.5.438",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "resend": "^6.38.0",
     "server-only": "^0.0.1",
     "three": "^0.187.0",
     "zod": "^4.6.7"
@@ -36,7 +42,9 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "playwright": "^1.65.0",
+    "sharp": "^0.35.5",
     "tailwindcss": "4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.1.0"
   }

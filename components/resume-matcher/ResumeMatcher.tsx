@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import ErrorState from "@/components/resume-matcher/ErrorState";
 import LoadingState from "@/components/resume-matcher/LoadingState";
@@ -9,6 +9,7 @@ import Results from "@/components/resume-matcher/Results";
 import TextPanel from "@/components/resume-matcher/TextPanel";
 import { requestAnalysis } from "@/lib/analyze/client";
 import { AnalyzeError } from "@/lib/analyze/errors";
+import { setFeedbackDebug } from "@/lib/feedback/debug-store";
 import { sampleJobDescription, sampleResume } from "@/lib/samples";
 import type { MatchResult } from "@/lib/types";
 import { MAX_CHARS, MIN_CHARS, canAnalyze, cleanText, isTooLong } from "@/lib/validation";
@@ -24,6 +25,12 @@ export default function ResumeMatcher() {
   const [result, setResult] = useState<MatchResult | null>(null);
   const [error, setError] = useState<AnalyzeError | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
+
+  // Lets the feedback panel offer to attach this result (score, summary and keywords only).
+  useEffect(() => {
+    setFeedbackDebug(step === "results" ? result : null);
+    return () => setFeedbackDebug(null);
+  }, [step, result]);
 
   const ready = canAnalyze(resume, jobDescription);
   const tooLong = isTooLong(resume) || isTooLong(jobDescription);
