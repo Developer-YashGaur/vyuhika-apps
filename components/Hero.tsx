@@ -18,11 +18,11 @@ export default function Hero() {
   return (
     <section className="relative flex min-h-svh items-center overflow-hidden pt-28 pb-16 lg:pt-20">
       {/* The orb sits behind the text on the right; on phones it sits above the text. */}
-      <div className="pointer-events-none absolute inset-x-0 top-20 mx-auto h-[300px] w-[300px] opacity-70 lg:inset-x-auto lg:top-1/2 lg:right-[-2%] lg:h-[min(760px,62vw)] lg:w-[min(760px,62vw)] lg:-translate-y-1/2 lg:opacity-100">
+      <div className="pointer-events-none absolute inset-x-0 top-20 mx-auto h-[300px] w-[300px] opacity-70 lg:inset-x-auto lg:top-1/2 lg:right-[-2%] lg:h-[min(62vw,82vh,1100px)] lg:w-[min(62vw,82vh,1100px)] lg:-translate-y-1/2 lg:opacity-100">
         <HeroOrb />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-5 pt-56 sm:px-8 lg:pt-0">
+      <div className="gutter relative z-10 w-full pt-56 lg:pt-0">
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -52,7 +52,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.55, ease }}
-          className="mt-8 max-w-xl text-lg leading-relaxed text-mist sm:text-xl"
+          className="measure mt-8 text-lg leading-relaxed text-mist sm:text-xl"
         >
           Small AI tools that each solve one real problem. Every one is built in the open,
           from the first commit to launch day.
