@@ -3,7 +3,7 @@ import { analyzeMatch } from "@/lib/analyze/analyze";
 import { ANALYZE_ERROR_MESSAGES, AnalyzeError, type AnalyzeErrorCode } from "@/lib/analyze/errors";
 import { createGeminiGenerate } from "@/lib/analyze/gemini";
 import { parseAnalyzeInput } from "@/lib/analyze/input";
-import { createRateLimiter, getClientIp } from "@/lib/analyze/rate-limit";
+import { DAY_MS, MINUTE_MS, createRateLimiter, getClientIp } from "@/lib/rate-limit";
 
 // POST /api/analyze with { resume, jobDescription } → a MatchResult (see lib/types.ts).
 // Runs only on the server, so the Gemini API key never reaches the browser.
@@ -11,7 +11,11 @@ import { createRateLimiter, getClientIp } from "@/lib/analyze/rate-limit";
 // Two 15,000-character fields fit easily; anything far bigger is rejected before parsing.
 const MAX_BODY_BYTES = 200_000;
 
-const limiter = createRateLimiter({ perMinute: 5, perDay: 30 });
+// Daily cap first, so a visitor who has used up the day sees the "try tomorrow" message.
+const limiter = createRateLimiter([
+  { name: "day", max: 30, windowMs: DAY_MS },
+  { name: "minute", max: 5, windowMs: MINUTE_MS },
+]);
 
 const STATUS: Record<AnalyzeErrorCode, number> = {
   "invalid-input": 400,
@@ -47,7 +51,7 @@ export async function POST(request: Request) {
   const limit = limiter.check(getClientIp(request.headers));
   if (!limit.allowed) {
     const message =
-      limit.reason === "day"
+      limit.limit === "day"
         ? "You've reached today's limit for this free tool. Please try again tomorrow."
         : ANALYZE_ERROR_MESSAGES["rate-limited"];
     return errorResponse("rate-limited", message, { "Retry-After": String(limit.retryAfterSeconds) });
