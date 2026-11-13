@@ -1,11 +1,11 @@
 // Minimal types for opentype.js 2.0 (it ships without any), covering only what
-// scripts/generate-logo-options.ts uses. The @types package describes the older 1.x API.
+// scripts/generate-brand.ts uses. The @types package describes the older 1.x API.
 declare module "opentype.js" {
   type BoundingBox = { x1: number; y1: number; x2: number; y2: number };
 
   interface Path {
+    commands: { type: string; x?: number; y?: number; x1?: number; y1?: number; x2?: number; y2?: number }[];
     getBoundingBox(): BoundingBox;
-    toPathData(options: { decimalPlaces?: number; flipY?: boolean }): string;
   }
 
   interface Glyph {

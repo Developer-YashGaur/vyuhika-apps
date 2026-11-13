@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="vyuhika-app-icon-title">
+  <title id="vyuhika-app-icon-title">Vyuhika Apps</title>
+  <defs>
+    <linearGradient id="vyuhika-app-icon-g" x1="0" y1="4" x2="0" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+    <radialGradient id="vyuhika-app-icon-core"><stop offset="0.35" stop-color="#ffffff"/><stop offset="1" stop-color="#22d3ee"/></radialGradient>
+    <radialGradient id="vyuhika-app-icon-halo"><stop offset="0" stop-color="#22d3ee" stop-opacity="0.6"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#050816"/>
+  <g transform="translate(4.48 4.48) scale(0.86)">
+  <mask id="vyuhika-app-icon-v" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><polyline points="22,20 32,37 42,20" fill="none" stroke="#000" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></mask>
+  <polygon points="32,6 53.65,18.5 53.65,43.5 32,56 10.35,43.5 10.35,18.5" fill="url(#vyuhika-app-icon-g)" stroke="url(#vyuhika-app-icon-g)" stroke-width="3" stroke-linejoin="round" mask="url(#vyuhika-app-icon-v)"/>
+  <circle cx="32" cy="6" r="5.5" fill="#ecfeff"/>
+  <circle cx="53.65" cy="18.5" r="5.5" fill="#ecfeff"/>
+  <circle cx="53.65" cy="43.5" r="5.5" fill="#ecfeff"/>
+  <circle cx="10.35" cy="43.5" r="5.5" fill="#ecfeff"/>
+  <circle cx="10.35" cy="18.5" r="5.5" fill="#ecfeff"/>
+  <circle cx="32" cy="56" r="9" fill="url(#vyuhika-app-icon-halo)"/><circle cx="32" cy="56" r="7.5" fill="url(#vyuhika-app-icon-core)"/>
+  </g>
+</svg>

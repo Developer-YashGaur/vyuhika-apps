@@ -15,8 +15,8 @@
     "email:test": "node --env-file=.env.local --import tsx scripts/send-test-emails.ts",
     "screenshots:emails": "node scripts/screenshots-emails.mjs",
     "screenshots:links": "node scripts/screenshots-links.mjs",
-    "logo:options": "tsx scripts/generate-logo-options.ts",
-    "screenshots:logo": "node scripts/screenshots-logo.mjs"
+    "brand": "tsx scripts/generate-brand.ts",
+    "screenshots:brand": "node scripts/screenshots-brand.mjs"
   },
   "dependencies": {
     "@google/genai": "^3.3.0",

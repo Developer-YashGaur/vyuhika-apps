@@ -7,6 +7,9 @@ import { site } from "@/lib/site";
 
 export const SUBJECT_EXCERPT_CHARS = 50;
 
+// The brand line at the end of every plain-text email (the HTML version shows the logo beside it).
+export const BRAND_LINE = `Vyuhika Apps: ${site.tagline}`;
+
 export function feedbackTypeLabel(type: Feedback["type"]): string {
   return FEEDBACK_TYPES.find((t) => t.value === type)?.label ?? type;
 }
@@ -64,7 +67,7 @@ export function notificationText(feedback: Feedback, receivedAt: Date): string {
       `Missing: ${feedback.debug.missingKeywords.join(", ") || "none"}`,
     );
   }
-  lines.push("", "Sent automatically from the feedback form on Vyuhika Apps.");
+  lines.push("", "Sent automatically from the feedback form on Vyuhika Apps.", "", "--", BRAND_LINE);
   return lines.join("\n");
 }
 
@@ -85,7 +88,7 @@ export function confirmationText(feedback: Feedback, siteUrl: string, excerptCha
     `Back to Vyuhika Apps: ${siteUrl}`,
     "",
     "--",
-    "Vyuhika: Intelligence, built in public.",
+    BRAND_LINE,
     "You're receiving this email because you sent feedback on Vyuhika Apps and included your email address. We won't add you to any mailing list.",
     `Built by ${site.owner.name}: ${site.owner.portfolio}`,
   );

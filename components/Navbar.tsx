@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useMotionValueEvent, useScroll } from "framer-motion";
 import ExternalHint from "@/components/ExternalHint";
+import Logo from "@/components/Logo";
 import { externalLinkProps, site } from "@/lib/site";
 
 // Fixed top bar. It's see-through at the top of the page and turns into
@@ -18,9 +20,10 @@ export default function Navbar({ onHome = false }: { onHome?: boolean }) {
   return (
     <header className={`navbar ${scrolled ? "is-scrolled" : ""}`}>
       <nav aria-label="Main" className="gutter flex h-16 items-center justify-between">
-        <a href={`${home}#top`} className="wordmark-sm font-display">
-          Vyuhika
-        </a>
+        {/* Smaller on phones so the links still fit beside it. */}
+        <Link href="/" className="shrink-0">
+          <Logo variant="horizontal" size={34} label="Vyuhika Apps home" glow priority className="h-[30px] w-auto sm:h-[34px]" />
+        </Link>
         <ul className="flex items-center gap-6 text-sm font-medium text-mist sm:gap-8">
           <li>
             <a href={`${home}#apps`} className="nav-link">Apps</a>

@@ -31,7 +31,7 @@ export default function FeedbackNotificationEmail({ feedback, assetBaseUrl, rece
       preview={`${label} on ${feedback.context.path}: ${feedback.message.slice(0, 90)}`}
       assetBaseUrl={assetBaseUrl}
       headerImage="header.png"
-      headerAlt="Vyuhika: a glowing neural network orb on a deep-space background"
+      headerAlt="Vyuhika Apps"
       footer="Sent automatically from the feedback form on Vyuhika Apps. Reply to this email to answer the visitor (only if they left an email)."
     >
       <Text

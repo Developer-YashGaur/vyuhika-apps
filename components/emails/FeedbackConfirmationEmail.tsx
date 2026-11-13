@@ -17,7 +17,7 @@ export default function FeedbackConfirmationEmail({ feedback, assetBaseUrl }: Pr
       preview="Thanks for your feedback. We read every message."
       assetBaseUrl={assetBaseUrl}
       headerImage="header.gif"
-      headerAlt="Vyuhika: a softly glowing neural network orb on a deep-space background"
+      headerAlt="Vyuhika Apps"
       footer={
         <>
           You&apos;re receiving this email because you sent feedback on Vyuhika Apps and included your email

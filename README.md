@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/brand/vyuhika-horizontal-color.svg">
+    <img src="public/brand/vyuhika-horizontal-light.svg" alt="Vyuhika Apps" height="64">
+  </picture>
+</p>
+
 Vyuhika Apps: a growing collection of useful AI tools, some free and some paid, built in public by Yash Gaur.
 ## Environment variables
 
