@@ -1,0 +1,517 @@
+@import "tailwindcss";
+
+/* Theme colors and fonts. Tailwind turns these into classes like
+   bg-space, text-ink, text-mist, text-accent, font-display. */
+@theme inline {
+  --color-space: #050816;
+  --color-ink: #eef2fb;
+  --color-mist: #a7b1cc;
+  --color-accent: #22d3ee;
+  --color-violet: #8b5cf6;
+  --color-magenta: #e879f9;
+  --font-sans: var(--font-body);
+  --font-display: var(--font-unbounded), system-ui, sans-serif;
+}
+
+html {
+  background: var(--color-space);
+  color: var(--color-ink);
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 1.0625rem;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+}
+
+/* Clear, visible keyboard focus everywhere. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+/* ================= Background layers ================= */
+
+/* Aurora: three huge soft colour blobs drifting slowly.
+   Only `transform` is animated, which the GPU handles cheaply. */
+.aurora {
+  position: absolute;
+  inset: 0;
+}
+
+.aurora-blob {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.aurora-cyan {
+  top: -35vmax;
+  left: -20vmax;
+  background: radial-gradient(closest-side, rgba(34, 211, 238, 0.22), transparent);
+  animation: drift-a 38s ease-in-out infinite alternate;
+}
+
+.aurora-violet {
+  top: -20vmax;
+  right: -30vmax;
+  background: radial-gradient(closest-side, rgba(139, 92, 246, 0.28), transparent);
+  animation: drift-b 46s ease-in-out infinite alternate;
+}
+
+.aurora-magenta {
+  bottom: -45vmax;
+  left: 15vmax;
+  background: radial-gradient(closest-side, rgba(232, 121, 249, 0.14), transparent);
+  animation: drift-c 52s ease-in-out infinite alternate;
+}
+
+@keyframes drift-a {
+  to { transform: translate(18vmax, 14vmax) scale(1.15); }
+}
+@keyframes drift-b {
+  to { transform: translate(-22vmax, 18vmax) scale(0.9); }
+}
+@keyframes drift-c {
+  to { transform: translate(-12vmax, -16vmax) scale(1.2); }
+}
+
+/* Perspective grid that fades out toward the horizon. */
+.horizon-grid {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 48vh;
+  perspective: 380px;
+  overflow: hidden;
+  mask-image: linear-gradient(to top, black 10%, transparent 90%);
+}
+
+.horizon-plane {
+  position: absolute;
+  left: -50%;
+  right: -50%;
+  top: 0;
+  height: 200%;
+  transform-origin: 50% 0;
+  background-image:
+    linear-gradient(rgba(34, 211, 238, 0.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 92, 246, 0.13) 1px, transparent 1px);
+  background-size: 64px 64px;
+  transform: rotateX(62deg);
+  animation: grid-flow 7s linear infinite;
+}
+
+@keyframes grid-flow {
+  from { transform: rotateX(62deg) translateY(0); }
+  to { transform: rotateX(62deg) translateY(64px); }
+}
+
+/* Film grain: a tiny noise texture made with an SVG filter. */
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ================= Top bar ================= */
+
+.scroll-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 60;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-violet), var(--color-magenta));
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.6);
+}
+
+.navbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease;
+}
+
+.navbar.is-scrolled {
+  background: rgba(5, 8, 22, 0.6);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+.wordmark-sm {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #f2fbff;
+  text-shadow:
+    0 0 10px rgba(34, 211, 238, 0.6),
+    0 0 30px rgba(139, 92, 246, 0.45);
+}
+
+.nav-link {
+  transition: color 0.2s ease;
+}
+.nav-link:hover {
+  color: var(--color-ink);
+}
+
+/* ================= Hero ================= */
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.9rem 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-ink);
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+.live-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 10px var(--color-accent);
+}
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-accent);
+  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes ping {
+  75%, 100% { transform: scale(2.6); opacity: 0; }
+}
+
+.hero-title {
+  font-size: clamp(2.1rem, 7.4vw, 6.5rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.055em;
+}
+
+.hero-gradient {
+  background: linear-gradient(100deg, #ffffff 0%, #c9f6ff 30%, #22d3ee 55%, #a78bfa 80%, #e879f9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.section-title {
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  max-width: 16ch;
+}
+
+.btn-glow,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.25rem;
+  padding: 0 1.75rem;
+  border-radius: 999px;
+  font-weight: 600;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.btn-glow {
+  color: #031018;
+  background: linear-gradient(135deg, #67e8f9, #22d3ee 50%, #a78bfa);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.25) inset,
+    0 8px 30px -6px rgba(34, 211, 238, 0.7),
+    0 0 60px -10px rgba(139, 92, 246, 0.6);
+}
+.btn-glow:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.35) inset,
+    0 12px 40px -6px rgba(34, 211, 238, 0.85),
+    0 0 80px -10px rgba(139, 92, 246, 0.8);
+}
+
+.btn-ghost {
+  color: var(--color-ink);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+}
+.btn-ghost:hover {
+  border-color: rgba(34, 211, 238, 0.6);
+  background: rgba(34, 211, 238, 0.08);
+}
+
+/* CSS orb: a glowing core with three tilted rings. */
+.orb-fallback {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.orb-core {
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #a5f3fc 18%, rgba(34, 211, 238, 0.6) 40%, rgba(139, 92, 246, 0.25) 65%, transparent 72%);
+  box-shadow: 0 0 80px 20px rgba(34, 211, 238, 0.25), 0 0 160px 40px rgba(139, 92, 246, 0.2);
+  animation: core-pulse 3s ease-in-out infinite;
+}
+
+.orb-ring {
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.15), inset 0 0 24px rgba(139, 92, 246, 0.15);
+}
+.orb-ring-1 { transform: rotateX(70deg); animation: ring-spin-1 18s linear infinite; }
+.orb-ring-2 { transform: rotateY(70deg); border-color: rgba(139, 92, 246, 0.4); animation: ring-spin-2 24s linear infinite; }
+.orb-ring-3 { inset: 18%; transform: rotateX(60deg) rotateY(40deg); border-color: rgba(232, 121, 249, 0.3); animation: ring-spin-3 30s linear infinite; }
+
+@keyframes core-pulse {
+  50% { transform: scale(1.1); }
+}
+@keyframes ring-spin-1 {
+  to { transform: rotateX(70deg) rotateZ(360deg); }
+}
+@keyframes ring-spin-2 {
+  to { transform: rotateY(70deg) rotateZ(360deg); }
+}
+@keyframes ring-spin-3 {
+  to { transform: rotateX(60deg) rotateY(40deg) rotateZ(360deg); }
+}
+
+/* ================= Marquee ================= */
+
+.marquee {
+  position: relative;
+  overflow: hidden;
+  border-block: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(5, 8, 22, 0.35);
+  backdrop-filter: blur(6px);
+  mask-image: linear-gradient(90deg, transparent, black 12%, black 88%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 45s linear infinite;
+}
+
+.marquee-list {
+  display: flex;
+  gap: 2.5rem;
+  padding: 1.6rem 1.25rem;
+  font-family: var(--font-unbounded), sans-serif;
+  font-size: clamp(1.1rem, 2.4vw, 1.75rem);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  color: rgba(238, 242, 251, 0.75);
+  white-space: nowrap;
+}
+
+.marquee-node {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 12px var(--color-accent), 0 0 24px var(--color-violet);
+}
+
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+
+/* ================= Bento cards ================= */
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.bento-cell {
+  min-height: 260px;
+}
+
+.bento-card {
+  --glow: 34, 211, 238;
+  --glow-2: 139, 92, 246;
+  position: relative;
+  height: 100%;
+  border-radius: 24px;
+}
+
+.card-pro {
+  --glow: 139, 92, 246;
+  --glow-2: 232, 121, 249;
+}
+
+/* Animated gradient border: a rotating conic gradient, masked to a 1px ring. */
+.bento-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--angle),
+    rgba(var(--glow), 0.1),
+    rgba(var(--glow), 0.9),
+    rgba(var(--glow-2), 0.6),
+    rgba(var(--glow), 0.1) 60%,
+    rgba(var(--glow), 0.1)
+  );
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-clip: content-box, border-box;
+  -webkit-mask-composite: xor;
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-clip: content-box, border-box;
+  mask-composite: exclude;
+  animation: border-spin 6s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes border-spin {
+  to { --angle: 360deg; }
+}
+
+/* Spotlight that follows the cursor (position set from JS). */
+.bento-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgba(var(--glow), 0.16), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.bento-card:hover::after,
+.bento-card:focus-within::after {
+  opacity: 1;
+}
+
+.bento-card:hover,
+.bento-card:focus-within {
+  box-shadow:
+    0 0 0 1px rgba(var(--glow), 0.25),
+    0 0 40px -12px rgba(var(--glow), 0.5);
+}
+
+.bento-inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1.75rem;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.015));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+@media (min-width: 640px) {
+  .bento-inner { padding: 2rem; }
+}
+
+.bento-inner:focus-visible {
+  outline-offset: 3px;
+  border-radius: 24px;
+}
+
+.card-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 14px;
+  color: rgb(var(--glow));
+  background: radial-gradient(circle at 30% 20%, rgba(var(--glow), 0.28), rgba(var(--glow), 0.06));
+  border: 1px solid rgba(var(--glow), 0.4);
+  box-shadow: 0 0 24px -4px rgba(var(--glow), 0.6), inset 0 0 12px rgba(var(--glow), 0.2);
+}
+
+.card-icon-lg {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 18px;
+}
+.card-icon-lg svg {
+  width: 30px;
+  height: 30px;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgb(var(--glow));
+  background: rgba(var(--glow), 0.12);
+  border: 1px solid rgba(var(--glow), 0.4);
+}
+
+.card-pro .badge {
+  color: #c4b5fd; /* lighter violet so the small text stays readable */
+}
+
+/* Locked cards: a light sweep across the "Coming soon" label. */
+.shimmer-text {
+  background: linear-gradient(90deg, #a7b1cc 0%, #a7b1cc 40%, #ffffff 50%, #a7b1cc 60%, #a7b1cc 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+/* ================= Reduced motion ================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob,
+  .horizon-plane,
+  .marquee-track,
+  .bento-card::before,
+  .shimmer-text,
+  .live-dot::after,
+  .orb-core,
+  .orb-ring {
+    animation: none;
+  }
+  .btn-glow:hover {
+    transform: none;
+  }
+}
