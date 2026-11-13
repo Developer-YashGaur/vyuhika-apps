@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useMotionValueEvent, useScroll } from "framer-motion";
-import { site } from "@/lib/site";
+import ExternalHint from "@/components/ExternalHint";
+import { externalLinkProps, site } from "@/lib/site";
 
 // Fixed top bar. It's see-through at the top of the page and turns into
 // frosted glass once you start scrolling. Pages pass `onHome` so the links
@@ -25,13 +26,22 @@ export default function Navbar({ onHome = false }: { onHome?: boolean }) {
             <a href={`${home}#apps`} className="nav-link">Apps</a>
           </li>
           <li>
-            <a href={site.links.youtube} target="_blank" rel="noopener noreferrer" className="nav-link">
+            <a href={site.links.youtube} {...externalLinkProps} className="nav-link">
               Journey
+              <ExternalHint />
             </a>
           </li>
           <li className="hidden sm:block">
-            <a href={site.links.linkedin} target="_blank" rel="noopener noreferrer" className="nav-link">
+            <a href={site.links.linkedin} {...externalLinkProps} className="nav-link">
               LinkedIn
+              <ExternalHint />
+            </a>
+          </li>
+          {/* Shown on every width: the bar has room for it on phones too. */}
+          <li>
+            <a href={site.owner.portfolio} {...externalLinkProps} className="nav-link">
+              About
+              <ExternalHint />
             </a>
           </li>
         </ul>

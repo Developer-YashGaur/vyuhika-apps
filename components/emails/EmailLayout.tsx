@@ -27,7 +27,7 @@ type Props = {
   assetBaseUrl: string;
   headerImage: "header.png" | "header.gif";
   headerAlt: string;
-  footer: ReactNode;
+  footer: ReactNode; // text (or text with links) under the card
   children: ReactNode;
 };
 

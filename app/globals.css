@@ -1063,3 +1063,54 @@ html:has(.feedback-dialog[open]) {
   border: 1px solid rgba(34, 211, 238, 0.45);
   box-shadow: 0 0 32px rgba(34, 211, 238, 0.3);
 }
+
+/* ================= Links to other sites ================= */
+
+/* The small ↗ after links that open in a new tab. */
+.external-hint {
+  display: inline-block;
+  margin-left: 0.3em;
+  vertical-align: 0.05em;
+  opacity: 0.65;
+}
+
+.footer-link {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-decoration-color: rgba(34, 211, 238, 0.45);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.2s ease, color 0.2s ease;
+}
+.footer-link:hover {
+  color: var(--color-accent);
+  text-decoration-color: currentColor;
+}
+/* A tighter ring, so it doesn't touch the words next to this inline link. */
+.footer-link:focus-visible {
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
+/* ================= Built by ================= */
+
+.built-by {
+  overflow: hidden;
+  padding: 2rem 1.5rem;
+}
+@media (min-width: 640px) {
+  .built-by { padding: 3.5rem; }
+}
+@media (min-width: 1280px) {
+  .built-by { padding: 4.5rem 5rem; }
+}
+/* A soft violet and cyan glow in the top-right corner. */
+.built-by-glow {
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: min(70%, 640px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.28), rgba(34, 211, 238, 0.1) 45%, transparent 70%);
+  pointer-events: none;
+}
