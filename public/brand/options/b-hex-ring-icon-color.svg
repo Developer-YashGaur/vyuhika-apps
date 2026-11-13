@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="b-hex-ring-icon-color-title">
+  <title id="b-hex-ring-icon-color-title">Vyuhika Apps</title>
+  <defs>
+    <linearGradient id="b-hex-ring-icon-color-g" x1="0" y1="4" x2="0" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+    <radialGradient id="b-hex-ring-icon-color-core"><stop offset="0.35" stop-color="#ffffff"/><stop offset="1" stop-color="#22d3ee"/></radialGradient>
+    <radialGradient id="b-hex-ring-icon-color-halo"><stop offset="0" stop-color="#22d3ee" stop-opacity="0.6"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+  </defs>
+  <mask id="b-hex-ring-icon-color-v" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64"><rect width="64" height="64" fill="#fff"/><polyline points="22,19 32,36 42,19" fill="none" stroke="#000" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></mask>
+  <polygon points="32,5 53.65,17.5 53.65,42.5 32,55 10.35,42.5 10.35,17.5" fill="url(#b-hex-ring-icon-color-g)" stroke="url(#b-hex-ring-icon-color-g)" stroke-width="3" stroke-linejoin="round" mask="url(#b-hex-ring-icon-color-v)"/>
+  <circle cx="32" cy="5" r="5.5" fill="#ecfeff"/>
+  <circle cx="53.65" cy="17.5" r="5.5" fill="#ecfeff"/>
+  <circle cx="53.65" cy="42.5" r="5.5" fill="#ecfeff"/>
+  <circle cx="10.35" cy="42.5" r="5.5" fill="#ecfeff"/>
+  <circle cx="10.35" cy="17.5" r="5.5" fill="#ecfeff"/>
+  <circle cx="32" cy="55" r="9" fill="url(#b-hex-ring-icon-color-halo)"/><circle cx="32" cy="55" r="7.5" fill="url(#b-hex-ring-icon-color-core)"/>
+</svg>

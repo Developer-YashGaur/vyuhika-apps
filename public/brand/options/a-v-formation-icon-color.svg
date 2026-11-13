@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="a-v-formation-icon-color-title">
+  <title id="a-v-formation-icon-color-title">Vyuhika Apps</title>
+  <defs>
+    <linearGradient id="a-v-formation-icon-color-g" x1="0" y1="4" x2="0" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+    <radialGradient id="a-v-formation-icon-color-core"><stop offset="0.35" stop-color="#ffffff"/><stop offset="1" stop-color="#22d3ee"/></radialGradient>
+    <radialGradient id="a-v-formation-icon-color-halo"><stop offset="0" stop-color="#22d3ee" stop-opacity="0.6"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+  </defs>
+  <polyline points="10,10 21,30 32,50 43,30 54,10" fill="none" stroke="url(#a-v-formation-icon-color-g)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="10" cy="10" r="5.5" fill="url(#a-v-formation-icon-color-g)"/>
+  <circle cx="21" cy="30" r="5.5" fill="url(#a-v-formation-icon-color-g)"/>
+  <circle cx="43" cy="30" r="5.5" fill="url(#a-v-formation-icon-color-g)"/>
+  <circle cx="54" cy="10" r="5.5" fill="url(#a-v-formation-icon-color-g)"/>
+  <circle cx="32" cy="50" r="13" fill="url(#a-v-formation-icon-color-halo)"/><circle cx="32" cy="50" r="7.5" fill="url(#a-v-formation-icon-color-core)"/>
+</svg>

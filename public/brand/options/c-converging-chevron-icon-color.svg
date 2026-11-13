@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="c-converging-chevron-icon-color-title">
+  <title id="c-converging-chevron-icon-color-title">Vyuhika Apps</title>
+  <defs>
+    <linearGradient id="c-converging-chevron-icon-color-g" x1="0" y1="4" x2="0" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+    <radialGradient id="c-converging-chevron-icon-color-core"><stop offset="0.35" stop-color="#ffffff"/><stop offset="1" stop-color="#22d3ee"/></radialGradient>
+    <radialGradient id="c-converging-chevron-icon-color-halo"><stop offset="0" stop-color="#22d3ee" stop-opacity="0.6"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+  </defs>
+  <line x1="12" y1="9" x2="16.38" y2="17.99" stroke="url(#c-converging-chevron-icon-color-g)" stroke-width="9" stroke-linecap="round"/>
+  <line x1="22.52" y1="30.57" x2="24.28" y2="34.17" stroke="url(#c-converging-chevron-icon-color-g)" stroke-width="9" stroke-linecap="round"/>
+  <line x1="52" y1="9" x2="47.62" y2="17.99" stroke="url(#c-converging-chevron-icon-color-g)" stroke-width="9" stroke-linecap="round"/>
+  <line x1="41.48" y1="30.57" x2="39.72" y2="34.17" stroke="url(#c-converging-chevron-icon-color-g)" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="32" cy="50" r="12" fill="url(#c-converging-chevron-icon-color-halo)"/><circle cx="32" cy="50" r="8" fill="url(#c-converging-chevron-icon-color-core)"/>
+</svg>
