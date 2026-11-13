@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { Body, Container, Head, Html, Img, Link, Preview, Section, Text } from "@react-email/components";
+import { Body, Column, Container, Head, Html, Img, Link, Preview, Row, Section, Text } from "@react-email/components";
 
-// Shared frame for every Vyuhika email: dark deep-space background, wordmark, header image and footer.
+// Shared frame for every Vyuhika email: dark deep-space background, a header image with the logo,
+// the content card, and a footer with the logo and brand line.
 //
 // Email rules followed here (so it works in Gmail, Apple Mail and Outlook):
 // - Table-based layout (React Email's Section/Container render tables), 600px wide.
@@ -53,26 +54,6 @@ export default function EmailLayout({ preview, assetBaseUrl, headerImage, header
             bgcolor={colors.space}
             style={{ width: "100%", maxWidth: "600px", backgroundColor: colors.space, margin: "0 auto" }}
           >
-            {/* Wordmark as real text, so the brand shows even when images are blocked. */}
-            <Section className="email-pad" style={{ padding: "8px 32px 20px" }}>
-              <Text
-                style={{
-                  margin: 0,
-                  fontSize: "26px",
-                  lineHeight: "32px",
-                  fontWeight: 800,
-                  letterSpacing: "-0.5px",
-                  color: colors.ink,
-                  textShadow: "0 0 18px rgba(34, 211, 238, 0.65)",
-                }}
-              >
-                Vyuhika
-              </Text>
-              <Text style={{ margin: "4px 0 0", fontSize: "13px", lineHeight: "18px", color: colors.mist }}>
-                Intelligence, built in public.
-              </Text>
-            </Section>
-
             <Img
               src={`${assetBaseUrl}/email/${headerImage}`}
               width="600"
@@ -110,7 +91,25 @@ export default function EmailLayout({ preview, assetBaseUrl, headerImage, header
             </Section>
 
             <Section className="email-pad" style={{ padding: "24px 32px 8px" }}>
-              <Text style={{ margin: 0, fontSize: "12px", lineHeight: "18px", color: colors.mist }}>{footer}</Text>
+              {/* Brand line: the logo icon beside the name and tagline. */}
+              <Row style={{ width: "100%" }}>
+                <Column style={{ width: "36px", verticalAlign: "middle" }}>
+                  <Img
+                    src={`${assetBaseUrl}/email/logo-icon.png`}
+                    width="28"
+                    height="28"
+                    alt="Vyuhika Apps logo"
+                    style={{ display: "block", border: 0, color: colors.mist, fontSize: "11px" }}
+                  />
+                </Column>
+                <Column style={{ verticalAlign: "middle" }}>
+                  <Text style={{ margin: 0, fontSize: "13px", lineHeight: "18px", color: colors.ink, fontWeight: 600 }}>
+                    Vyuhika Apps
+                    <span style={{ color: colors.mist, fontWeight: 400 }}>: Intelligence, built in public.</span>
+                  </Text>
+                </Column>
+              </Row>
+              <Text style={{ margin: "16px 0 0", fontSize: "12px", lineHeight: "18px", color: colors.mist }}>{footer}</Text>
               <Text style={{ margin: "8px 0 0", fontSize: "12px", lineHeight: "18px", color: colors.mist }}>
                 <Link href={assetBaseUrl} style={{ color: colors.cyan, textDecoration: "underline" }}>
                   {assetBaseUrl.replace(/^https?:\/\//, "")}

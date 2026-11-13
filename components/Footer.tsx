@@ -1,4 +1,5 @@
 import ExternalHint from "@/components/ExternalHint";
+import Logo from "@/components/Logo";
 import { externalLinkProps, site } from "@/lib/site";
 
 // Site footer: wordmark, tagline, a link to the maker's portfolio and social links.
@@ -8,8 +9,8 @@ export default function Footer() {
     <footer className="border-t border-white/10">
       <div className="gutter flex flex-col gap-6 pt-12 pb-24 text-sm text-mist sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="wordmark-sm font-display">{site.name}</p>
-          <p className="mt-2">
+          <Logo variant="horizontal" size={36} />
+          <p className="mt-4">
             {site.tagline} Made by{" "}
             <a href={site.owner.portfolio} {...externalLinkProps} className="footer-link">
               {site.owner.name}

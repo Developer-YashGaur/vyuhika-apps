@@ -1,11 +1,10 @@
-import type { Metadata } from "next";
 import { Instrument_Sans, Unbounded } from "next/font/google";
 import Backdrop from "@/components/Backdrop";
 import FeedbackWidget from "@/components/feedback/FeedbackWidget";
 import MotionProvider from "@/components/MotionProvider";
 import ScrollProgress from "@/components/ScrollProgress";
 import SmoothScroll from "@/components/SmoothScroll";
-import { site } from "@/lib/site";
+import { siteMetadata, siteViewport } from "@/lib/metadata";
 import "./globals.css";
 
 // Unbounded: wide, futuristic letters for the logo and headings.
@@ -20,11 +19,9 @@ const body = Instrument_Sans({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Vyuhika Apps",
-  description: `Useful AI tools, some free and some paid. ${site.tagline}`,
-  metadataBase: new URL("https://apps.vyuhika.com"),
-};
+// Titles, descriptions, share images and theme colour live in lib/metadata.ts.
+export const metadata = siteMetadata;
+export const viewport = siteViewport;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

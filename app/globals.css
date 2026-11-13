@@ -297,6 +297,9 @@ body {
   box-shadow: 0 0 80px 20px rgba(34, 211, 238, 0.25), 0 0 160px 40px rgba(139, 92, 246, 0.2);
   animation: core-pulse 3s ease-in-out infinite;
 }
+@keyframes core-pulse {
+  50% { transform: scale(1.1); }
+}
 
 .orb-ring {
   position: absolute;
@@ -309,9 +312,6 @@ body {
 .orb-ring-2 { transform: rotateY(70deg); border-color: rgba(139, 92, 246, 0.4); animation: ring-spin-2 24s linear infinite; }
 .orb-ring-3 { inset: 18%; transform: rotateX(60deg) rotateY(40deg); border-color: rgba(232, 121, 249, 0.3); animation: ring-spin-3 30s linear infinite; }
 
-@keyframes core-pulse {
-  50% { transform: scale(1.1); }
-}
 @keyframes ring-spin-1 {
   to { transform: rotateX(70deg) rotateZ(360deg); }
 }
@@ -784,42 +784,6 @@ body {
 }
 
 /* Loading animation: nodes and links pulse one after another. */
-.neural-loader {
-  overflow: visible;
-  animation: loader-spin 14s linear infinite;
-}
-.neural-link {
-  stroke: rgba(34, 211, 238, 0.5);
-  stroke-width: 1.2;
-  animation: link-pulse 1.6s ease-in-out infinite;
-}
-.neural-node {
-  fill: #a5f3fc;
-  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.9));
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: node-pulse 1.6s ease-in-out infinite;
-}
-.neural-core {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: core-beat 1.2s ease-in-out infinite;
-}
-@keyframes link-pulse {
-  0%, 100% { stroke-opacity: 0.25; }
-  50% { stroke-opacity: 1; }
-}
-@keyframes node-pulse {
-  0%, 100% { transform: scale(0.8); opacity: 0.6; }
-  50% { transform: scale(1.35); opacity: 1; }
-}
-@keyframes core-beat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.25); }
-}
-@keyframes loader-spin {
-  to { transform: rotate(360deg); }
-}
 
 .gauge-ring {
   filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.6));
@@ -853,10 +817,6 @@ body {
   .bento-card::before,
   .glass-panel::before,
   .shimmer-text,
-  .neural-node,
-  .neural-link,
-  .neural-core,
-  .neural-loader,
   .dropzone-spinner,
   .live-dot::after,
   .orb-core,
@@ -1113,4 +1073,41 @@ html:has(.feedback-dialog[open]) {
   border-radius: 999px;
   background: radial-gradient(circle, rgba(139, 92, 246, 0.28), rgba(34, 211, 238, 0.1) 45%, transparent 70%);
   pointer-events: none;
+}
+
+/* ================= Logo ================= */
+
+/* A soft cyan and violet glow when the link around the logo is hovered or focused. */
+.logo-glow {
+  transition: filter 0.3s ease;
+}
+a:hover > .logo-glow,
+a:focus-visible > .logo-glow {
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.55)) drop-shadow(0 0 18px rgba(139, 92, 246, 0.35));
+}
+
+/* The loading screen's icon gently breathes: a small scale and a brighter glow. */
+.logo-pulse {
+  animation: logo-pulse 2.4s ease-in-out infinite;
+}
+@keyframes logo-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.35));
+  }
+  50% {
+    transform: scale(1.045);
+    filter: drop-shadow(0 0 22px rgba(34, 211, 238, 0.6)) drop-shadow(0 0 36px rgba(139, 92, 246, 0.35));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-glow {
+    transition: none;
+  }
+  .logo-pulse {
+    animation: none;
+    filter: drop-shadow(0 0 14px rgba(34, 211, 238, 0.45));
+  }
 }

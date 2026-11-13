@@ -42,7 +42,9 @@ describe("templates render", () => {
     expect(email.html).toContain("Wrong result");
     expect(email.html).toContain("/apps/resume-matcher");
     expect(email.html).toContain("https://apps.vyuhika.com/email/header.png");
-    expect(email.html).toMatch(/alt="Vyuhika: a glowing neural network orb/);
+    expect(email.html).toContain('alt="Vyuhika Apps"');
+    expect(email.html).toContain("https://apps.vyuhika.com/email/logo-icon.png");
+    expect(email.text).toContain("Vyuhika Apps: Intelligence, built in public.");
     expect(email.text).toContain("Score: 62 / 100");
     expect(email.text).toContain("Matched: React, TypeScript, REST APIs, SQL, Git, Agile");
     expect(email.text).toContain("Received: 13 Nov 2026, 10:52 UTC");

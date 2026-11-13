@@ -1,13 +1,9 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import ResumeMatcher from "@/components/resume-matcher/ResumeMatcher";
+import { resumeMatcherMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Resume Matcher | Vyuhika Apps",
-  description:
-    "Paste your resume and a job description. See your match score, the keywords you're missing, and what to change.",
-};
+export const metadata = resumeMatcherMetadata;
 
 export default function ResumeMatcherPage() {
   return (

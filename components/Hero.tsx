@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
+import Logo from "@/components/Logo";
 import OrbFallback from "@/components/OrbFallback";
 import { externalLinkProps, site } from "@/lib/site";
 
@@ -29,8 +30,9 @@ export default function Hero() {
           transition={{ duration: 0.6, ease }}
           className="live-badge"
         >
-          <span className="live-dot" aria-hidden="true" />
+          <Logo variant="icon" size={18} decorative />
           Now building in public
+          <span className="live-dot" aria-hidden="true" />
         </motion.p>
 
         <h1 className="hero-title font-display mt-7">
