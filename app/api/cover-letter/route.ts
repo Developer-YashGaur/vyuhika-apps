@@ -8,7 +8,8 @@ import { writeCoverLetter } from "@/lib/cover-letter/write";
 import { DAY_MS, MINUTE_MS, createRateLimiter, getClientIp } from "@/lib/rate-limit";
 
 // POST /api/cover-letter with { resume, jobDescription, companyName?, roleTitle?, highlight?, tone, length }
-// → { letter, gaps } (see lib/cover-letter/schema.ts).
+// → { letter, gaps, notes, highlightHandling, highlightEvidence } (see lib/cover-letter/write.ts).
+// `notes` lists style checks the letter still fails (names only, like ["length"]).
 // Runs only on the server, so the Gemini API key never reaches the browser.
 
 // Two 15,000-character fields plus the short ones fit easily; anything far bigger is rejected before parsing.
@@ -52,8 +53,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { letter, gaps } = await writeCoverLetter(checked.input, generate);
-    return Response.json({ letter, gaps }, { headers: { "Cache-Control": "no-store" } });
+    const { letter, gaps, notes, highlightHandling, highlightEvidence } = await writeCoverLetter(checked.input, generate);
+    return Response.json(
+      { letter, gaps, notes, highlightHandling, highlightEvidence },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     if (error instanceof AiError) return letterError(error.code, error.message);
     // Log only the error type, never the person's text or the letter.

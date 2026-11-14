@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AiError } from "@/lib/ai/errors";
 import type { GenerateFn } from "@/lib/ai/generate-json";
 import { BANNED_CLICHES, BANNED_OPENINGS } from "@/lib/cover-letter/cliches";
-import { WORD_LIMITS, countWords, findNumbers, findProblems } from "@/lib/cover-letter/checks";
+import { SEVERITY, WORD_LIMITS, checkNumbers, countWords, findNumbers, findProblems, type CheckName } from "@/lib/cover-letter/checks";
 import { COVER_LETTER_ERROR_MESSAGES } from "@/lib/cover-letter/errors";
 import { COMPANY, HIGHLIGHT, JOB, RESUME, ROLE, SYSTEM_INSTRUCTION, buildUserPrompt } from "@/lib/cover-letter/prompt";
 import { parseCoverLetterInput, type CoverLetterInput, type CoverLetterResult } from "@/lib/cover-letter/schema";
@@ -24,10 +24,13 @@ const input: CoverLetterInput = {
 const messagesOf = (result: CoverLetterResult, letterInput: CoverLetterInput) =>
   findProblems(result, letterInput).map((p) => p.message);
 
+// Only the number check, for tests that pass a highlight just as a source of numbers.
+const numberProblems = (result: CoverLetterResult, letterInput: CoverLetterInput) => checkNumbers(result.letter, letterInput);
+
 // The valid answer with one sentence of the letter swapped for another.
 function edited(find: string, replace: string, gaps = valid.gaps): CoverLetterResult {
   if (!validLetter.includes(find)) throw new Error(`Test setup: "${find}" is not in the letter`);
-  return { letter: validLetter.replace(find, replace), gaps };
+  return { ...valid, letter: validLetter.replace(find, replace), gaps };
 }
 
 // A fake AI that returns each answer in turn and records every request it gets.
@@ -59,15 +62,15 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("writeCoverLetter with a fake AI", () => {
-  it("returns a valid letter after one call", async () => {
+  it("returns a valid letter after one call, with no notes", async () => {
     const ai = fakeAi(valid);
-    expect(await writeCoverLetter(input, ai.generate)).toEqual(valid);
+    expect(await writeCoverLetter(input, ai.generate)).toEqual({ ...valid, notes: [] });
     expect(ai.calls).toHaveLength(1);
   });
 
   it("uses the retry if it fixes the problem", async () => {
     const ai = fakeAi(edited("20,000 shoppers", "50,000 shoppers"), valid);
-    expect(await writeCoverLetter(input, ai.generate)).toEqual(valid);
+    expect(await writeCoverLetter(input, ai.generate)).toEqual({ ...valid, notes: [] });
     expect(ai.calls).toHaveLength(2);
   });
 
@@ -80,23 +83,70 @@ describe("writeCoverLetter with a fake AI", () => {
     expect(ai.calls[1].systemInstruction).toBe(SYSTEM_INSTRUCTION);
   });
 
-  const failing: [string, CoverLetterResult | string][] = [
+  // Must-pass (honesty and safety): still failing after the retry → friendly error.
+  const mustFail: [string, CoverLetterResult | string, Partial<CoverLetterInput>?][] = [
     ["an invented number", edited("20,000 shoppers", "50,000 shoppers")],
-    ["a cliché", edited("I would welcome the chance", "As a team player, I would welcome the chance")],
+    ["an inflated role", edited("I built the checkout flow", "I led the team that built the checkout flow")],
+    ["a dropped highlight", valid, { highlight: "Accessibility work" }],
     ["a placeholder with no gap", edited("Unit tests", "I [add your AWS experience here] too. Unit tests")],
     ["a gap with no placeholder", edited(NEXT_JS_GAP, "I have used it in side projects.")],
-    ["a letter that is too short", { letter: "Dear Hiring Manager,\n\nI build React apps.\n\nKind regards,\nPriya Sharma", gaps: [] }],
     ["a delimiter marker in the letter", edited("Kind regards,", "<<<RESUME_END>>>\nKind regards,")],
     ["broken JSON", "{ not json"],
   ];
 
-  it.each(failing)("%s: retries exactly once, then gives a friendly error", async (_, answer) => {
+  it.each(mustFail)("must-pass, %s: retries exactly once, then gives a friendly error", async (_, answer, extra) => {
     const ai = fakeAi(answer);
-    const error = await errorOf(writeCoverLetter(input, ai.generate));
+    const error = await errorOf(writeCoverLetter({ ...input, ...extra }, ai.generate));
     expect(ai.calls).toHaveLength(2);
     expect(error.code).toBe("ai-failed");
     expect(error.message).toBe(COVER_LETTER_ERROR_MESSAGES["ai-failed"]);
     expect(error.message).toContain("couldn't write this letter");
+  });
+
+  // Should-pass (style): still failing after the retry → the letter comes back, with the check names as notes.
+  const styleFail: [CheckName, CoverLetterResult][] = [
+    ["cliche", edited("I would welcome the chance", "As a team player, I would welcome the chance")],
+    ["length", { ...valid, letter: "Dear Hiring Manager,\n\nI build React apps.\n\nKind regards,\nPriya Sharma", gaps: [] }],
+    ["opening", edited("Speed and accessibility sit", "I am applying because speed and accessibility sit")],
+    ["resume-mention", edited("Unit tests with Jest", "As my resume shows, unit tests with Jest")],
+    ["placeholder-wording", edited("and at ShopLane I", "and I am ready to learn it, so at ShopLane I")],
+    [
+      "placement",
+      edited(`${NEXT_JS_GAP}.`, `${NEXT_JS_GAP}, and I [add your AWS experience here].`, [
+        ...valid.gaps,
+        { need: "AWS", placeholder: "[add your AWS experience here]" },
+      ]),
+    ],
+  ];
+
+  it.each(styleFail)("should-pass, %s: retries once, then returns the letter with notes", async (name, answer) => {
+    const ai = fakeAi(answer);
+    const letter = await writeCoverLetter(input, ai.generate);
+    expect(ai.calls).toHaveLength(2);
+    expect(letter.letter).toBe(answer.letter);
+    expect(letter.notes).toEqual([name]);
+  });
+
+  it("keeps a style-only first answer if the retry breaks a must-pass rule", async () => {
+    const styleOnly = edited("I would welcome the chance", "As a team player, I would welcome the chance");
+    const ai = fakeAi(styleOnly, edited("20,000 shoppers", "50,000 shoppers"));
+    const letter = await writeCoverLetter(input, ai.generate);
+    expect(letter.letter).toBe(styleOnly.letter);
+    expect(letter.notes).toEqual(["cliche"]);
+  });
+
+  it("uses a style-only retry after a must-pass failure", async () => {
+    const styleOnly = edited("Speed and accessibility sit", "I am applying because speed and accessibility sit");
+    const ai = fakeAi(edited("20,000 shoppers", "50,000 shoppers"), styleOnly);
+    const letter = await writeCoverLetter(input, ai.generate);
+    expect(letter.letter).toBe(styleOnly.letter);
+    expect(letter.notes).toEqual(["opening"]);
+  });
+
+  it("lists each style note once, by name only", async () => {
+    const twoCliches = edited("I would welcome the chance", "As a team player and hard worker, I would welcome the chance");
+    const letter = await writeCoverLetter(input, fakeAi(twoCliches).generate);
+    expect(letter.notes).toEqual(["cliche"]);
   });
 
   it("reports a timeout in the cover letter's own words", async () => {
@@ -110,48 +160,48 @@ describe("writeCoverLetter with a fake AI", () => {
 
 describe("check: numbers", () => {
   it("rejects a number that isn't in any input", () => {
-    const problems = messagesOf(edited("20,000 shoppers", "35,000 shoppers"), input);
+    const problems = numberProblems(edited("20,000 shoppers", "35,000 shoppers"), input);
     expect(problems).toHaveLength(1);
     expect(problems[0]).toContain('"35,000"');
   });
 
   it("accepts a number that only appears in the highlight", () => {
     const answer = edited("Unit tests", "I also cut load time by 40% on the product list. Unit tests");
-    expect(messagesOf(answer, input)).toHaveLength(1);
-    expect(messagesOf(answer, { ...input, highlight: "I cut product list load time by 40%" })).toEqual([]);
+    expect(numberProblems(answer, input)).toHaveLength(1);
+    expect(numberProblems(answer, { ...input, highlight: "I cut product list load time by 40%" })).toEqual([]);
   });
 
   it("accepts numbers from the company name and role title", () => {
     const answer = edited("Nimbus Cloud.", "Nimbus Cloud 360 as a Level 3 engineer.");
-    expect(messagesOf(answer, input)).toHaveLength(2);
-    expect(messagesOf(answer, { ...input, companyName: "Nimbus Cloud 360", roleTitle: "Engineer, Level 3" })).toEqual([]);
+    expect(numberProblems(answer, input)).toHaveLength(2);
+    expect(numberProblems(answer, { ...input, companyName: "Nimbus Cloud 360", roleTitle: "Engineer, Level 3" })).toEqual([]);
   });
 
   it("treats 1,000 and 1000 as the same number, both ways", () => {
     const resume = `${sampleResume}\n- Reviewed 1,000 pull requests`;
     const answer = edited("Unit tests", "I have reviewed 1000 pull requests. Unit tests");
-    expect(messagesOf(answer, { ...input, resume })).toEqual([]);
+    expect(numberProblems(answer, { ...input, resume })).toEqual([]);
 
     const resumePlain = `${sampleResume}\n- Reviewed 1000 pull requests`;
     const answerComma = edited("Unit tests", "I have reviewed 1,000 pull requests. Unit tests");
-    expect(messagesOf(answerComma, { ...input, resume: resumePlain })).toEqual([]);
+    expect(numberProblems(answerComma, { ...input, resume: resumePlain })).toEqual([]);
   });
 
   it("treats 20 percent and 20% as the same", () => {
     const answer = edited("Unit tests", "That made the page 20% faster. Unit tests");
-    expect(messagesOf(answer, { ...input, highlight: "made the page 20 percent faster" })).toEqual([]);
+    expect(numberProblems(answer, { ...input, highlight: "made the page 20 percent faster" })).toEqual([]);
   });
 
   it("does not turn a plain number from the resume into a percentage", () => {
     // The resume says "4 years", not "4%".
     const answer = edited("Unit tests", "I raised test coverage by 4%. Unit tests");
-    expect(messagesOf(answer, input)).toEqual([expect.stringContaining('"4%"')]);
+    expect(numberProblems(answer, input)).toEqual([expect.stringContaining('"4%"')]);
   });
 
   it("ignores numbers inside placeholders", () => {
     const placeholder = "[add how many of the 3 dashboards you built here]";
     const answer = edited("Unit tests", `I ${placeholder} too. Unit tests`, [...valid.gaps, { need: "Dashboards", placeholder }]);
-    expect(messagesOf(answer, input)).toEqual([]);
+    expect(numberProblems(answer, input)).toEqual([]);
   });
 
   it("reads numbers the same way, whatever the formatting", () => {
@@ -176,29 +226,29 @@ describe("check: numbers written as words", () => {
 
   it("rejects an invented number word followed by a unit", () => {
     const answer = edited("For the past 4 years", "For the past four years");
-    expect(messagesOf(answer, noFour)).toEqual([expect.stringContaining('"four years"')]);
-    expect(messagesOf(withSentence("I have led twenty-five clients."), input)).toEqual([
+    expect(numberProblems(answer, noFour)).toEqual([expect.stringContaining('"four years"')]);
+    expect(numberProblems(withSentence("I have led twenty-five clients."), input)).toEqual([
       expect.stringContaining('"twenty-five clients"'),
     ]);
   });
 
   it("accepts a number word when the inputs have it as digits", () => {
     // The resume says "4 years".
-    expect(messagesOf(edited("For the past 4 years", "For the past four years"), input)).toEqual([]);
+    expect(numberProblems(edited("For the past 4 years", "For the past four years"), input)).toEqual([]);
   });
 
   it("accepts a number word when the inputs have the same word, and digits when they have the word", () => {
     const withThree = { ...input, highlight: "I led three projects at once" };
-    expect(messagesOf(withSentence("I have led three projects at once."), withThree)).toEqual([]);
-    expect(messagesOf(withSentence("I have led 3 projects at once."), withThree)).toEqual([]);
+    expect(numberProblems(withSentence("I have led three projects at once."), withThree)).toEqual([]);
+    expect(numberProblems(withSentence("I have led 3 projects at once."), withThree)).toEqual([]);
     // The resume says "two-week Agile sprints", and the valid letter repeats it.
-    expect(messagesOf(valid, input)).toEqual([]);
+    expect(numberProblems(valid, input)).toEqual([]);
   });
 
   it("reads tens, hundreds and thousands", () => {
-    expect(messagesOf(withSentence("I trained two hundred people."), input)).toEqual([expect.stringContaining('"two hundred people"')]);
+    expect(numberProblems(withSentence("I trained two hundred people."), input)).toEqual([expect.stringContaining('"two hundred people"')]);
     const withHundreds = { ...input, highlight: "Trained 200 people and served 1,000 customers" };
-    expect(messagesOf(withSentence("I trained two hundred people and served one thousand customers."), withHundreds)).toEqual([]);
+    expect(numberProblems(withSentence("I trained two hundred people and served one thousand customers."), withHundreds)).toEqual([]);
   });
 
   it("does not flag ordinary phrases", () => {
@@ -212,13 +262,13 @@ describe("check: numbers written as words", () => {
       "Someone years ago told me to write tests.",
     ]) {
       const letter = letterNoFour.replace("Unit tests", `${sentence} Unit tests`);
-      expect(messagesOf({ ...valid, letter }, noFour)).toEqual([]);
+      expect(numberProblems({ ...valid, letter }, noFour)).toEqual([]);
     }
   });
 
   it("treats twenty percent like 20%", () => {
-    expect(messagesOf(withSentence("Pages got twenty percent faster."), input)).toHaveLength(1);
-    expect(messagesOf(withSentence("Pages got twenty percent faster."), { ...input, highlight: "20% faster pages" })).toEqual([]);
+    expect(numberProblems(withSentence("Pages got twenty percent faster."), input)).toHaveLength(1);
+    expect(numberProblems(withSentence("Pages got twenty percent faster."), { ...input, highlight: "20% faster pages" })).toEqual([]);
   });
 });
 
@@ -257,7 +307,7 @@ describe("check: placeholders and gaps", () => {
   it("allows [Your name] on its own, with no gap", () => {
     const answer = edited("Priya Sharma", "[Your name]");
     expect(messagesOf(answer, input)).toEqual([]);
-    expect(messagesOf({ letter: answer.letter.replace(` ${NEXT_JS_GAP}`, " I am keen to learn it."), gaps: [] }, input)).toEqual([]);
+    expect(messagesOf({ ...valid, letter: answer.letter.replace(` ${NEXT_JS_GAP}`, " I am keen to learn it."), gaps: [] }, input)).toEqual([]);
   });
 
   it("matches a gap to its placeholder ignoring case and extra spaces", () => {
@@ -284,10 +334,126 @@ describe("check: length", () => {
   it("does not let a long placeholder pad a short letter", () => {
     const padding = `[${"add more detail here ".repeat(9).trim()}]`;
     const answer = {
+      ...valid,
       letter: `Dear Hiring Manager,\n\nI build React apps. ${padding}\n\nKind regards,\nPriya Sharma`,
       gaps: [{ need: "More detail", placeholder: padding }],
     };
     expect(messagesOf(answer, input)).toEqual([expect.stringContaining("words")]);
+  });
+});
+
+describe("must-pass and should-pass checks", () => {
+  it("splits the checks as agreed", () => {
+    const must = Object.entries(SEVERITY).filter(([, s]) => s === "must").map(([name]) => name);
+    const should = Object.entries(SEVERITY).filter(([, s]) => s === "should").map(([name]) => name);
+    expect(must.sort()).toEqual(["delimiter", "highlight", "numbers", "placeholder-count", "placeholders", "role"]);
+    expect(should.sort()).toEqual(["cliche", "length", "opening", "placeholder-wording", "placement", "resume-mention"]);
+  });
+});
+
+describe("check: role inflation", () => {
+  const roleChecks = (result: CoverLetterResult, resume: string) =>
+    findProblems(result, { ...input, resume }).filter((p) => p.check === "role");
+
+  it('rejects "managed a team" when the resume only says "team of 4"', () => {
+    const resume = `${sampleResume}\n- Part of a team of 4 on the checkout project`;
+    const answer = edited("I built the checkout flow", "I managed a team of 4 and built the checkout flow");
+    expect(roleChecks(answer, resume)).toEqual([expect.objectContaining({ severity: "must", message: expect.stringContaining('"managed"') })]);
+  });
+
+  it('accepts "led" when the resume says "Led"', () => {
+    const resume = `${sampleResume}\n- Led the move from JavaScript to TypeScript`;
+    const answer = edited("Unit tests", "I led the move from JavaScript to TypeScript. Unit tests");
+    expect(roleChecks(answer, resume)).toEqual([]);
+  });
+
+  it("accepts any form of the word from the resume", () => {
+    const answer = edited("Unit tests", "I managed the release and mentored two interns. Unit tests");
+    const resume = `${sampleResume}\nRelease manager for the checkout team; ran a mentorship scheme`;
+    expect(roleChecks(answer, resume)).toEqual([]);
+    expect(roleChecks(answer, sampleResume).map((p) => p.message)).toEqual([
+      expect.stringContaining('"managed"'),
+      expect.stringContaining('"mentored"'),
+    ]);
+  });
+
+  it("catches each leadership word on the list", () => {
+    for (const word of ["led", "lead", "leading", "leadership", "managed", "manage", "managing", "management", "mentored", "mentoring", "supervised", "headed", "directed", "oversaw"]) {
+      const answer = edited("Unit tests", `I ${word} the checkout work. Unit tests`);
+      expect(roleChecks(answer, sampleResume)).toHaveLength(1);
+    }
+  });
+
+  it("ignores leadership words inside placeholders", () => {
+    const placeholder = "[add a real example of leading a team or mentoring here]";
+    const answer = edited(NEXT_JS_GAP, placeholder, [{ need: "Leadership", placeholder }]);
+    expect(roleChecks(answer, sampleResume)).toEqual([]);
+  });
+});
+
+describe("check: highlight handling", () => {
+  const unsupported = "I have led a team of engineers and mentored junior developers through their first year";
+  const supported = "improving page speed with virtualised rendering";
+  const highlightChecks = (result: CoverLetterResult, highlight?: string) =>
+    findProblems(result, { ...input, highlight }).filter((p) => p.check === "highlight");
+
+  it('needs "not-provided" when no highlight was given', () => {
+    expect(highlightChecks(valid)).toEqual([]);
+    expect(highlightChecks({ ...valid, highlightHandling: "gap" })).toHaveLength(1);
+  });
+
+  it("rejects a highlight that was dropped silently", () => {
+    expect(highlightChecks(valid, supported)).toEqual([expect.objectContaining({ severity: "must", message: expect.stringContaining("Never drop it") })]);
+  });
+
+  it('accepts "used" with evidence copied from the resume, ignoring case and spacing', () => {
+    const evidence = "IMPROVED page speed by  rewriting the product list\nwith virtualised rendering";
+    expect(highlightChecks({ ...valid, highlightHandling: "used", highlightEvidence: evidence }, supported)).toEqual([]);
+  });
+
+  it('rejects "used" when the evidence is not in the resume, or is empty', () => {
+    const made = { ...valid, highlightHandling: "used" as const, highlightEvidence: "Cut page load time in half" };
+    expect(highlightChecks(made, supported)).toHaveLength(1);
+    expect(highlightChecks({ ...made, highlightEvidence: "" }, supported)).toHaveLength(1);
+  });
+
+  it('accepts "gap" when a gap clearly refers to the highlight', () => {
+    const placeholder = "[add a real example of leading a team and mentoring junior developers here]";
+    const answer = { ...edited(NEXT_JS_GAP, placeholder, [{ need: "Leading a team and mentoring juniors", placeholder }]), highlightHandling: "gap" as const };
+    expect(highlightChecks(answer, unsupported)).toEqual([]);
+  });
+
+  it('rejects "gap" when no gap is about the highlight', () => {
+    expect(highlightChecks({ ...valid, highlightHandling: "gap" }, unsupported)).toEqual([
+      expect.objectContaining({ message: expect.stringContaining("no gap clearly refers to the highlight") }),
+    ]);
+  });
+});
+
+describe("check: talking about the resume", () => {
+  it('rejects "my resume", "my CV" and "as per my resume", ignoring case', () => {
+    for (const phrase of ["As my resume shows,", "As shown in my CV,", "As per my resume,", "MY RESUME shows that"]) {
+      const answer = edited("Unit tests with Jest", `${phrase} unit tests with Jest`);
+      expect(findProblems(answer, input).map((p) => [p.check, p.severity])).toEqual([["resume-mention", "should"]]);
+    }
+  });
+
+  it("allows the word resume in other uses", () => {
+    expect(messagesOf(edited("Unit tests", "I helped resume work on the payments API. Unit tests"), input)).toEqual([]);
+  });
+});
+
+describe("check: placeholder wording", () => {
+  it('rejects "not yet" or "ready to learn" in the same sentence as a placeholder', () => {
+    for (const hedge of ["I have not yet used it, but at ShopLane I", "I am ready to learn it, and at ShopLane I"]) {
+      const answer = edited("and at ShopLane I", `and ${hedge}`);
+      expect(findProblems(answer, input).map((p) => [p.check, p.severity])).toEqual([["placeholder-wording", "should"]]);
+    }
+  });
+
+  it("allows those words in a different sentence", () => {
+    const answer = edited("The role also asks for Next.js,", "I am ready to learn more. The role also asks for Next.js,");
+    expect(messagesOf(answer, input)).toEqual([]);
   });
 });
 
@@ -328,7 +494,7 @@ describe("check: number of gaps", () => {
     ].slice(0, count - 1);
     let letter = validLetter;
     for (const { find, placeholder } of extra) letter = letter.replace(find, `I ${placeholder} too. ${find}`);
-    return { letter, gaps: [...valid.gaps, ...extra.map(({ placeholder }) => ({ need: "Something", placeholder }))] };
+    return { ...valid, letter, gaps: [...valid.gaps, ...extra.map(({ placeholder }) => ({ need: "Something", placeholder }))] };
   }
 
   it("allows up to 3 gaps", () => {
@@ -337,7 +503,7 @@ describe("check: number of gaps", () => {
 
   it("rejects more than 3 gaps", () => {
     expect(findProblems(withGaps(4), input)).toEqual([
-      { check: "placeholder-count", message: expect.stringContaining("has 4 gaps. Use at most 3") },
+      { check: "placeholder-count", severity: "must", message: expect.stringContaining("has 4 gaps. Use at most 3") },
     ]);
   });
 });
@@ -350,6 +516,7 @@ describe("check: placeholder placement", () => {
 
   it("rejects a stacked list of placeholders", () => {
     const stacked = {
+      ...valid,
       letter: validLetter.replace(`The role also asks for Next.js, and at ShopLane I ${NEXT_JS_GAP}.`, `${NEXT_JS_GAP}\n\n[add your AWS experience here]`),
       gaps: [...valid.gaps, { need: "AWS", placeholder: "[add your AWS experience here]" }],
     };
@@ -361,7 +528,7 @@ describe("check: placeholder placement", () => {
       ...valid.gaps,
       { need: "AWS", placeholder: "[add your AWS experience here]" },
     ]);
-    expect(findProblems(two, input)).toEqual([{ check: "placement", message: expect.stringContaining("has 2 placeholders") }]);
+    expect(findProblems(two, input)).toEqual([{ check: "placement", severity: "should", message: expect.stringContaining("has 2 placeholders") }]);
   });
 
   it("accepts a placeholder inside a sentence, and [Your name] on its own line", () => {
@@ -374,7 +541,7 @@ describe("logging failed checks", () => {
   it("logs only the attempt, the check names and the word count, never any text", async () => {
     const warn = vi.mocked(console.warn);
     const highlight = "SECRET-HIGHLIGHT-PHRASE";
-    // Fails three checks on both attempts: an opening, a cliché and (for "medium") the length.
+    // Fails on both attempts: the dropped highlight (must-pass), and the length, a cliché and the opening (style).
     const bad = edited("Speed and accessibility sit", "I am applying as a team player. Speed and accessibility sit");
     const ai = fakeAi(bad);
 
@@ -382,8 +549,8 @@ describe("logging failed checks", () => {
 
     const lines = warn.mock.calls.map((args) => args.join(" "));
     expect(lines).toEqual([
-      "[cover-letter] attempt 1 of 2 failed checks: cliche, length, opening (words: 181)",
-      "[cover-letter] attempt 2 of 2 failed checks: cliche, length, opening (words: 181)",
+      "[cover-letter] attempt 1 of 2 failed checks: highlight, length, cliche, opening (words: 181)",
+      "[cover-letter] attempt 2 of 2 failed checks: highlight, length, cliche, opening (words: 181)",
     ]);
     const everything = JSON.stringify([...warn.mock.calls, ...vi.mocked(console.error).mock.calls]);
     for (const secret of ["Priya", "ShopLane", "Nimbus", "Dear Hiring", "team player", "I am applying", highlight, "aim for"]) {
@@ -391,9 +558,22 @@ describe("logging failed checks", () => {
     }
   });
 
+  it("logs a style-only result by names and numbers too", async () => {
+    const warn = vi.mocked(console.warn);
+    const bad = edited("Speed and accessibility sit", "I am applying as a team player. Speed and accessibility sit");
+    const letter = await writeCoverLetter({ ...input, length: "medium" }, fakeAi(bad).generate);
+
+    expect(letter.notes).toEqual(["length", "cliche", "opening"]);
+    expect(warn.mock.calls.map((args) => args.join(" "))).toEqual([
+      "[cover-letter] attempt 1 of 2 failed checks: length, cliche, opening (words: 181)",
+      "[cover-letter] attempt 2 of 2 failed checks: length, cliche, opening (words: 181)",
+      "[cover-letter] returning an answer that only failed style checks",
+    ]);
+  });
+
   it("names each failed check", () => {
     const answer = edited("20,000 shoppers", "90,000 shoppers");
-    expect(findProblems(answer, input)).toEqual([{ check: "numbers", message: expect.stringContaining('"90,000"') }]);
+    expect(findProblems(answer, input)).toEqual([{ check: "numbers", severity: "must", message: expect.stringContaining('"90,000"') }]);
   });
 });
 
@@ -489,6 +669,18 @@ describe("prompt", () => {
       "based only on what the job description says",
       "confident: direct and assured. Active verbs and short sentences. Lead with results",
       "never as a claim about past work",
+      // Highlight, role, wording and length.
+      "Never drop it silently: either use it or turn it into a gap",
+      'set highlightHandling to "used" and copy, word for word, the phrase',
+      'set highlightHandling to "not-provided"',
+      "Never upgrade the person's role",
+      'Being part of\n  a "team of 4" is not managing or leading it',
+      "A placeholder replaces a real past example",
+      '"not yet", "ready to learn", "eager to learn", "aligns with my background"',
+      "Never claim a match for something that is a gap",
+      '"my resume"',
+      "explain more fully how each real fact from the resume meets a specific need",
+      "Never pad with generic sentences, and never\n  invent anything to reach the length",
     ]) {
       expect(SYSTEM_INSTRUCTION).toContain(rule);
     }

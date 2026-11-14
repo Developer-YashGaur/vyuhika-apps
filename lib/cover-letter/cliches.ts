@@ -22,6 +22,12 @@ export const BANNED_CLICHES = [
   "where my experience does not",
 ];
 
+// The letter must not talk about the resume itself.
+export const RESUME_MENTIONS = ["as per my resume", "my resume", "my résumé", "my CV"];
+
+// A placeholder stands for a real past example, so it must not share a sentence with these.
+export const PLACEHOLDER_HEDGES = ["not yet", "ready to learn", "eager to learn", "aligns with my background"];
+
 // Not allowed as the start of the first sentence after the greeting.
 export const BANNED_OPENINGS = [
   "I am applying",

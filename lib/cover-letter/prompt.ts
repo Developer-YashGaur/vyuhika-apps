@@ -1,5 +1,5 @@
 import { delimiters, stripDelimiters } from "@/lib/ai/delimiters";
-import { BANNED_CLICHES, BANNED_OPENINGS } from "@/lib/cover-letter/cliches";
+import { BANNED_CLICHES, BANNED_OPENINGS, PLACEHOLDER_HEDGES, RESUME_MENTIONS } from "@/lib/cover-letter/cliches";
 import type { CoverLetterInput, LetterLength, Tone } from "@/lib/cover-letter/schema";
 
 // The instructions we give Gemini for a cover letter, and how the user's text is wrapped.
@@ -63,9 +63,18 @@ Honesty rules (the most important):
 - Never attach a duration (like "4 years") to one employer unless the resume states that duration for that employer.
   Total experience may be mentioned only as a whole (like "4 years of frontend experience"), and only if the resume
   states it.
-- The highlight is what the person wants to stress. Use it only if the resume supports it. If the resume does not
-  support it, do not claim it: add a placeholder and a gap for it instead.
+- Never upgrade the person's role. Use leadership words (led, managed, mentored, supervised, headed, directed,
+  oversaw, leadership, management) only if the resume itself uses that kind of word for that work. Being part of
+  a "team of 4" is not managing or leading it.
 - Do not praise the company with anything the job description does not support. No flattery.
+
+The highlight:
+- The highlight is what the person wants to stress. Never drop it silently: either use it or turn it into a gap.
+- Use it only if the resume supports it. Then set highlightHandling to "used" and copy, word for word, the phrase
+  from the resume that supports it into highlightEvidence.
+- If the resume does not support it, do not claim it: add a placeholder and a gap for it instead (the gap must
+  clearly name what the highlight is about). Then set highlightHandling to "gap" and highlightEvidence to "".
+- If the highlight block is empty, set highlightHandling to "not-provided" and highlightEvidence to "".
 
 Gaps and placeholders:
 - Where the job asks for something the resume does not show, do not pretend. Put a clearly marked placeholder in
@@ -77,8 +86,12 @@ Gaps and placeholders:
 - Every placeholder must be listed in "gaps", with the exact same text (including the brackets) in "placeholder"
   and a few words about what the job needs in "need". Only [Your name] needs no gap.
 - Use square brackets only for placeholders.
+- A placeholder replaces a real past example. In the same sentence, never write phrases like ${quoted(PLACEHOLDER_HEDGES)}:
+  write "At ShopLane I [add a real example of X here]", not "I am ready to learn [add a real example of X here]".
+- Never claim a match for something that is a gap (no "my background covers X" next to a placeholder for X).
 - Never write about the gaps themselves. No sentences like "I note the following" or "For the areas where my
   experience does not match".
+- Never mention the resume itself (${quoted(RESUME_MENTIONS)}). Talk about the experience.
 
 Opening:
 - The first sentence after the greeting must start with a specific hook: the person's most relevant real achievement
@@ -88,6 +101,9 @@ Opening:
 Length and shape:
 - Use exactly the number of paragraphs and the word range given in the user message. Count every word of the letter,
   including the greeting and sign-off, but not the placeholders.
+- To reach the word range, explain more fully how each real fact from the resume meets a specific need in the job
+  description, using concrete detail that is already in the resume. Never pad with generic sentences, and never
+  invent anything to reach the length.
 
 Tone (the user message says which one to use):
 - professional: ${TONE_GUIDE.professional}

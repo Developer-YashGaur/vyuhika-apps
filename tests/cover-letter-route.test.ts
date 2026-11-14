@@ -71,13 +71,20 @@ afterEach(() => {
 });
 
 describe("POST /api/cover-letter", () => {
-  it("returns { letter, gaps } for valid input", async () => {
-    const response = await post({ ...body, companyName: "Nimbus Cloud", highlight: "Accessibility" });
+  it("returns { letter, gaps, notes, highlightHandling, highlightEvidence } for valid input", async () => {
+    const response = await post({ ...body, companyName: "Nimbus Cloud" });
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     const data = await response.json();
-    expect(Object.keys(data).sort()).toEqual(["gaps", "letter"]);
-    expect(data).toEqual(valid);
+    expect(Object.keys(data).sort()).toEqual(["gaps", "highlightEvidence", "highlightHandling", "letter", "notes"]);
+    expect(data).toEqual({ ...valid, notes: [] });
+  });
+
+  it("returns a letter that only fails style checks, with notes", async () => {
+    fake.generate = async () => JSON.stringify({ ...valid, letter: valid.letter.replace("I would welcome", "As a team player, I would welcome") });
+    const response = await post(body);
+    expect(response.status).toBe(200);
+    expect((await response.json()).notes).toEqual(["cliche"]);
   });
 
   it("rejects invalid input with a clear message", async () => {

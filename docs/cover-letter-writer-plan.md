@@ -24,6 +24,9 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
   at most 3 gaps placed inside sentences, and clearly different tones. New checks: `opening`,
   `placeholder-count`, `placement`. A failed attempt logs only its number, the failed check names and the word
   count, for example `[cover-letter] attempt 1 of 2 failed checks: length, opening (words: 148)`.
+- Final tuning: must-pass vs should-pass checks (style failures come back as `notes`), new checks `role`,
+  `highlight`, `resume-mention` and `placeholder-wording`, `highlightHandling` and `highlightEvidence` in the
+  answer, and a prompt rule for reaching the medium length honestly.
 
 Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
 re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
@@ -91,31 +94,50 @@ Stays in the Resume Matcher: its prompt, schema, `enforceHonesty`, `Results`, `S
 
 - Strict zod object (extra fields are rejected). Body capped at 200 KB.
 - Rate limits: its own limiter, **3 per minute and 15 per day** per visitor. Regenerate counts.
-- Success: `{ letter: string, gaps: { need: string, placeholder: string }[] }`
+- Success: `{ letter, gaps: { need, placeholder }[], notes: string[], highlightHandling, highlightEvidence }`
+  - `notes`: names of style checks the letter still fails, for example `["length"]` (names only, never text).
+  - `highlightHandling`: `"not-provided"`, `"used"` or `"gap"`; `highlightEvidence`: the resume phrase that supports
+    a used highlight, otherwise `""`.
 - Errors: `{ error: { code, message } }`, the same as the Resume Matcher.
 
-**Server-side checks** (any failure → one retry that tells the AI what was wrong, then a friendly error):
-- Every number in the letter must appear in the resume, job description, company name, role title or highlight.
-  Numbers are compared after normalising formatting (`1,000` = `1000`, `20 percent` = `20%`).
-  A percentage in the letter must be a percentage in the inputs too. Numbers inside placeholders are ignored.
-  Number words followed by a unit count too ("four years" = "4 years"), but not "one of" or "the first".
-- No banned clichés, from the one list in `lib/cover-letter/cliches.ts`, matched ignoring case.
-- Every `[...]` placeholder in the letter has a matching gap, and every gap has a placeholder.
-  `[Your name]` is always allowed and needs no gap.
-- At most 3 gaps; each placeholder inside a sentence, never alone on a line, at most one per paragraph.
-- The word count fits the chosen length, not counting placeholders: short 120–240, medium 210–420
-  (wider than the prompt's targets on purpose; do not loosen them to fit the model).
-- No delimiter marker in the letter or the gaps.
-- The first sentence after the greeting doesn't start with a banned opening (`BANNED_OPENINGS` in `cliches.ts`).
+**Server-side checks.** Any failure gets one retry that tells the AI what was wrong. After that:
+- **Must-pass** (honesty and safety): if one still fails, the person gets the friendly error.
+- **Should-pass** (style): if one still fails, the letter is returned anyway, with the failed check names in `notes`.
+  If the retry breaks a must-pass rule but the first answer only had style problems, the first answer is returned.
 
-Check names, as logged: `numbers`, `cliche`, `placeholders`, `placeholder-count`, `placement`, `length`,
-`delimiter`, `opening`.
+Must-pass:
+- `numbers`: every number in the letter must appear in the resume, job description, company name, role title or
+  highlight. Compared after normalising formatting (`1,000` = `1000`, `20 percent` = `20%`). A percentage must be a
+  percentage in the inputs too. Numbers inside placeholders are ignored. Number words followed by a unit count too
+  ("four years" = "4 years"), but not "one of" or "the first".
+- `role`: leadership words in the letter (led, lead, leading, leadership, managed, manage, managing, management,
+  mentored, mentoring, supervised, headed, directed, oversaw) must appear in some form in the resume.
+  Text inside placeholders is ignored. "Team of 4" in the resume does not allow "managed a team".
+- `highlight`: no highlight → `"not-provided"`. A highlight is never dropped: `"used"` needs `highlightEvidence`
+  that literally appears in the resume (ignoring case and spacing); `"gap"` needs a gap that shares meaningful
+  words with the highlight.
+- `placeholders`: every `[...]` placeholder has a matching gap and every gap a placeholder (`[Your name]` needs none).
+- `placeholder-count`: at most 3 gaps.
+- `delimiter`: no delimiter marker in the letter or the gaps.
+
+Should-pass (style):
+- `length`: short 120–240, medium 210–420 words, not counting placeholders (wider than the prompt's targets on
+  purpose; do not loosen them to fit the model).
+- `cliche`: no banned clichés (`BANNED_CLICHES` in `lib/cover-letter/cliches.ts`), ignoring case.
+- `opening`: the first sentence doesn't start with a banned opening (`BANNED_OPENINGS`).
+- `resume-mention`: no "my resume", "my CV" or "as per my resume".
+- `placeholder-wording`: no "not yet", "ready to learn", "eager to learn" or "aligns with my background" in the
+  same sentence as a placeholder.
+- `placement`: each placeholder inside a sentence, never alone on a line, at most one per paragraph.
+
+Logs show only the attempt number, the failed check names and the word count.
 
 ## 4. Feedback
 
 A "Wrong result" report from this page may attach **counts and settings only**: tone, length, word count,
 placeholder count, and which optional fields were filled in (yes/no).
-Never the gap labels, and never any resume, letter, job description or highlight text.
+Never the gap labels, and never any resume, letter, job description or highlight text
+(that includes `highlightEvidence`, which is copied from the resume).
 The feedback schema is strict, so a request with any other field is rejected.
 
 ## 5. Card, metadata, share image
@@ -134,8 +156,9 @@ Gemini is always faked in tests. The Resume Matcher's existing tests must keep p
 3. Move UI pieces to `components/shared/`, point the Resume Matcher at the new paths, remove the re-exports. ✅
 4. Cover letter prompt, schema and server-side checks, with tests. ✅
 5. `/api/cover-letter` route with its own rate limits, with tests. ✅
-6. Form page (inputs, tone and length pills).
-7. Loading and result view (editable letter, Copy, Download, Regenerate, gaps list).
+6. Form page (inputs, tone and length pills). Suggest "short" when the resume is under about 1,200 characters.
+7. Loading and result view (editable letter, Copy, Download, Regenerate, gaps list). The result screen says
+   "Check every fact before you send" and shows the word count and any style notes.
 8. Feedback attachments for this app, with tests.
 9. Card goes live, metadata and share image.
 10. Full test run, build, screenshots on phone and desktop, then the pull request.

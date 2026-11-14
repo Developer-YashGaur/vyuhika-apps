@@ -25,4 +25,6 @@ Priya Sharma`;
 export const valid: CoverLetterResult = {
   letter: validLetter,
   gaps: [{ need: "Next.js or a server-rendered framework", placeholder: NEXT_JS_GAP }],
+  highlightHandling: "not-provided",
+  highlightEvidence: "",
 };

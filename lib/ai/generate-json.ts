@@ -57,7 +57,9 @@ type GenerateJsonOptions<T> = {
 
 // One failed check. `check` is a fixed name from our code (like "length"), so it is safe to log.
 // `message` can quote the AI's answer, so it only ever goes back to the AI, never to the logs.
-export type CheckProblem = { check: string; message: string };
+// `severity`: "must" (the default) means the answer can't be used; "should" means a style problem —
+// worth a retry, but if the retry doesn't fix it, the answer is still returned.
+export type CheckProblem = { check: string; message: string; severity?: "must" | "should" };
 
 export async function generateJson<T>({
   systemInstruction,
@@ -74,6 +76,8 @@ export async function generateJson<T>({
   const jsonSchema = toGeminiJsonSchema(schema);
   const friendlyError = (code: AiErrorCode) => new AiError(code, messages[code] ?? AI_ERROR_MESSAGES[code]);
   let problems: CheckProblem[] = [];
+  // The latest answer whose only problems are style ("should") problems, kept in case the retry is no better.
+  let styleOnlyAnswer: T | undefined;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     // On the retry, tell the AI what was wrong with its last answer (only when our own checks failed).
@@ -89,6 +93,7 @@ export async function generateJson<T>({
     const answer = parseJsonAnswer(text, schema);
     problems = answer && check ? check(answer) : [];
     if (answer && problems.length === 0) return answer;
+    if (answer && problems.every((p) => p.severity === "should")) styleOnlyAnswer = answer;
 
     // Log only the attempt, the names of the failed checks and safe numbers. Never any text:
     // not the user's, not the AI's answer, and not the problem messages (they can quote the answer).
@@ -99,6 +104,11 @@ export async function generateJson<T>({
     );
   }
 
+  // Style problems alone never block an answer: the app can show them as notes.
+  if (styleOnlyAnswer !== undefined) {
+    console.warn(`[${logLabel}] returning an answer that only failed style checks`);
+    return styleOnlyAnswer;
+  }
   throw friendlyError("ai-failed");
 }
 

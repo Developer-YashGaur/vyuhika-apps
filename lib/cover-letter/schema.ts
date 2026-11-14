@@ -8,6 +8,9 @@ export const LENGTHS = ["short", "medium"] as const;
 export type Tone = (typeof TONES)[number];
 export type LetterLength = (typeof LENGTHS)[number];
 
+// How the letter dealt with the "highlight" field (see lib/cover-letter/checks.ts).
+export const HIGHLIGHT_HANDLING = ["not-provided", "used", "gap"] as const;
+
 export const COMPANY_MAX = 100;
 export const ROLE_MAX = 100;
 export const HIGHLIGHT_MAX = 500;
@@ -77,6 +80,14 @@ export const coverLetterResultSchema = z.object({
     )
     .max(10)
     .describe("Every placeholder in the letter (except [Your name]), with what the job needs there."),
+  highlightHandling: z
+    .enum(HIGHLIGHT_HANDLING)
+    .describe('"not-provided" if the highlight block is empty; "used" if the resume supports it; otherwise "gap".'),
+  highlightEvidence: z
+    .string()
+    .trim()
+    .max(300)
+    .describe('If "used": a phrase copied exactly from the resume that supports the highlight. Otherwise an empty string.'),
 });
 
 export type CoverLetterResult = z.infer<typeof coverLetterResultSchema>;
