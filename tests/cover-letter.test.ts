@@ -9,6 +9,7 @@ import { parseCoverLetterInput, type CoverLetterInput, type CoverLetterResult } 
 import { writeCoverLetter } from "@/lib/cover-letter/write";
 import { sampleJobDescription, sampleResume } from "@/lib/samples";
 import { MAX_CHARS } from "@/lib/text-rules";
+import { NEXT_JS_GAP, valid, validLetter } from "@/tests/fixtures/cover-letter";
 
 // No test here calls the real Gemini API: every AI answer comes from a fake `generate` function.
 
@@ -17,29 +18,6 @@ const input: CoverLetterInput = {
   jobDescription: sampleJobDescription,
   tone: "professional",
   length: "short",
-};
-
-const NEXT_JS_GAP = "[add a real example of working with Next.js or another server-rendered framework here]";
-
-// A letter that follows every rule: 176 words, numbers only from the resume (4, 2022, 20,000), one gap.
-const validLetter = `Dear Hiring Manager,
-
-I would like to be considered for the Senior Frontend Engineer role at Nimbus Cloud. For the past 4 years I have built fast, accessible web apps with React and TypeScript, and building the dashboard your customers use is the kind of work I want to do next.
-
-At ShopLane, where I have worked since 2022, I built the checkout flow in React and TypeScript that 20,000 shoppers use every day. I improved page speed by rewriting the product list with virtualised rendering, and I worked with the backend team to design REST APIs for orders and payments. Unit tests with Jest and React Testing Library are part of how I ship every feature.
-
-The role also asks for Next.js. ${NEXT_JS_GAP}
-
-Before ShopLane, I built marketing sites with HTML, CSS and JavaScript at PixelCraft Studio, wrote SQL reports for the sales team, and worked in two-week Agile sprints using Git.
-
-I would welcome the chance to talk about how I could help your team build a faster, more accessible dashboard.
-
-Kind regards,
-Priya Sharma`;
-
-const valid: CoverLetterResult = {
-  letter: validLetter,
-  gaps: [{ need: "Next.js or a server-rendered framework", placeholder: NEXT_JS_GAP }],
 };
 
 // The valid answer with one sentence of the letter swapped for another.
@@ -180,6 +158,63 @@ describe("check: numbers", () => {
       ["20", true],
       ["7", true],
     ]);
+  });
+});
+
+describe("check: numbers written as words", () => {
+  // The sample resume says "4 years" and the job "4+ years"; remove both to test an invented "four years".
+  const noFour = {
+    ...input,
+    resume: sampleResume.replace("4 years of experience", "experience"),
+    jobDescription: sampleJobDescription.replace("4+ years of ", ""),
+  };
+  const withSentence = (sentence: string) => edited("Unit tests", `${sentence} Unit tests`);
+
+  it("rejects an invented number word followed by a unit", () => {
+    const answer = edited("For the past 4 years", "For the past four years");
+    expect(findProblems(answer, noFour)).toEqual([expect.stringContaining('"four years"')]);
+    expect(findProblems(withSentence("I have led twenty-five clients."), input)).toEqual([
+      expect.stringContaining('"twenty-five clients"'),
+    ]);
+  });
+
+  it("accepts a number word when the inputs have it as digits", () => {
+    // The resume says "4 years".
+    expect(findProblems(edited("For the past 4 years", "For the past four years"), input)).toEqual([]);
+  });
+
+  it("accepts a number word when the inputs have the same word, and digits when they have the word", () => {
+    const withThree = { ...input, highlight: "I led three projects at once" };
+    expect(findProblems(withSentence("I have led three projects at once."), withThree)).toEqual([]);
+    expect(findProblems(withSentence("I have led 3 projects at once."), withThree)).toEqual([]);
+    // The resume says "two-week Agile sprints", and the valid letter repeats it.
+    expect(findProblems(valid, input)).toEqual([]);
+  });
+
+  it("reads tens, hundreds and thousands", () => {
+    expect(findProblems(withSentence("I trained two hundred people."), input)).toEqual([expect.stringContaining('"two hundred people"')]);
+    const withHundreds = { ...input, highlight: "Trained 200 people and served 1,000 customers" };
+    expect(findProblems(withSentence("I trained two hundred people and served one thousand customers."), withHundreds)).toEqual([]);
+  });
+
+  it("does not flag ordinary phrases", () => {
+    // The base letter without its "4 years", since `noFour` has no 4 anywhere.
+    const letterNoFour = validLetter.replace("For the past 4 years", "For years");
+    for (const sentence of [
+      "It is one of the best teams I know.",
+      "I was the first developer on the team.",
+      "I have built a few projects with it.",
+      "I run four yearly accessibility reviews.", // "yearly" is not "years"
+      "Someone years ago told me to write tests.",
+    ]) {
+      const letter = letterNoFour.replace("Unit tests", `${sentence} Unit tests`);
+      expect(findProblems({ ...valid, letter }, noFour)).toEqual([]);
+    }
+  });
+
+  it("treats twenty percent like 20%", () => {
+    expect(findProblems(withSentence("Pages got twenty percent faster."), input)).toHaveLength(1);
+    expect(findProblems(withSentence("Pages got twenty percent faster."), { ...input, highlight: "20% faster pages" })).toEqual([]);
   });
 });
 

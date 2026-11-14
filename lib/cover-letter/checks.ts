@@ -18,6 +18,23 @@ const PLACEHOLDER = /\[[^[\]\n]+\]/g;
 // A number like 4, 2022, 20,000, 1000 or 4.5, optionally followed by "%", "percent" or "per cent".
 const NUMBER = /(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(\s*(?:%|percent\b|per cent\b))?/gi;
 
+// Numbers written as words: zero to twenty, the tens, hundred and thousand.
+const WORD_VALUES: Record<string, number> = {
+  zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17,
+  eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70,
+  eighty: 80, ninety: 90, hundred: 100, thousand: 1000,
+};
+const NUMBER_WORD = `(?:${Object.keys(WORD_VALUES).join("|")})`;
+// One or more number words in a row, like "four", "twenty-five" or "two hundred".
+const WORD_RUN = `\\b${NUMBER_WORD}(?:[\\s-]+${NUMBER_WORD})*\\b`;
+// The words that make a number word count as a claim, like "four years" or "twelve clients".
+const UNIT = `(?:(?:years?|months?|weeks?|teams?|people|persons?|projects?|clients?|customers?|employees?|percent)\\b|%)`;
+// In the letter: a number-word run directly followed by a unit ("one of" and "the first" never match).
+const WORD_NUMBER_WITH_UNIT = new RegExp(`(${WORD_RUN})([\\s-]+${UNIT})`, "gi");
+// In the inputs: any number-word run, with or without a unit.
+const ANY_WORD_NUMBER = new RegExp(`(${WORD_RUN})(\\s*(?:percent\\b|%))?`, "gi");
+
 // ---------- helpers ----------
 
 function withoutPlaceholders(text: string): string {
@@ -43,6 +60,30 @@ export function findNumbers(text: string): FoundNumber[] {
   }));
 }
 
+// The value of a run of number words: "four" → 4, "twenty-five" → 25, "two hundred" → 200.
+function wordsToNumber(run: string): number {
+  let total = 0;
+  let current = 0;
+  for (const word of run.toLowerCase().split(/[\s-]+/)) {
+    const value = WORD_VALUES[word];
+    if (value === 100) current = (current || 1) * 100;
+    else if (value === 1000) {
+      total += (current || 1) * 1000;
+      current = 0;
+    } else current += value;
+  }
+  return total + current;
+}
+
+// Numbers written as words. With `needUnit`, only those followed by a unit word ("four years", "ten clients").
+export function findWordNumbers(text: string, needUnit: boolean): FoundNumber[] {
+  return [...text.matchAll(needUnit ? WORD_NUMBER_WITH_UNIT : ANY_WORD_NUMBER)].map((match) => ({
+    raw: match[0].trim(),
+    value: String(wordsToNumber(match[1])),
+    percent: /percent|%/i.test(match[2] ?? ""),
+  }));
+}
+
 // Word count, not counting placeholders. A "word" is anything with a letter or digit in it.
 export function countWords(letter: string): number {
   return withoutPlaceholders(letter)
@@ -54,14 +95,17 @@ export function countWords(letter: string): number {
 
 // (a) Every number in the letter must come from what the person gave us.
 // A percentage must be a percentage there too; a plain number may match either.
+// Number words count when a unit follows them ("four years"), but not in phrases like "one of".
 export function checkNumbers(letter: string, input: CoverLetterInput): string[] {
   const sources = [input.resume, input.jobDescription, input.companyName, input.roleTitle, input.highlight]
     .filter(Boolean)
     .join("\n");
-  const known = findNumbers(sources);
+  // Numbers the person gave us, as digits or as words ("4 years" and "four years" are both 4).
+  const known = [...findNumbers(sources), ...findWordNumbers(sources, false)];
   const problems: string[] = [];
+  const text = withoutPlaceholders(letter);
 
-  for (const found of findNumbers(withoutPlaceholders(letter))) {
+  for (const found of [...findNumbers(text), ...findWordNumbers(text, true)]) {
     const ok = known.some((k) => k.value === found.value && (k.percent || !found.percent));
     const message = `The number "${found.raw}" is not in the resume or the other details. Remove it, or use a placeholder instead.`;
     if (!ok && !problems.includes(message)) problems.push(message);

@@ -17,7 +17,9 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
   the banned clichés (`cliches.ts`), the safety checks (`checks.ts`), error wording (`errors.ts`) and
   `writeCoverLetter` (`write.ts`). `stripDelimiters` moved to `lib/ai/delimiters.ts`. `generateJson` takes
   optional `check` (problems are sent back to the AI with its one retry) and `messages` (the app's wording).
-  Not covered by the number check: numbers written as words ("four years"); the prompt asks for digits.
+- Step 5: `POST /api/cover-letter` (`app/api/cover-letter/route.ts`) with its own rate limiter (3 a minute,
+  15 a day per visitor, separate from the matcher's). The number check also reads number words followed by
+  a unit ("four years", "twenty-five clients", "two hundred people"); "one of" or "the first" are not numbers.
 
 Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
 re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
@@ -82,6 +84,7 @@ Stays in the Resume Matcher: its prompt, schema, `enforceHonesty`, `Results`, `S
 - Every number in the letter must appear in the resume, job description, company name, role title or highlight.
   Numbers are compared after normalising formatting (`1,000` = `1000`, `20 percent` = `20%`).
   A percentage in the letter must be a percentage in the inputs too. Numbers inside placeholders are ignored.
+  Number words followed by a unit count too ("four years" = "4 years"), but not "one of" or "the first".
 - No banned clichés, from the one list in `lib/cover-letter/cliches.ts`, matched ignoring case.
 - Every `[...]` placeholder in the letter has a matching gap, and every gap has a placeholder.
   `[Your name]` is always allowed and needs no gap.
@@ -110,7 +113,7 @@ Gemini is always faked in tests. The Resume Matcher's existing tests must keep p
 2. Move the text rules, route helpers and client fetch wrapper. ✅
 3. Move UI pieces to `components/shared/`, point the Resume Matcher at the new paths, remove the re-exports. ✅
 4. Cover letter prompt, schema and server-side checks, with tests. ✅
-5. `/api/cover-letter` route with its own rate limits, with tests.
+5. `/api/cover-letter` route with its own rate limits, with tests. ✅
 6. Form page (inputs, tone and length pills).
 7. Loading and result view (editable letter, Copy, Download, Regenerate, gaps list).
 8. Feedback attachments for this app, with tests.
