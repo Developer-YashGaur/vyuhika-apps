@@ -591,7 +591,7 @@ body {
   box-shadow: 0 0 0 1px rgba(var(--glow), 0.3), 0 0 50px -14px rgba(var(--glow), 0.55);
 }
 
-.matcher-textarea {
+.text-panel-textarea {
   flex: 1;
   width: 100%;
   min-height: 240px;
@@ -606,12 +606,12 @@ body {
   transition: border-color 0.2s ease;
 }
 @media (min-width: 1024px) {
-  .matcher-textarea { min-height: clamp(360px, 42vh, 640px); }
+  .text-panel-textarea { min-height: clamp(360px, 42vh, 640px); }
 }
-.matcher-textarea::placeholder {
+.text-panel-textarea::placeholder {
   color: rgba(167, 177, 204, 0.6);
 }
-.matcher-textarea:focus {
+.text-panel-textarea:focus {
   outline: none;
   border-color: rgba(var(--glow), 0.6);
 }

@@ -4,24 +4,16 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Logo from "@/components/Logo";
 
-// Shown while the match is being analysed: the pulsing logo
-// and status lines that change every second, then stay on the last one until the answer arrives.
+// Shown while the AI works: the pulsing logo and status lines (passed in by each app)
+// that change every second, then stay on the last one until the answer arrives.
 
-const statusLines = [
-  "Reading your resume...",
-  "Scanning job requirements...",
-  "Matching skills and keywords...",
-  "Finding gaps...",
-  "Writing suggestions...",
-];
-
-export default function LoadingState() {
+export default function LoadingState({ lines }: { lines: string[] }) {
   const [line, setLine] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => setLine((i) => Math.min(i + 1, statusLines.length - 1)), 1400);
+    const timer = setInterval(() => setLine((i) => Math.min(i + 1, lines.length - 1)), 1400);
     return () => clearInterval(timer);
-  }, []);
+  }, [lines.length]);
 
   return (
     <div role="status" className="glass-panel glow-cyan flex flex-col items-center px-6 py-16 text-center sm:py-20">
@@ -41,7 +33,7 @@ export default function LoadingState() {
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-x-0 font-display text-lg font-medium tracking-[-0.02em] text-ink sm:text-xl"
           >
-            {statusLines[line]}
+            {lines[line]}
           </motion.p>
         </AnimatePresence>
       </div>

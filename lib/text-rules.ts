@@ -9,6 +9,11 @@ export function cleanText(text: string): string {
   return text.trim();
 }
 
+// How many real characters the text has (ignoring outer whitespace).
+export function countChars(text: string): number {
+  return cleanText(text).length;
+}
+
 // Server-side check of one long text field. Returns the cleaned text, or a friendly message.
 // The page already checks lengths before sending, but anyone can call the API directly.
 export function checkField(value: unknown, name: string): string | { message: string } {

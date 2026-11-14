@@ -1,13 +1,8 @@
-import { MAX_CHARS, MIN_CHARS, cleanText } from "@/lib/text-rules";
+import { MAX_CHARS, MIN_CHARS, countChars } from "@/lib/text-rules";
 
 // Input rules for the Resume Matcher. The shared length rules live in lib/text-rules.ts.
 
-export { MAX_CHARS, MIN_CHARS, cleanText } from "@/lib/text-rules";
-
-// How many real characters the text has (ignoring outer whitespace).
-export function countChars(text: string): number {
-  return cleanText(text).length;
-}
+export { MAX_CHARS, MIN_CHARS, cleanText, countChars } from "@/lib/text-rules";
 
 export function isLongEnough(text: string): boolean {
   return countChars(text) >= MIN_CHARS;

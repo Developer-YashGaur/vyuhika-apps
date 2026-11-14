@@ -9,6 +9,13 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
 **Done so far:**
 - Step 1: shared AI helpers moved to `lib/ai/`.
 - Step 2: shared text rules and API helpers moved to `lib/text-rules.ts` and `lib/api/`.
+- Step 3: `ErrorState`, `LoadingState`, `ResumeDropzone` and `TextPanel` moved to `components/shared/`
+  (wording comes in as props). Screenshots before and after were identical
+  (`node scripts/visual-check-matcher.mjs`, see the top of that file).
+
+Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
+re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
+and its tests still import these old paths.
 
 ## Rules for the AI (they go in the prompt)
 
@@ -35,7 +42,7 @@ then (in step 3) point the Resume Matcher at the new paths and delete the re-exp
 | `checkField`, `MIN_CHARS`, `MAX_CHARS`, `cleanText` | `lib/text-rules.ts` | none |
 | Body-size check, JSON parsing, `errorResponse` | `lib/api/route-helpers.ts` | none |
 | Fetch wrapper in `lib/analyze/client.ts` | `lib/api/post-json.ts` | takes the URL and a "does this answer look right?" check |
-| `ResumeDropzone`, `TextPanel`, `ErrorState`, `LoadingState` | `components/shared/` | `LoadingState` takes its lines as a prop; `ErrorState` takes its titles as a prop |
+| `ResumeDropzone`, `TextPanel`, `ErrorState`, `LoadingState` | `components/shared/` | `LoadingState` takes its lines as a prop; `ErrorState` takes its titles and button labels as props; CSS class `.matcher-textarea` renamed `.text-panel-textarea` |
 
 Stays in the Resume Matcher: its prompt, schema, `enforceHonesty`, `Results`, `ScoreGauge`, `scoreLabel`.
 
@@ -92,7 +99,7 @@ Gemini is always faked in tests. The Resume Matcher's existing tests must keep p
 
 1. Move the Gemini helper, errors and retry loop to `lib/ai/`. ✅
 2. Move the text rules, route helpers and client fetch wrapper. ✅
-3. Move UI pieces to `components/shared/`, point the Resume Matcher at the new paths, remove the re-exports.
+3. Move UI pieces to `components/shared/`, point the Resume Matcher at the new paths, remove the re-exports. ✅
 4. Cover letter prompt, schema and server-side checks, with tests.
 5. `/api/cover-letter` route with its own rate limits, with tests.
 6. Form page (inputs, tone and length pills).
