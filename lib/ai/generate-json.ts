@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { AiError } from "@/lib/ai/errors";
+import { AI_ERROR_MESSAGES, AiError, type AiErrorCode } from "@/lib/ai/errors";
 
-// Asks the AI for a JSON answer, checks it with a zod schema, and retries once if the answer is broken.
-// Shared by every app: each app brings its own instructions, prompt and schema.
+// Asks the AI for a JSON answer, checks it with a zod schema (and optionally the app's own checks),
+// and retries once if the answer is broken. Shared by every app: each app brings its own
+// instructions, prompt, schema and error wording.
 
 // One call to the AI. Passed in as a parameter so tests can use a fake instead of Gemini.
 export type GenerateFn = (request: {
@@ -45,6 +46,11 @@ type GenerateJsonOptions<T> = {
   generate: GenerateFn;
   logLabel: string; // shown in server logs, like "analyze", so we know which app failed
   timeoutMs?: number;
+  // Extra checks on a well-formed answer. Returns a list of problems (empty when all is fine).
+  // The problems are sent back to the AI with the retry, so it knows what to fix.
+  check?: (answer: T) => string[];
+  // The app's own wording for errors (falls back to lib/ai/errors.ts).
+  messages?: Partial<Record<AiErrorCode, string>>;
 };
 
 export async function generateJson<T>({
@@ -54,31 +60,59 @@ export async function generateJson<T>({
   generate,
   logLabel,
   timeoutMs = AI_TIMEOUT_MS,
+  check,
+  messages = {},
 }: GenerateJsonOptions<T>): Promise<T> {
   const signal = AbortSignal.timeout(timeoutMs);
-  const request = { systemInstruction, prompt, jsonSchema: toGeminiJsonSchema(schema), signal };
+  const jsonSchema = toGeminiJsonSchema(schema);
+  const friendlyError = (code: AiErrorCode) => new AiError(code, messages[code] ?? AI_ERROR_MESSAGES[code]);
+  let problems: string[] = [];
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    // On the retry, tell the AI what was wrong with its last answer (only when our own checks failed).
+    const request = { systemInstruction, prompt: withProblems(prompt, problems), jsonSchema, signal };
+
     let text: string | undefined;
     try {
       text = await generate(request);
     } catch (error) {
-      throw toAiError(error, signal, logLabel);
+      throw toAiError(error, signal, logLabel, friendlyError);
     }
 
     const answer = parseJsonAnswer(text, schema);
-    if (answer) return answer;
+    problems = answer && check ? check(answer) : [];
+    if (answer && problems.length === 0) return answer;
 
-    // Log only the fact that it failed, never the user's text or the AI answer.
-    console.warn(`[${logLabel}] AI answer failed validation (attempt ${attempt} of ${MAX_ATTEMPTS})`);
+    // Log only the fact that it failed, never the user's text, the AI answer or the problem details.
+    console.warn(
+      answer
+        ? `[${logLabel}] AI answer failed ${problems.length} check(s) (attempt ${attempt} of ${MAX_ATTEMPTS})`
+        : `[${logLabel}] AI answer failed validation (attempt ${attempt} of ${MAX_ATTEMPTS})`,
+    );
   }
 
-  throw new AiError("ai-failed");
+  throw friendlyError("ai-failed");
+}
+
+function withProblems(prompt: string, problems: string[]): string {
+  if (problems.length === 0) return prompt;
+  return [
+    prompt,
+    "",
+    "Your previous answer was rejected for these reasons:",
+    ...problems.map((p) => `- ${p}`),
+    "Write a new answer that follows all the rules and fixes every problem above.",
+  ].join("\n");
 }
 
 // Turns any error from the AI call into one of our safe, friendly errors.
-function toAiError(error: unknown, signal: AbortSignal, logLabel: string): AiError {
-  if (signal.aborted) return new AiError("timeout");
+function toAiError(
+  error: unknown,
+  signal: AbortSignal,
+  logLabel: string,
+  friendlyError: (code: AiErrorCode) => AiError,
+): AiError {
+  if (signal.aborted) return friendlyError("timeout");
 
   const status = (error as { status?: unknown })?.status;
   // Log only the error type and HTTP status; the message could echo request details.
@@ -87,5 +121,5 @@ function toAiError(error: unknown, signal: AbortSignal, logLabel: string): AiErr
   if (status === 429) {
     return new AiError("rate-limited", "Our AI service is busy right now. Please try again in a minute.");
   }
-  return new AiError("ai-failed");
+  return friendlyError("ai-failed");
 }

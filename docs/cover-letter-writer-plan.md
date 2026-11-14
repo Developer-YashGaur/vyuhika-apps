@@ -13,6 +13,12 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
   (wording comes in as props). Screenshots before and after were identical
   (`node scripts/visual-check-matcher.mjs`, see the top of that file).
 
+- Step 4: `lib/cover-letter/` has the input and output schema (`schema.ts`), the prompt (`prompt.ts`),
+  the banned clichés (`cliches.ts`), the safety checks (`checks.ts`), error wording (`errors.ts`) and
+  `writeCoverLetter` (`write.ts`). `stripDelimiters` moved to `lib/ai/delimiters.ts`. `generateJson` takes
+  optional `check` (problems are sent back to the AI with its one retry) and `messages` (the app's wording).
+  Not covered by the number check: numbers written as words ("four years"); the prompt asks for digits.
+
 Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
 re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
 and its tests still import these old paths.
@@ -72,12 +78,15 @@ Stays in the Resume Matcher: its prompt, schema, `enforceHonesty`, `Results`, `S
 - Success: `{ letter: string, gaps: { need: string, placeholder: string }[] }`
 - Errors: `{ error: { code, message } }`, the same as the Resume Matcher.
 
-**Server-side checks** (any failure → one retry, then a friendly error):
+**Server-side checks** (any failure → one retry that tells the AI what was wrong, then a friendly error):
 - Every number in the letter must appear in the resume, job description, company name, role title or highlight.
-  Numbers are compared after normalising formatting (`1,000` = `1000`).
-- No banned clichés (a fixed list, also used by the tests).
+  Numbers are compared after normalising formatting (`1,000` = `1000`, `20 percent` = `20%`).
+  A percentage in the letter must be a percentage in the inputs too. Numbers inside placeholders are ignored.
+- No banned clichés, from the one list in `lib/cover-letter/cliches.ts`, matched ignoring case.
 - Every `[...]` placeholder in the letter has a matching gap, and every gap has a placeholder.
-- The word count fits the chosen length, with some slack.
+  `[Your name]` is always allowed and needs no gap.
+- The word count fits the chosen length, not counting placeholders: short 120–240, medium 210–420.
+- No delimiter marker in the letter or the gaps.
 
 ## 4. Feedback
 
@@ -100,7 +109,7 @@ Gemini is always faked in tests. The Resume Matcher's existing tests must keep p
 1. Move the Gemini helper, errors and retry loop to `lib/ai/`. ✅
 2. Move the text rules, route helpers and client fetch wrapper. ✅
 3. Move UI pieces to `components/shared/`, point the Resume Matcher at the new paths, remove the re-exports. ✅
-4. Cover letter prompt, schema and server-side checks, with tests.
+4. Cover letter prompt, schema and server-side checks, with tests. ✅
 5. `/api/cover-letter` route with its own rate limits, with tests.
 6. Form page (inputs, tone and length pills).
 7. Loading and result view (editable letter, Copy, Download, Regenerate, gaps list).

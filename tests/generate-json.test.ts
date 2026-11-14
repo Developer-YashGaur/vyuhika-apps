@@ -84,3 +84,51 @@ describe("generateJson", () => {
     expect(calls).toBe(2);
   });
 });
+
+describe("generateJson with the app's own checks and wording", () => {
+  const fixedGreeting = JSON.stringify({ greeting: "hi there" });
+
+  it("retries once with the problems listed, and uses the fixed answer", async () => {
+    const prompts: string[] = [];
+    let calls = 0;
+    const generate: GenerateFn = async ({ prompt }) => {
+      prompts.push(prompt);
+      return calls++ === 0 ? valid : fixedGreeting;
+    };
+    const check = (answer: { greeting: string }) => (answer.greeting === "hello" ? ["Do not say hello."] : []);
+
+    const answer = await generateJson({ systemInstruction: "rules", prompt: "data", schema, generate, logLabel: "test", check });
+    expect(answer).toEqual({ greeting: "hi there" });
+    expect(prompts[0]).toBe("data");
+    expect(prompts[1]).toContain("data");
+    expect(prompts[1]).toContain("- Do not say hello.");
+  });
+
+  it("gives up after one retry when the check still fails, using the app's wording", async () => {
+    const ai = fakeAi(valid);
+    const error = await errorOf(
+      generateJson({
+        systemInstruction: "rules",
+        prompt: "data",
+        schema,
+        generate: ai.generate,
+        logLabel: "test",
+        check: () => ["Still wrong."],
+        messages: { "ai-failed": "We couldn't write this." },
+      }),
+    );
+    expect(ai.calls()).toBe(2);
+    expect(error.code).toBe("ai-failed");
+    expect(error.message).toBe("We couldn't write this.");
+  });
+
+  it("does not add problems to the retry prompt when the answer was just broken JSON", async () => {
+    const prompts: string[] = [];
+    const generate: GenerateFn = async ({ prompt }) => {
+      prompts.push(prompt);
+      return prompts.length === 1 ? "{ not json" : valid;
+    };
+    await generateJson({ systemInstruction: "rules", prompt: "data", schema, generate, logLabel: "test", check: () => [] });
+    expect(prompts).toEqual(["data", "data"]);
+  });
+});
