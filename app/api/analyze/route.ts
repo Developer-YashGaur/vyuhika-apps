@@ -1,8 +1,9 @@
 import "server-only";
 import { analyzeMatch } from "@/lib/analyze/analyze";
-import { ANALYZE_ERROR_MESSAGES, AnalyzeError, type AnalyzeErrorCode } from "@/lib/analyze/errors";
+import { ANALYZE_ERROR_MESSAGES, AnalyzeError } from "@/lib/analyze/errors";
 import { createGeminiGenerate } from "@/lib/analyze/gemini";
 import { parseAnalyzeInput } from "@/lib/analyze/input";
+import { errorResponse, readJsonBody } from "@/lib/api/route-helpers";
 import { DAY_MS, MINUTE_MS, createRateLimiter, getClientIp } from "@/lib/rate-limit";
 
 // POST /api/analyze with { resume, jobDescription } → a MatchResult (see lib/types.ts).
@@ -17,34 +18,12 @@ const limiter = createRateLimiter([
   { name: "minute", max: 5, windowMs: MINUTE_MS },
 ]);
 
-const STATUS: Record<AnalyzeErrorCode, number> = {
-  "invalid-input": 400,
-  "rate-limited": 429,
-  timeout: 504,
-  "ai-failed": 502,
-  offline: 503, // only used by the browser, listed for completeness
-};
-
-function errorResponse(code: AnalyzeErrorCode, message = ANALYZE_ERROR_MESSAGES[code], headers?: HeadersInit) {
-  return Response.json({ error: { code, message } }, { status: STATUS[code], headers });
-}
-
 export async function POST(request: Request) {
   // 1. Size and format checks.
-  const declaredSize = Number(request.headers.get("content-length") ?? 0);
-  if (declaredSize > MAX_BODY_BYTES) return errorResponse("invalid-input", "That's too much text to analyze.");
+  const read = await readJsonBody(request, MAX_BODY_BYTES, "That's too much text to analyze.");
+  if (!read.ok) return read.response;
 
-  const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) return errorResponse("invalid-input", "That's too much text to analyze.");
-
-  let body: unknown;
-  try {
-    body = JSON.parse(raw);
-  } catch {
-    return errorResponse("invalid-input");
-  }
-
-  const checked = parseAnalyzeInput(body);
+  const checked = parseAnalyzeInput(read.body);
   if (!checked.ok) return errorResponse("invalid-input", checked.message);
 
   // 2. Rate limit per visitor.
