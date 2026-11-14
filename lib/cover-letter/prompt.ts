@@ -1,5 +1,5 @@
 import { delimiters, stripDelimiters } from "@/lib/ai/delimiters";
-import { BANNED_CLICHES } from "@/lib/cover-letter/cliches";
+import { BANNED_CLICHES, BANNED_OPENINGS } from "@/lib/cover-letter/cliches";
 import type { CoverLetterInput, LetterLength, Tone } from "@/lib/cover-letter/schema";
 
 // The instructions we give Gemini for a cover letter, and how the user's text is wrapped.
@@ -13,17 +13,28 @@ export const COMPANY = delimiters("COMPANY_NAME");
 export const ROLE = delimiters("ROLE_TITLE");
 export const HIGHLIGHT = delimiters("HIGHLIGHT");
 
-// The word counts we ask for. lib/cover-letter/checks.ts allows some slack around these.
-export const TARGET_WORDS: Record<LetterLength, string> = {
-  short: "150 to 200 words",
-  medium: "250 to 350 words",
+// What we ask for. lib/cover-letter/checks.ts allows wider word ranges, on purpose.
+export const LENGTH_GUIDE: Record<LetterLength, { shape: string; minWords: number; maxWords: number }> = {
+  short: { shape: "3 short paragraphs", minWords: 150, maxWords: 200 },
+  medium: { shape: "4 paragraphs", minWords: 260, maxWords: 340 },
 };
 
-const TONE_GUIDE: Record<Tone, string> = {
-  professional: "professional: clear, polite and to the point",
-  friendly: "friendly: warm and natural, like a thoughtful email to a future colleague, still respectful",
-  confident: "confident: direct and assured, stating strengths plainly, never arrogant",
+// The most gaps (placeholders) one letter may have.
+export const MAX_GAPS = 3;
+
+export const TONE_GUIDE: Record<Tone, string> = {
+  professional:
+    "formal and measured. No contractions (write \"I am\", not \"I'm\"). Longer, carefully built sentences.",
+  friendly:
+    "warm and conversational, like a thoughtful note to a future colleague. Contractions are fine. Include one light, " +
+    "human sentence about why this role or company appeals, based only on what the job description says.",
+  confident:
+    "direct and assured. Active verbs and short sentences. Lead with results from the resume. Close with what the " +
+    "person would focus on first in this role, written as an intention (\"In my first months I would...\"), never as a " +
+    "claim about past work.",
 };
+
+const quoted = (phrases: string[]) => phrases.map((p) => `"${p}"`).join(", ");
 
 export const SYSTEM_INSTRUCTION = `You are an honest, skilled career coach. You write one tailored cover letter in English
 for the person whose resume you are given, for the job you are given.
@@ -47,14 +58,41 @@ Honesty rules (the most important):
   degrees, dates, numbers or achievements.
 - Only use numbers (years, counts, percentages, money) that appear in the resume or the other blocks. Write them
   as digits, the way they appear there.
-- Where the job asks for something the resume does not show, do not pretend. Put a clearly marked placeholder in
-  square brackets at that point in the letter, like [add a real example of X here], and list it as a gap.
-- Every placeholder must be listed in "gaps", with the exact same text (including the brackets) in "placeholder"
-  and a few words about what the job needs in "need". Only [Your name] needs no gap.
-- Use square brackets only for placeholders.
+- Facts stay where they belong. Each achievement, tool and number stays attached to the employer or project where
+  the resume shows it. Never move a fact to a different employer or project.
+- Never attach a duration (like "4 years") to one employer unless the resume states that duration for that employer.
+  Total experience may be mentioned only as a whole (like "4 years of frontend experience"), and only if the resume
+  states it.
 - The highlight is what the person wants to stress. Use it only if the resume supports it. If the resume does not
   support it, do not claim it: add a placeholder and a gap for it instead.
 - Do not praise the company with anything the job description does not support. No flattery.
+
+Gaps and placeholders:
+- Where the job asks for something the resume does not show, do not pretend. Put a clearly marked placeholder in
+  square brackets, like [add a real example of X here], and list it as a gap.
+- At most ${MAX_GAPS} gaps per letter. Choose the ones the job description stresses most.
+- Each placeholder sits inside a normal sentence, in the paragraph where that example belongs, for example
+  "At ShopLane I [add a real example of working with Next.js here]." Never put a placeholder on a line of its own,
+  never list placeholders, and use at most one placeholder per paragraph.
+- Every placeholder must be listed in "gaps", with the exact same text (including the brackets) in "placeholder"
+  and a few words about what the job needs in "need". Only [Your name] needs no gap.
+- Use square brackets only for placeholders.
+- Never write about the gaps themselves. No sentences like "I note the following" or "For the areas where my
+  experience does not match".
+
+Opening:
+- The first sentence after the greeting must start with a specific hook: the person's most relevant real achievement
+  from the resume, or a concrete thing the job needs that the resume answers.
+- Never start with ${quoted(BANNED_OPENINGS)} or anything like them.
+
+Length and shape:
+- Use exactly the number of paragraphs and the word range given in the user message. Count every word of the letter,
+  including the greeting and sign-off, but not the placeholders.
+
+Tone (the user message says which one to use):
+- professional: ${TONE_GUIDE.professional}
+- friendly: ${TONE_GUIDE.friendly}
+- confident: ${TONE_GUIDE.confident}
 
 Style rules:
 - Plain text only. No markdown, no bullet points, no headings.
@@ -63,7 +101,7 @@ Style rules:
 - End with a short sign-off (for example "Kind regards,") and then the person's name from the resume.
   If no name is clear, use [Your name].
 - Be specific: link real experience from the resume to what the job asks for.
-- Never use these clichés or close variations of them: ${BANNED_CLICHES.map((c) => `"${c}"`).join(", ")}.
+- Never use these clichés or close variations of them: ${quoted(BANNED_CLICHES)}.
 
 Reply only with JSON that matches the given schema.`;
 
@@ -73,10 +111,11 @@ function block(markers: { start: string; end: string }, text: string | undefined
 }
 
 export function buildUserPrompt(input: CoverLetterInput): string {
+  const { shape, minWords, maxWords } = LENGTH_GUIDE[input.length];
   return [
     "Write a cover letter for this person and this job.",
-    `Tone: ${TONE_GUIDE[input.tone]}.`,
-    `Length: ${TARGET_WORDS[input.length]}, not counting placeholders.`,
+    `Tone: ${input.tone}. ${TONE_GUIDE[input.tone]}`,
+    `Length: ${shape} between the greeting and the sign-off, ${minWords} to ${maxWords} words in total, not counting placeholders.`,
     "",
     ...block(RESUME, input.resume),
     "",

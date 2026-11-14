@@ -20,6 +20,10 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
 - Step 5: `POST /api/cover-letter` (`app/api/cover-letter/route.ts`) with its own rate limiter (3 a minute,
   15 a day per visitor, separate from the matcher's). The number check also reads number words followed by
   a unit ("four years", "twenty-five clients", "two hundred people"); "one of" or "the first" are not numbers.
+- Prompt tuning (after step 5): exact length shapes, facts stay with their employer, a specific opening hook,
+  at most 3 gaps placed inside sentences, and clearly different tones. New checks: `opening`,
+  `placeholder-count`, `placement`. A failed attempt logs only its number, the failed check names and the word
+  count, for example `[cover-letter] attempt 1 of 2 failed checks: length, opening (words: 148)`.
 
 Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
 re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
@@ -35,6 +39,16 @@ and its tests still import these old paths.
 - Plain text, no markdown. Starts with "Dear Hiring Manager," unless the job text names the person to address.
   Signs off with the name from the resume, or `[Your name]` if there isn't one.
 - If the "highlight" isn't backed by the resume, it becomes a gap, not a claim.
+- Facts stay with the employer or project where the resume shows them. A duration ("4 years") is attached to one
+  employer only if the resume says so; total experience only as a whole, and only if the resume states it.
+- The first sentence is a specific hook (a real achievement, or a concrete need the resume answers), never
+  "I am applying", "I am writing" or "I would like to apply". No sentences about the gaps themselves.
+- At most 3 gaps, the ones the job stresses most. Each placeholder sits inside a normal sentence, at most one
+  per paragraph, never on its own line or in a list.
+- Tones: professional = formal and measured, no contractions, longer sentences; friendly = warm and conversational,
+  contractions allowed, one light human touch about why the role appeals (from the job text only);
+  confident = direct, active verbs, short sentences, leads with results, closes with what the person would
+  focus on first (as an intention, not a past claim).
 
 ## 1. Shared code
 
@@ -73,7 +87,7 @@ Stays in the Resume Matcher: its prompt, schema, `enforceHonesty`, `Results`, `S
 | `companyName`, `roleTitle` | optional, max 100 characters |
 | `highlight` | optional, max 500 characters |
 | `tone` | `"professional"`, `"friendly"` or `"confident"` |
-| `length` | `"short"` (about 150–200 words) or `"medium"` (about 250–350 words) |
+| `length` | `"short"` (3 short paragraphs, 150–200 words) or `"medium"` (4 paragraphs, 260–340 words) |
 
 - Strict zod object (extra fields are rejected). Body capped at 200 KB.
 - Rate limits: its own limiter, **3 per minute and 15 per day** per visitor. Regenerate counts.
@@ -88,8 +102,14 @@ Stays in the Resume Matcher: its prompt, schema, `enforceHonesty`, `Results`, `S
 - No banned clichés, from the one list in `lib/cover-letter/cliches.ts`, matched ignoring case.
 - Every `[...]` placeholder in the letter has a matching gap, and every gap has a placeholder.
   `[Your name]` is always allowed and needs no gap.
-- The word count fits the chosen length, not counting placeholders: short 120–240, medium 210–420.
+- At most 3 gaps; each placeholder inside a sentence, never alone on a line, at most one per paragraph.
+- The word count fits the chosen length, not counting placeholders: short 120–240, medium 210–420
+  (wider than the prompt's targets on purpose; do not loosen them to fit the model).
 - No delimiter marker in the letter or the gaps.
+- The first sentence after the greeting doesn't start with a banned opening (`BANNED_OPENINGS` in `cliches.ts`).
+
+Check names, as logged: `numbers`, `cliche`, `placeholders`, `placeholder-count`, `placement`, `length`,
+`delimiter`, `opening`.
 
 ## 4. Feedback
 

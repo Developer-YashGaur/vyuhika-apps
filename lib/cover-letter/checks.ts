@@ -1,6 +1,7 @@
 import { containsDelimiter } from "@/lib/ai/delimiters";
-import { BANNED_CLICHES } from "@/lib/cover-letter/cliches";
-import { TARGET_WORDS } from "@/lib/cover-letter/prompt";
+import type { CheckProblem } from "@/lib/ai/generate-json";
+import { BANNED_CLICHES, BANNED_OPENINGS } from "@/lib/cover-letter/cliches";
+import { LENGTH_GUIDE, MAX_GAPS } from "@/lib/cover-letter/prompt";
 import type { CoverLetterInput, CoverLetterResult, LetterLength } from "@/lib/cover-letter/schema";
 
 // A safety net on top of the prompt: checks the AI's letter before it reaches the person.
@@ -47,6 +48,23 @@ function placeholderKey(text: string): string {
 }
 
 const isYourName = (placeholder: string) => placeholderKey(placeholder) === "your name";
+
+// The placeholders in a piece of text, except [Your name].
+function placeholdersIn(text: string): string[] {
+  return [...text.matchAll(PLACEHOLDER)].map((m) => m[0]).filter((p) => !isYourName(p));
+}
+
+// Straight apostrophes and single spaces, so phrase checks don't miss "I’m" or line breaks.
+function plain(text: string): string {
+  return text.replace(/[‘’]/g, "'").replace(/\s+/g, " ").trim();
+}
+
+// The first line of text after the greeting ("Dear ...,"), which starts the first sentence.
+function firstSentenceLine(letter: string): string {
+  const lines = letter.split("\n").map((line) => line.trim()).filter(Boolean);
+  const start = /^dear\b/i.test(lines[0] ?? "") ? 1 : 0;
+  return lines[start] ?? "";
+}
 
 type FoundNumber = { raw: string; value: string; percent: boolean };
 
@@ -115,7 +133,7 @@ export function checkNumbers(letter: string, input: CoverLetterInput): string[] 
 
 // (b) No banned clichés, ignoring case and curly apostrophes, as whole words.
 export function checkCliches(letter: string): string[] {
-  const text = letter.replace(/[\u2018\u2019]/g, "'").replace(/\s+/g, " ");
+  const text = plain(letter);
   return BANNED_CLICHES.filter((cliche) => {
     const escaped = cliche.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+");
     return new RegExp(`(?<![a-z])${escaped}(?![a-z])`, "i").test(text);
@@ -124,7 +142,7 @@ export function checkCliches(letter: string): string[] {
 
 // (c) Placeholders and gaps must match one to one. [Your name] is always allowed and needs no gap.
 export function checkPlaceholders(result: CoverLetterResult): string[] {
-  const inLetter = [...result.letter.matchAll(PLACEHOLDER)].map((m) => m[0]).filter((p) => !isYourName(p));
+  const inLetter = placeholdersIn(result.letter);
   const letterKeys = new Set(inLetter.map(placeholderKey));
   const gapKeys = new Set(result.gaps.map((gap) => placeholderKey(gap.placeholder)));
   const problems: string[] = [];
@@ -143,13 +161,47 @@ export function checkPlaceholders(result: CoverLetterResult): string[] {
   return problems;
 }
 
+// (c2) At most MAX_GAPS gaps ([Your name] doesn't count).
+export function checkPlaceholderCount(result: CoverLetterResult): string[] {
+  const inLetter = new Set(placeholdersIn(result.letter).map(placeholderKey));
+  const gaps = result.gaps.filter((gap) => !isYourName(gap.placeholder));
+  const count = Math.max(inLetter.size, gaps.length);
+  if (count <= MAX_GAPS) return [];
+  return [`The letter has ${count} gaps. Use at most ${MAX_GAPS}: keep only the ones the job description stresses most.`];
+}
+
+// (c3) Each placeholder sits inside a normal sentence: never alone on its own line,
+// and at most one per paragraph.
+export function checkPlacement(letter: string): string[] {
+  const problems: string[] = [];
+
+  for (const line of letter.split("\n")) {
+    const placeholders = placeholdersIn(line);
+    const rest = line.replace(PLACEHOLDER, "");
+    if (placeholders.length > 0 && !/[a-z0-9]/i.test(rest)) {
+      problems.push(
+        `The placeholder "${placeholders[0]}" is on a line of its own. Put it inside a normal sentence in the paragraph where that example belongs.`,
+      );
+    }
+  }
+
+  letter.split(/\n\s*\n/).forEach((paragraph, i) => {
+    const count = placeholdersIn(paragraph).length;
+    if (count > 1) {
+      problems.push(`Paragraph ${i + 1} has ${count} placeholders. Use at most one placeholder per paragraph.`);
+    }
+  });
+  return problems;
+}
+
 // (d) The word count fits the chosen length, with slack.
 export function checkLength(letter: string, length: LetterLength): string[] {
   const words = countWords(letter);
   const { min, max } = WORD_LIMITS[length];
   if (words >= min && words <= max) return [];
+  const aim = LENGTH_GUIDE[length];
   return [
-    `The letter has ${words} words, not counting placeholders. It must have ${min} to ${max} (aim for ${TARGET_WORDS[length]}).`,
+    `Your letter had ${words} words; it must have ${min} to ${max} words, aim for ${aim.minWords} to ${aim.maxWords}.`,
   ];
 }
 
@@ -161,13 +213,40 @@ export function checkDelimiters(result: CoverLetterResult): string[] {
     : [];
 }
 
-// All checks together. An empty list means the letter is fine.
-export function findProblems(result: CoverLetterResult, input: CoverLetterInput): string[] {
+// (f) The first sentence after the greeting is a specific hook, not "I am applying..." and the like.
+export function checkOpening(letter: string): string[] {
+  const opening = plain(firstSentenceLine(letter)).toLowerCase();
+  const banned = BANNED_OPENINGS.find((phrase) => opening.startsWith(phrase.toLowerCase()));
+  if (!banned) return [];
   return [
-    ...checkNumbers(result.letter, input),
-    ...checkCliches(result.letter),
-    ...checkPlaceholders(result),
-    ...checkLength(result.letter, input.length),
-    ...checkDelimiters(result),
+    `The first sentence starts with "${banned}". Start instead with a specific hook: the person's most relevant real achievement, or a concrete thing the job needs that the resume answers.`,
+  ];
+}
+
+// The names of the checks. They are logged when a check fails, so they must never contain user text.
+export type CheckName =
+  | "numbers"
+  | "cliche"
+  | "placeholders"
+  | "placeholder-count"
+  | "placement"
+  | "length"
+  | "delimiter"
+  | "opening";
+
+export type LetterProblem = CheckProblem & { check: CheckName };
+
+// All checks together. An empty list means the letter is fine.
+export function findProblems(result: CoverLetterResult, input: CoverLetterInput): LetterProblem[] {
+  const named = (check: CheckName, messages: string[]) => messages.map((message) => ({ check, message }));
+  return [
+    ...named("numbers", checkNumbers(result.letter, input)),
+    ...named("cliche", checkCliches(result.letter)),
+    ...named("placeholders", checkPlaceholders(result)),
+    ...named("placeholder-count", checkPlaceholderCount(result)),
+    ...named("placement", checkPlacement(result.letter)),
+    ...named("length", checkLength(result.letter, input.length)),
+    ...named("delimiter", checkDelimiters(result)),
+    ...named("opening", checkOpening(result.letter)),
   ];
 }

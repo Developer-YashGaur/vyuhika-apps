@@ -1,5 +1,5 @@
 import { AI_TIMEOUT_MS, generateJson, type GenerateFn } from "@/lib/ai/generate-json";
-import { findProblems } from "@/lib/cover-letter/checks";
+import { countWords, findProblems } from "@/lib/cover-letter/checks";
 import { COVER_LETTER_ERROR_MESSAGES } from "@/lib/cover-letter/errors";
 import { SYSTEM_INSTRUCTION, buildUserPrompt } from "@/lib/cover-letter/prompt";
 import { coverLetterResultSchema, type CoverLetterInput, type CoverLetterResult } from "@/lib/cover-letter/schema";
@@ -21,6 +21,7 @@ export async function writeCoverLetter(
     logLabel: "cover-letter",
     timeoutMs,
     check: (result) => findProblems(result, input),
+    logNumbers: (result) => ({ words: countWords(result.letter) }),
     messages: COVER_LETTER_ERROR_MESSAGES,
   });
 }

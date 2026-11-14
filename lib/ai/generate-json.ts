@@ -47,11 +47,17 @@ type GenerateJsonOptions<T> = {
   logLabel: string; // shown in server logs, like "analyze", so we know which app failed
   timeoutMs?: number;
   // Extra checks on a well-formed answer. Returns a list of problems (empty when all is fine).
-  // The problems are sent back to the AI with the retry, so it knows what to fix.
-  check?: (answer: T) => string[];
+  // The messages are sent back to the AI with the retry, so it knows what to fix.
+  check?: (answer: T) => CheckProblem[];
+  // Plain numbers about a failed answer that are safe to log, like { words: 148 }. Never text.
+  logNumbers?: (answer: T) => Record<string, number>;
   // The app's own wording for errors (falls back to lib/ai/errors.ts).
   messages?: Partial<Record<AiErrorCode, string>>;
 };
+
+// One failed check. `check` is a fixed name from our code (like "length"), so it is safe to log.
+// `message` can quote the AI's answer, so it only ever goes back to the AI, never to the logs.
+export type CheckProblem = { check: string; message: string };
 
 export async function generateJson<T>({
   systemInstruction,
@@ -61,12 +67,13 @@ export async function generateJson<T>({
   logLabel,
   timeoutMs = AI_TIMEOUT_MS,
   check,
+  logNumbers,
   messages = {},
 }: GenerateJsonOptions<T>): Promise<T> {
   const signal = AbortSignal.timeout(timeoutMs);
   const jsonSchema = toGeminiJsonSchema(schema);
   const friendlyError = (code: AiErrorCode) => new AiError(code, messages[code] ?? AI_ERROR_MESSAGES[code]);
-  let problems: string[] = [];
+  let problems: CheckProblem[] = [];
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     // On the retry, tell the AI what was wrong with its last answer (only when our own checks failed).
@@ -83,10 +90,11 @@ export async function generateJson<T>({
     problems = answer && check ? check(answer) : [];
     if (answer && problems.length === 0) return answer;
 
-    // Log only the fact that it failed, never the user's text, the AI answer or the problem details.
+    // Log only the attempt, the names of the failed checks and safe numbers. Never any text:
+    // not the user's, not the AI's answer, and not the problem messages (they can quote the answer).
     console.warn(
       answer
-        ? `[${logLabel}] AI answer failed ${problems.length} check(s) (attempt ${attempt} of ${MAX_ATTEMPTS})`
+        ? `[${logLabel}] attempt ${attempt} of ${MAX_ATTEMPTS} failed checks: ${checkNames(problems)}${numbersText(answer, logNumbers)}`
         : `[${logLabel}] AI answer failed validation (attempt ${attempt} of ${MAX_ATTEMPTS})`,
     );
   }
@@ -94,13 +102,24 @@ export async function generateJson<T>({
   throw friendlyError("ai-failed");
 }
 
-function withProblems(prompt: string, problems: string[]): string {
+// "length, opening" — each failed check's name once, in order.
+function checkNames(problems: CheckProblem[]): string {
+  return [...new Set(problems.map((p) => p.check))].join(", ");
+}
+
+// " (words: 148)" — only finite numbers make it into the log.
+function numbersText<T>(answer: T, logNumbers?: (answer: T) => Record<string, number>): string {
+  const pairs = Object.entries(logNumbers?.(answer) ?? {}).filter(([, n]) => typeof n === "number" && Number.isFinite(n));
+  return pairs.length ? ` (${pairs.map(([key, n]) => `${key}: ${n}`).join(", ")})` : "";
+}
+
+function withProblems(prompt: string, problems: CheckProblem[]): string {
   if (problems.length === 0) return prompt;
   return [
     prompt,
     "",
     "Your previous answer was rejected for these reasons:",
-    ...problems.map((p) => `- ${p}`),
+    ...problems.map((p) => `- ${p.message}`),
     "Write a new answer that follows all the rules and fixes every problem above.",
   ].join("\n");
 }

@@ -95,7 +95,7 @@ describe("generateJson with the app's own checks and wording", () => {
       prompts.push(prompt);
       return calls++ === 0 ? valid : fixedGreeting;
     };
-    const check = (answer: { greeting: string }) => (answer.greeting === "hello" ? ["Do not say hello."] : []);
+    const check = (answer: { greeting: string }) => (answer.greeting === "hello" ? [{ check: "greeting", message: "Do not say hello." }] : []);
 
     const answer = await generateJson({ systemInstruction: "rules", prompt: "data", schema, generate, logLabel: "test", check });
     expect(answer).toEqual({ greeting: "hi there" });
@@ -113,7 +113,7 @@ describe("generateJson with the app's own checks and wording", () => {
         schema,
         generate: ai.generate,
         logLabel: "test",
-        check: () => ["Still wrong."],
+        check: () => [{ check: "wrong", message: "Still wrong." }],
         messages: { "ai-failed": "We couldn't write this." },
       }),
     );
@@ -130,5 +130,33 @@ describe("generateJson with the app's own checks and wording", () => {
     };
     await generateJson({ systemInstruction: "rules", prompt: "data", schema, generate, logLabel: "test", check: () => [] });
     expect(prompts).toEqual(["data", "data"]);
+  });
+});
+
+describe("generateJson logging", () => {
+  it("logs the attempt, the failed check names and safe numbers, but never the problem messages", async () => {
+    const warn = vi.mocked(console.warn);
+    const ai = fakeAi(valid);
+    await errorOf(
+      generateJson({
+        systemInstruction: "rules",
+        prompt: "data",
+        schema,
+        generate: ai.generate,
+        logLabel: "test",
+        check: () => [
+          { check: "length", message: "Your letter had 12 words about SECRET-TEXT" },
+          { check: "length", message: "Another length problem" },
+          { check: "opening", message: "Starts with SECRET-TEXT" },
+        ],
+        logNumbers: () => ({ words: 12, notANumber: Number.NaN }),
+      }),
+    );
+    expect(warn.mock.calls.map((args) => args.join(" "))).toEqual([
+      "[test] attempt 1 of 2 failed checks: length, opening (words: 12)",
+      "[test] attempt 2 of 2 failed checks: length, opening (words: 12)",
+    ]);
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("SECRET-TEXT");
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("hello"); // the AI's answer
   });
 });
