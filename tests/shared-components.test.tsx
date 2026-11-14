@@ -32,6 +32,15 @@ describe("LoadingState", () => {
     expect(html).not.toContain("Reading your resume");
     expect(html).toContain('role="status"');
   });
+
+  it("sizes the status box to fit every line, so long lines are never cut off on phones", () => {
+    const long = "Matching your real experience to every requirement in the job...";
+    const html = renderToStaticMarkup(<LoadingState lines={["Short.", long]} />);
+    // Hidden copies of each line (one visible line is shown on top).
+    expect(html).toContain(`<p aria-hidden="true" class="invisible`);
+    expect(html).toContain(long);
+    expect(html).not.toMatch(/[" ]h-8[" ]/); // no fixed height left (min-h-8 is fine)
+  });
 });
 
 describe("ErrorState", () => {
