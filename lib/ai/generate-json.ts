@@ -49,8 +49,9 @@ type GenerateJsonOptions<T> = {
   // Extra checks on a well-formed answer. Returns a list of problems (empty when all is fine).
   // The messages are sent back to the AI with the retry, so it knows what to fix.
   check?: (answer: T) => CheckProblem[];
-  // Plain numbers about a failed answer that are safe to log, like { words: 148 }. Never text.
-  logNumbers?: (answer: T) => Record<string, number>;
+  // Facts about a failed answer that are safe to log: numbers, or fixed code words from our own code
+  // (like { words: 148, highlight: "gap" }). Never the user's or the AI's text.
+  logFacts?: (answer: T) => Record<string, number | string | undefined>;
   // The app's own wording for errors (falls back to lib/ai/errors.ts).
   messages?: Partial<Record<AiErrorCode, string>>;
 };
@@ -69,7 +70,7 @@ export async function generateJson<T>({
   logLabel,
   timeoutMs = AI_TIMEOUT_MS,
   check,
-  logNumbers,
+  logFacts,
   messages = {},
 }: GenerateJsonOptions<T>): Promise<T> {
   const signal = AbortSignal.timeout(timeoutMs);
@@ -99,7 +100,7 @@ export async function generateJson<T>({
     // not the user's, not the AI's answer, and not the problem messages (they can quote the answer).
     console.warn(
       answer
-        ? `[${logLabel}] attempt ${attempt} of ${MAX_ATTEMPTS} failed checks: ${checkNames(problems)}${numbersText(answer, logNumbers)}`
+        ? `[${logLabel}] attempt ${attempt} of ${MAX_ATTEMPTS} failed checks: ${checkNames(problems)}${factsText(answer, logFacts)}`
         : `[${logLabel}] AI answer failed validation (attempt ${attempt} of ${MAX_ATTEMPTS})`,
     );
   }
@@ -117,9 +118,12 @@ function checkNames(problems: CheckProblem[]): string {
   return [...new Set(problems.map((p) => p.check))].join(", ");
 }
 
-// " (words: 148)" — only finite numbers make it into the log.
-function numbersText<T>(answer: T, logNumbers?: (answer: T) => Record<string, number>): string {
-  const pairs = Object.entries(logNumbers?.(answer) ?? {}).filter(([, n]) => typeof n === "number" && Number.isFinite(n));
+// " (words: 148, highlight: gap)". Only finite numbers and plain code words (like "gap" or
+// "evidence-not-in-resume") make it into the log; anything else is left out, so no text can slip through.
+function factsText<T>(answer: T, logFacts?: (answer: T) => Record<string, number | string | undefined>): string {
+  const isSafe = (v: unknown) =>
+    (typeof v === "number" && Number.isFinite(v)) || (typeof v === "string" && /^[a-z][a-z0-9-]{0,40}$/.test(v));
+  const pairs = Object.entries(logFacts?.(answer) ?? {}).filter(([key, v]) => /^[a-z][a-z0-9-]*$/i.test(key) && isSafe(v));
   return pairs.length ? ` (${pairs.map(([key, n]) => `${key}: ${n}`).join(", ")})` : "";
 }
 

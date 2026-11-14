@@ -1,5 +1,5 @@
 import { AI_TIMEOUT_MS, generateJson, type GenerateFn } from "@/lib/ai/generate-json";
-import { countWords, findProblems, styleNotes, type CheckName } from "@/lib/cover-letter/checks";
+import { countWords, findProblems, highlightProblem, styleNotes, type CheckName } from "@/lib/cover-letter/checks";
 import { COVER_LETTER_ERROR_MESSAGES } from "@/lib/cover-letter/errors";
 import { SYSTEM_INSTRUCTION, buildUserPrompt } from "@/lib/cover-letter/prompt";
 import { coverLetterResultSchema, type CoverLetterInput, type CoverLetterResult } from "@/lib/cover-letter/schema";
@@ -23,8 +23,19 @@ export async function writeCoverLetter(
     logLabel: "cover-letter",
     timeoutMs,
     check: (answer) => findProblems(answer, input),
-    logNumbers: (answer) => ({ words: countWords(answer.letter) }),
+    // Only numbers and fixed words: the highlight handling is one of three set values.
+    logFacts: (answer) => ({
+      words: countWords(answer.letter),
+      highlight: answer.highlightHandling,
+      "highlight-check": highlightProblem(answer, input) ?? undefined,
+    }),
     messages: COVER_LETTER_ERROR_MESSAGES,
   });
-  return { ...result, notes: styleNotes(result, input) };
+
+  // With no highlight given, there is nothing to report about it, whatever the AI said.
+  const highlight = input.highlight
+    ? { highlightHandling: result.highlightHandling, highlightEvidence: result.highlightEvidence }
+    : { highlightHandling: "not-provided" as const, highlightEvidence: "" };
+
+  return { ...result, ...highlight, notes: styleNotes(result, input) };
 }

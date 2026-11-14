@@ -14,9 +14,9 @@ export const ROLE = delimiters("ROLE_TITLE");
 export const HIGHLIGHT = delimiters("HIGHLIGHT");
 
 // What we ask for. lib/cover-letter/checks.ts allows wider word ranges, on purpose.
-export const LENGTH_GUIDE: Record<LetterLength, { shape: string; minWords: number; maxWords: number }> = {
-  short: { shape: "3 short paragraphs", minWords: 150, maxWords: 200 },
-  medium: { shape: "4 paragraphs", minWords: 260, maxWords: 340 },
+export const LENGTH_GUIDE: Record<LetterLength, { shape: string; minWords: number; maxWords: number; aim: number }> = {
+  short: { shape: "3 short paragraphs", minWords: 150, maxWords: 200, aim: 175 },
+  medium: { shape: "4 paragraphs", minWords: 260, maxWords: 340, aim: 300 },
 };
 
 // The most gaps (placeholders) one letter may have.
@@ -86,6 +86,9 @@ Gaps and placeholders:
 - Every placeholder must be listed in "gaps", with the exact same text (including the brackets) in "placeholder"
   and a few words about what the job needs in "need". Only [Your name] needs no gap.
 - Use square brackets only for placeholders.
+- Each placeholder must read as a complete sentence, or a complete clause, that is still correct English once the
+  person replaces it with their example: "At ShopLane I [add a real example of X here]." Never "Regarding X,
+  I [add ...]", never "I am also [add ...]", never a placeholder that leaves a sentence without its verb.
 - A placeholder replaces a real past example. In the same sentence, never write phrases like ${quoted(PLACEHOLDER_HEDGES)}:
   write "At ShopLane I [add a real example of X here]", not "I am ready to learn [add a real example of X here]".
 - Never claim a match for something that is a gap (no "my background covers X" next to a placeholder for X).
@@ -99,7 +102,8 @@ Opening:
 - Never start with ${quoted(BANNED_OPENINGS)} or anything like them.
 
 Length and shape:
-- Use exactly the number of paragraphs and the word range given in the user message. Count every word of the letter,
+- Use exactly the number of paragraphs and the word range given in the user message. Aim for the middle of
+  the range (the user message gives the number), not the bottom. Count every word of the letter,
   including the greeting and sign-off, but not the placeholders.
 - To reach the word range, explain more fully how each real fact from the resume meets a specific need in the job
   description, using concrete detail that is already in the resume. Never pad with generic sentences, and never
@@ -127,11 +131,11 @@ function block(markers: { start: string; end: string }, text: string | undefined
 }
 
 export function buildUserPrompt(input: CoverLetterInput): string {
-  const { shape, minWords, maxWords } = LENGTH_GUIDE[input.length];
+  const { shape, minWords, maxWords, aim } = LENGTH_GUIDE[input.length];
   return [
     "Write a cover letter for this person and this job.",
     `Tone: ${input.tone}. ${TONE_GUIDE[input.tone]}`,
-    `Length: ${shape} between the greeting and the sign-off, ${minWords} to ${maxWords} words in total, not counting placeholders.`,
+    `Length: ${shape} between the greeting and the sign-off, ${minWords} to ${maxWords} words in total (aim for about ${aim}), not counting placeholders.`,
     "",
     ...block(RESUME, input.resume),
     "",

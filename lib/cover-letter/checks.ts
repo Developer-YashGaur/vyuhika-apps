@@ -53,6 +53,16 @@ const LEADERSHIP_FAMILIES: { inLetter: string[]; inResume: string[] }[] = [
   { inLetter: ["oversaw", "oversee", "oversees", "overseeing"], inResume: ["oversaw", "oversee", "oversees", "overseeing", "overseen"] },
 ];
 
+// For the role check: who is the subject of a leadership word?
+const FIRST_PERSON = new Set(["i", "i've", "i'd", "we", "we've"]);
+const POSSESSIVES = new Set(["my", "our"]);
+// Someone else is doing it ("customers manage", "a team that managed", "helped them lead").
+const OTHER_SUBJECTS = new Set(
+  "you your they their them he she his her it its customers users clients people teams who which that help helped helping helps let lets allow allows allowed enable enables enabled".split(" "),
+);
+// "to lead", "would manage": an intention, not a claim about the past.
+const INTENT_WORDS = new Set(["to", "will", "would", "could", "can", "might", "may", "shall"]);
+
 // Small words that say nothing about what a highlight is about.
 const STOP_WORDS = new Set(
   "a an and are as at be been by for from had has have i in into is it its me my of on or our over so that the their them they this through to was we were with what when where which who will year years first".split(" "),
@@ -63,6 +73,11 @@ const STOP_WORDS = new Set(
 // Lowercase words, without placeholders.
 function wordsOf(text: string): string[] {
   return withoutPlaceholders(text).toLowerCase().match(/[a-z]+/g) ?? [];
+}
+
+// Lowercase words in order, keeping short forms like "i've" (curly apostrophes are straightened first).
+function tokensOf(text: string): string[] {
+  return plain(text).toLowerCase().match(/[a-z0-9]+(?:'[a-z]+)?/g) ?? [];
 }
 
 // A rough word stem, so "mentored", "mentoring" and "mentor" match: drops common endings.
@@ -270,42 +285,61 @@ export function checkOpening(letter: string): string[] {
   ];
 }
 
-// (g) Role inflation: a leadership word in the letter ("led", "managed", "mentored"...) must also appear,
-// in any form, in the resume. "Team of 4" in the resume does not make "managed a team" true.
-export function checkRole(letter: string, resume: string): string[] {
-  const letterWords = new Set(wordsOf(letter));
-  const resumeWords = new Set(wordsOf(resume));
+// (g) Role inflation: when the letter claims leadership for the person ("I managed", "my leadership"),
+// the resume must use a word of the same family. "Team of 4" in the resume does not make "I managed a team" true.
+// Not flagged: the word inside a placeholder, the word in a phrase of 3+ words copied from the job description
+// ("manage their cloud apps"), or the word about someone else ("customers manage their apps").
+export function checkRole(letter: string, input: CoverLetterInput): string[] {
+  const resumeWords = new Set(wordsOf(input.resume));
+  const jobText = ` ${tokensOf(input.jobDescription).join(" ")} `;
   const problems: string[] = [];
 
-  for (const family of LEADERSHIP_FAMILIES) {
-    const used = family.inLetter.find((word) => letterWords.has(word));
-    if (used && !family.inResume.some((word) => resumeWords.has(word))) {
-      problems.push(
-        `The letter says "${used}", but the resume never shows the person doing that. Describe their real part, in the resume's own terms.`,
-      );
-    }
+  for (const sentence of sentencesOf(withoutPlaceholders(letter))) {
+    const tokens = tokensOf(sentence);
+    tokens.forEach((token, k) => {
+      const family = LEADERSHIP_FAMILIES.find((f) => f.inLetter.includes(token));
+      if (!family || !isClaim(tokens, k) || inJobPhrase(tokens, k, jobText)) return;
+      if (family.inResume.some((word) => resumeWords.has(word))) return;
+      const message = `The letter says "${token}" about the person, but the resume never shows them doing that. Describe their real part, in the resume's own terms.`;
+      if (!problems.includes(message)) problems.push(message);
+    });
   }
   return problems;
 }
 
-// (h) Highlight handling: a highlight is never dropped silently.
-// "used" needs evidence copied from the resume; "gap" needs a gap that clearly refers to the highlight.
-export function checkHighlight(result: CoverLetterResult, input: CoverLetterInput): string[] {
+// Is the leadership word at tokens[k] a claim about the person?
+function isClaim(tokens: string[], k: number): boolean {
+  if (INTENT_WORDS.has(tokens[k - 1] ?? "")) return false; // "to lead", "would manage": a wish, not a claim
+  if (tokens.slice(Math.max(0, k - 3), k).some((t) => POSSESSIVES.has(t))) return true; // "my leadership"
+  // Read back to the nearest subject: "I" or "we" makes it a claim, anyone else ("customers", "who") does not.
+  for (let j = k - 1; j >= 0; j--) {
+    if (FIRST_PERSON.has(tokens[j])) return true;
+    if (OTHER_SUBJECTS.has(tokens[j])) return false;
+  }
+  return false;
+}
+
+// Is the word at tokens[k] part of a phrase of 3 or more words that also appears in the job description?
+function inJobPhrase(tokens: string[], k: number, jobText: string): boolean {
+  for (let start = k - 2; start <= k; start++) {
+    if (start < 0 || start + 3 > tokens.length) continue;
+    if (jobText.includes(` ${tokens.slice(start, start + 3).join(" ")} `)) return true;
+  }
+  return false;
+}
+
+// Which part of the highlight handling failed, as a fixed name (safe to log), or null if it is fine.
+// With no highlight given there is nothing to check (writeCoverLetter reports "not-provided").
+export type HighlightProblem = "evidence-not-in-resume" | "dropped" | "gap-mismatch";
+
+export function highlightProblem(result: CoverLetterResult, input: CoverLetterInput): HighlightProblem | null {
+  if (!input.highlight) return null;
   const { highlightHandling: handling, highlightEvidence: evidence } = result;
 
-  if (!input.highlight) {
-    return handling === "not-provided" ? [] : ['No highlight was given, so highlightHandling must be "not-provided".'];
-  }
-  if (handling === "not-provided") {
-    return ['A highlight was given. Either use it (if the resume supports it) or turn it into a gap. Never drop it.'];
-  }
+  if (handling === "not-provided") return "dropped";
   if (handling === "used") {
     const found = normalise(evidence).length >= 3 && normalise(input.resume).includes(normalise(evidence));
-    return found
-      ? []
-      : [
-          'highlightHandling is "used", but highlightEvidence is not a phrase copied exactly from the resume. If the resume does not support the highlight, make it a gap instead.',
-        ];
+    return found ? null : "evidence-not-in-resume";
   }
   // "gap": some gap must share at least two meaningful words with the highlight (one, if it is very short).
   const highlightStems = contentStems(input.highlight);
@@ -314,9 +348,28 @@ export function checkHighlight(result: CoverLetterResult, input: CoverLetterInpu
     const gapStems = contentStems(`${gap.need} ${gap.placeholder}`);
     return [...highlightStems].filter((s) => gapStems.has(s)).length >= needed;
   });
-  return matches
-    ? []
-    : ['highlightHandling is "gap", but no gap clearly refers to the highlight. Add a gap (and its placeholder) for it.'];
+  return matches ? null : "gap-mismatch";
+}
+
+// (h) Must-pass: a highlight marked "used" needs evidence that is really in the resume.
+export function checkHighlightEvidence(result: CoverLetterResult, input: CoverLetterInput): string[] {
+  return highlightProblem(result, input) === "evidence-not-in-resume"
+    ? [
+        'highlightHandling is "used", but highlightEvidence is not a phrase copied exactly from the resume. If the resume does not support the highlight, make it a gap instead.',
+      ]
+    : [];
+}
+
+// (h2) Should-pass: a highlight is never dropped, and a highlight gap clearly refers to it.
+export function checkHighlightAddressed(result: CoverLetterResult, input: CoverLetterInput): string[] {
+  const problem = highlightProblem(result, input);
+  if (problem === "dropped") {
+    return ["A highlight was given. Either use it (if the resume supports it) or turn it into a gap. Never drop it."];
+  }
+  if (problem === "gap-mismatch") {
+    return ['highlightHandling is "gap", but no gap clearly refers to the highlight. Add a gap (and its placeholder) for it.'];
+  }
+  return [];
 }
 
 // (i) The letter must not talk about the resume itself ("my resume", "my CV").
@@ -355,7 +408,8 @@ export type CheckName =
   | "opening"
   | "resume-mention"
   | "placeholder-wording"
-  | "placement";
+  | "placement"
+  | "highlight-not-addressed";
 
 // Must-pass checks protect honesty and safety; should-pass checks are about style.
 export const SEVERITY: Record<CheckName, "must" | "should"> = {
@@ -371,6 +425,7 @@ export const SEVERITY: Record<CheckName, "must" | "should"> = {
   "resume-mention": "should",
   "placeholder-wording": "should",
   placement: "should",
+  "highlight-not-addressed": "should",
 };
 
 export type LetterProblem = CheckProblem & { check: CheckName; severity: "must" | "should" };
@@ -381,8 +436,8 @@ export function findProblems(result: CoverLetterResult, input: CoverLetterInput)
     messages.map((message) => ({ check, message, severity: SEVERITY[check] }));
   return [
     ...named("numbers", checkNumbers(result.letter, input)),
-    ...named("role", checkRole(result.letter, input.resume)),
-    ...named("highlight", checkHighlight(result, input)),
+    ...named("role", checkRole(result.letter, input)),
+    ...named("highlight", checkHighlightEvidence(result, input)),
     ...named("placeholders", checkPlaceholders(result)),
     ...named("placeholder-count", checkPlaceholderCount(result)),
     ...named("delimiter", checkDelimiters(result)),
@@ -392,6 +447,7 @@ export function findProblems(result: CoverLetterResult, input: CoverLetterInput)
     ...named("resume-mention", checkResumeMentions(result.letter)),
     ...named("placeholder-wording", checkPlaceholderWording(result.letter)),
     ...named("placement", checkPlacement(result.letter)),
+    ...named("highlight-not-addressed", checkHighlightAddressed(result, input)),
   ];
 }
 

@@ -27,6 +27,10 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
 - Final tuning: must-pass vs should-pass checks (style failures come back as `notes`), new checks `role`,
   `highlight`, `resume-mention` and `placeholder-wording`, `highlightHandling` and `highlightEvidence` in the
   answer, and a prompt rule for reaching the medium length honestly.
+- Last tuning: the role check only flags first-person claims and skips phrases copied from the job; a dropped or
+  unmatched highlight is now a style note (`highlight-not-addressed`), only made-up evidence is a hard error; the
+  prompt asks for placeholders that read as complete sentences and for the middle of each length range
+  (about 175 and 300 words). **Prompt and check tuning is finished; next is step 6.**
 
 Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
 re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
@@ -110,12 +114,16 @@ Must-pass:
   highlight. Compared after normalising formatting (`1,000` = `1000`, `20 percent` = `20%`). A percentage must be a
   percentage in the inputs too. Numbers inside placeholders are ignored. Number words followed by a unit count too
   ("four years" = "4 years"), but not "one of" or "the first".
-- `role`: leadership words in the letter (led, lead, leading, leadership, managed, manage, managing, management,
-  mentored, mentoring, supervised, headed, directed, oversaw) must appear in some form in the resume.
-  Text inside placeholders is ignored. "Team of 4" in the resume does not allow "managed a team".
-- `highlight`: no highlight → `"not-provided"`. A highlight is never dropped: `"used"` needs `highlightEvidence`
-  that literally appears in the resume (ignoring case and spacing); `"gap"` needs a gap that shares meaningful
-  words with the highlight.
+- `role`: when the letter claims leadership for the person, the resume must use a word of the same family.
+  Leadership words: led, lead, leading, leadership, managed, manage, managing, management, mentored, mentoring,
+  supervised, headed, directed, oversaw. Only claims count: "my"/"our" just before the word, or "I"/"we"/"I've" as
+  the nearest subject ("I managed", "I have mentored", "my leadership"). Not flagged: someone else as the subject
+  ("customers manage", "a team that managed"), an intention ("to lead", "would manage"), a phrase of 3+ words
+  copied from the job description ("manage their cloud apps"), or text inside a placeholder.
+  "Team of 4" in the resume does not allow "I managed a team".
+- `highlight`: a highlight marked `"used"` needs `highlightEvidence` that literally appears in the resume
+  (ignoring case and spacing). With no highlight given there is nothing to check, and the answer always says
+  `"not-provided"`.
 - `placeholders`: every `[...]` placeholder has a matching gap and every gap a placeholder (`[Your name]` needs none).
 - `placeholder-count`: at most 3 gaps.
 - `delimiter`: no delimiter marker in the letter or the gaps.
@@ -129,8 +137,12 @@ Should-pass (style):
 - `placeholder-wording`: no "not yet", "ready to learn", "eager to learn" or "aligns with my background" in the
   same sentence as a placeholder.
 - `placement`: each placeholder inside a sentence, never alone on a line, at most one per paragraph.
+- `highlight-not-addressed`: a given highlight was dropped silently, or marked `"gap"` without a gap that shares
+  meaningful words with it.
 
-Logs show only the attempt number, the failed check names and the word count.
+Logs show only the attempt number, the failed check names, the word count, the highlight handling (one of three
+fixed words) and which highlight sub-check failed (`evidence-not-in-resume`, `dropped` or `gap-mismatch`), for example
+`[cover-letter] attempt 1 of 2 failed checks: highlight-not-addressed (words: 174, highlight: gap, highlight-check: gap-mismatch)`.
 
 ## 4. Feedback
 

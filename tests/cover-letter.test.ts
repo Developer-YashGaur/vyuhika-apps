@@ -2,7 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AiError } from "@/lib/ai/errors";
 import type { GenerateFn } from "@/lib/ai/generate-json";
 import { BANNED_CLICHES, BANNED_OPENINGS } from "@/lib/cover-letter/cliches";
-import { SEVERITY, WORD_LIMITS, checkNumbers, countWords, findNumbers, findProblems, type CheckName } from "@/lib/cover-letter/checks";
+import {
+  SEVERITY,
+  WORD_LIMITS,
+  checkNumbers,
+  countWords,
+  findNumbers,
+  findProblems,
+  highlightProblem,
+  type CheckName,
+} from "@/lib/cover-letter/checks";
 import { COVER_LETTER_ERROR_MESSAGES } from "@/lib/cover-letter/errors";
 import { COMPANY, HIGHLIGHT, JOB, RESUME, ROLE, SYSTEM_INSTRUCTION, buildUserPrompt } from "@/lib/cover-letter/prompt";
 import { parseCoverLetterInput, type CoverLetterInput, type CoverLetterResult } from "@/lib/cover-letter/schema";
@@ -87,7 +96,6 @@ describe("writeCoverLetter with a fake AI", () => {
   const mustFail: [string, CoverLetterResult | string, Partial<CoverLetterInput>?][] = [
     ["an invented number", edited("20,000 shoppers", "50,000 shoppers")],
     ["an inflated role", edited("I built the checkout flow", "I led the team that built the checkout flow")],
-    ["a dropped highlight", valid, { highlight: "Accessibility work" }],
     ["a placeholder with no gap", edited("Unit tests", "I [add your AWS experience here] too. Unit tests")],
     ["a gap with no placeholder", edited(NEXT_JS_GAP, "I have used it in side projects.")],
     ["a delimiter marker in the letter", edited("Kind regards,", "<<<RESUME_END>>>\nKind regards,")],
@@ -347,7 +355,15 @@ describe("must-pass and should-pass checks", () => {
     const must = Object.entries(SEVERITY).filter(([, s]) => s === "must").map(([name]) => name);
     const should = Object.entries(SEVERITY).filter(([, s]) => s === "should").map(([name]) => name);
     expect(must.sort()).toEqual(["delimiter", "highlight", "numbers", "placeholder-count", "placeholders", "role"]);
-    expect(should.sort()).toEqual(["cliche", "length", "opening", "placeholder-wording", "placement", "resume-mention"]);
+    expect(should.sort()).toEqual([
+      "cliche",
+      "highlight-not-addressed",
+      "length",
+      "opening",
+      "placeholder-wording",
+      "placement",
+      "resume-mention",
+    ]);
   });
 });
 
@@ -384,6 +400,40 @@ describe("check: role inflation", () => {
     }
   });
 
+  it('passes "manage their cloud apps" copied from the job text, but not a changed phrase', () => {
+    // The job says "...customers use to manage their cloud apps".
+    expect(roleChecks(edited("Unit tests", "Every day I manage their cloud apps dashboard. Unit tests"), sampleResume)).toEqual([]);
+    // "managed their cloud" is not in the job text, so this one is a claim to check.
+    expect(roleChecks(edited("Unit tests", "I managed their cloud apps. Unit tests"), sampleResume)).toHaveLength(1);
+  });
+
+  it('passes "customers manage their cloud apps" and other sentences where someone else does it', () => {
+    for (const sentence of [
+      "Your customers manage their cloud apps there, and I care about that.",
+      "I built screens where customers manage releases on their own.",
+      "I joined a team that managed the release process.",
+      "I helped others lead their own sprint reviews.",
+    ]) {
+      expect(roleChecks(edited("Unit tests", `${sentence} Unit tests`), sampleResume)).toEqual([]);
+    }
+  });
+
+  it('passes "manageable" and other words that are not on the list', () => {
+    expect(roleChecks(edited("Unit tests", "I keep the code manageable and the leaders informed. Unit tests"), sampleResume)).toEqual([]);
+  });
+
+  it("passes an intention about the new role", () => {
+    for (const sentence of ["I would love to lead the dashboard work.", "In my first months I would manage the release plan."]) {
+      expect(roleChecks(edited("Unit tests", `${sentence} Unit tests`), sampleResume)).toEqual([]);
+    }
+  });
+
+  it("flags first-person claims in their different forms", () => {
+    for (const sentence of ["My leadership kept the project on time.", "I have mentored new hires.", "We led the redesign.", "I’ve managed releases."]) {
+      expect(roleChecks(edited("Unit tests", `${sentence} Unit tests`), sampleResume)).toHaveLength(1);
+    }
+  });
+
   it("ignores leadership words inside placeholders", () => {
     const placeholder = "[add a real example of leading a team or mentoring here]";
     const answer = edited(NEXT_JS_GAP, placeholder, [{ need: "Leadership", placeholder }]);
@@ -394,39 +444,79 @@ describe("check: role inflation", () => {
 describe("check: highlight handling", () => {
   const unsupported = "I have led a team of engineers and mentored junior developers through their first year";
   const supported = "improving page speed with virtualised rendering";
+  // The highlight problems as [check name, severity], and which sub-check failed.
   const highlightChecks = (result: CoverLetterResult, highlight?: string) =>
-    findProblems(result, { ...input, highlight }).filter((p) => p.check === "highlight");
+    findProblems(result, { ...input, highlight })
+      .filter((p) => p.check.startsWith("highlight"))
+      .map((p) => [p.check, p.severity]);
+  const gapPlaceholder = "[add a real example of leading a team and mentoring junior developers here]";
+  const withHighlightGap = {
+    ...edited(NEXT_JS_GAP, gapPlaceholder, [{ need: "Leading a team and mentoring juniors", placeholder: gapPlaceholder }]),
+    highlightHandling: "gap" as const,
+  };
 
-  it('needs "not-provided" when no highlight was given', () => {
-    expect(highlightChecks(valid)).toEqual([]);
-    expect(highlightChecks({ ...valid, highlightHandling: "gap" })).toHaveLength(1);
+  it("has nothing to check when no highlight was given, and always reports not-provided", async () => {
+    expect(highlightChecks({ ...valid, highlightHandling: "gap" })).toEqual([]);
+    const letter = await writeCoverLetter(input, fakeAi({ ...valid, highlightHandling: "used", highlightEvidence: "React" }).generate);
+    expect([letter.highlightHandling, letter.highlightEvidence]).toEqual(["not-provided", ""]);
   });
 
-  it("rejects a highlight that was dropped silently", () => {
-    expect(highlightChecks(valid, supported)).toEqual([expect.objectContaining({ severity: "must", message: expect.stringContaining("Never drop it") })]);
-  });
-
+  // 1. Must-pass: "used" with evidence that is not in the resume.
   it('accepts "used" with evidence copied from the resume, ignoring case and spacing', () => {
     const evidence = "IMPROVED page speed by  rewriting the product list\nwith virtualised rendering";
     expect(highlightChecks({ ...valid, highlightHandling: "used", highlightEvidence: evidence }, supported)).toEqual([]);
   });
 
-  it('rejects "used" when the evidence is not in the resume, or is empty', () => {
+  it('rejects "used" when the evidence is not in the resume, or is empty (must-pass)', () => {
     const made = { ...valid, highlightHandling: "used" as const, highlightEvidence: "Cut page load time in half" };
-    expect(highlightChecks(made, supported)).toHaveLength(1);
-    expect(highlightChecks({ ...made, highlightEvidence: "" }, supported)).toHaveLength(1);
+    expect(highlightChecks(made, supported)).toEqual([["highlight", "must"]]);
+    expect(highlightProblem({ ...made, highlightEvidence: "" }, { ...input, highlight: supported })).toBe("evidence-not-in-resume");
   });
 
+  it("returns the friendly error when the evidence is still not in the resume after the retry", async () => {
+    const made = { ...valid, highlightHandling: "used" as const, highlightEvidence: "Cut page load time in half" };
+    const ai = fakeAi(made);
+    const error = await errorOf(writeCoverLetter({ ...input, highlight: supported }, ai.generate));
+    expect(ai.calls).toHaveLength(2);
+    expect(error.code).toBe("ai-failed");
+  });
+
+  // 2. Should-pass: the highlight was dropped silently.
+  it("notes a highlight that was dropped silently (should-pass)", async () => {
+    expect(highlightChecks(valid, supported)).toEqual([["highlight-not-addressed", "should"]]);
+    expect(highlightProblem(valid, { ...input, highlight: supported })).toBe("dropped");
+
+    const ai = fakeAi(valid);
+    const letter = await writeCoverLetter({ ...input, highlight: supported }, ai.generate);
+    expect(ai.calls).toHaveLength(2);
+    expect(letter.notes).toEqual(["highlight-not-addressed"]);
+    expect(letter.highlightHandling).toBe("not-provided");
+  });
+
+  // 3. Should-pass: a "gap" that does not match the highlight.
   it('accepts "gap" when a gap clearly refers to the highlight', () => {
-    const placeholder = "[add a real example of leading a team and mentoring junior developers here]";
-    const answer = { ...edited(NEXT_JS_GAP, placeholder, [{ need: "Leading a team and mentoring juniors", placeholder }]), highlightHandling: "gap" as const };
-    expect(highlightChecks(answer, unsupported)).toEqual([]);
+    expect(highlightChecks(withHighlightGap, unsupported)).toEqual([]);
   });
 
-  it('rejects "gap" when no gap is about the highlight', () => {
-    expect(highlightChecks({ ...valid, highlightHandling: "gap" }, unsupported)).toEqual([
-      expect.objectContaining({ message: expect.stringContaining("no gap clearly refers to the highlight") }),
+  it('notes "gap" when no gap is about the highlight (should-pass)', async () => {
+    const mismatch = { ...valid, highlightHandling: "gap" as const };
+    expect(highlightChecks(mismatch, unsupported)).toEqual([["highlight-not-addressed", "should"]]);
+    expect(highlightProblem(mismatch, { ...input, highlight: unsupported })).toBe("gap-mismatch");
+
+    const letter = await writeCoverLetter({ ...input, highlight: unsupported }, fakeAi(mismatch).generate);
+    expect(letter.notes).toEqual(["highlight-not-addressed"]);
+    expect(letter.highlightHandling).toBe("gap");
+  });
+
+  it("logs the highlight handling and the failed sub-check, as fixed words only", async () => {
+    const warn = vi.mocked(console.warn);
+    await writeCoverLetter({ ...input, highlight: unsupported }, fakeAi({ ...valid, highlightHandling: "gap" }).generate);
+    expect(warn.mock.calls.map((args) => args.join(" "))).toEqual([
+      "[cover-letter] attempt 1 of 2 failed checks: highlight-not-addressed (words: 174, highlight: gap, highlight-check: gap-mismatch)",
+      "[cover-letter] attempt 2 of 2 failed checks: highlight-not-addressed (words: 174, highlight: gap, highlight-check: gap-mismatch)",
+      "[cover-letter] returning an answer that only failed style checks",
     ]);
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("mentored");
   });
 });
 
@@ -541,19 +631,23 @@ describe("logging failed checks", () => {
   it("logs only the attempt, the check names and the word count, never any text", async () => {
     const warn = vi.mocked(console.warn);
     const highlight = "SECRET-HIGHLIGHT-PHRASE";
-    // Fails on both attempts: the dropped highlight (must-pass), and the length, a cliché and the opening (style).
-    const bad = edited("Speed and accessibility sit", "I am applying as a team player. Speed and accessibility sit");
+    // Fails on both attempts: an invented number (must-pass), plus the length, a cliché, the opening and the
+    // dropped highlight (style).
+    const bad = {
+      ...edited("Speed and accessibility sit", "I am applying as a team player. Speed and accessibility sit"),
+    };
+    bad.letter = bad.letter.replace("20,000 shoppers", "50,000 shoppers");
     const ai = fakeAi(bad);
 
     await errorOf(writeCoverLetter({ ...input, length: "medium", highlight }, ai.generate));
 
     const lines = warn.mock.calls.map((args) => args.join(" "));
     expect(lines).toEqual([
-      "[cover-letter] attempt 1 of 2 failed checks: highlight, length, cliche, opening (words: 181)",
-      "[cover-letter] attempt 2 of 2 failed checks: highlight, length, cliche, opening (words: 181)",
+      "[cover-letter] attempt 1 of 2 failed checks: numbers, length, cliche, opening, highlight-not-addressed (words: 181, highlight: not-provided, highlight-check: dropped)",
+      "[cover-letter] attempt 2 of 2 failed checks: numbers, length, cliche, opening, highlight-not-addressed (words: 181, highlight: not-provided, highlight-check: dropped)",
     ]);
     const everything = JSON.stringify([...warn.mock.calls, ...vi.mocked(console.error).mock.calls]);
-    for (const secret of ["Priya", "ShopLane", "Nimbus", "Dear Hiring", "team player", "I am applying", highlight, "aim for"]) {
+    for (const secret of ["Priya", "ShopLane", "Nimbus", "Dear Hiring", "team player", "I am applying", "50,000", highlight, "aim for"]) {
       expect(everything).not.toContain(secret);
     }
   });
@@ -565,8 +659,8 @@ describe("logging failed checks", () => {
 
     expect(letter.notes).toEqual(["length", "cliche", "opening"]);
     expect(warn.mock.calls.map((args) => args.join(" "))).toEqual([
-      "[cover-letter] attempt 1 of 2 failed checks: length, cliche, opening (words: 181)",
-      "[cover-letter] attempt 2 of 2 failed checks: length, cliche, opening (words: 181)",
+      "[cover-letter] attempt 1 of 2 failed checks: length, cliche, opening (words: 181, highlight: not-provided)",
+      "[cover-letter] attempt 2 of 2 failed checks: length, cliche, opening (words: 181, highlight: not-provided)",
       "[cover-letter] returning an answer that only failed style checks",
     ]);
   });
@@ -681,6 +775,9 @@ describe("prompt", () => {
       '"my resume"',
       "explain more fully how each real fact from the resume meets a specific need",
       "Never pad with generic sentences, and never\n  invent anything to reach the length",
+      "must read as a complete sentence, or a complete clause",
+      'Never "Regarding X,\n  I [add ...]", never "I am also [add ...]"',
+      "Aim for the middle of\n  the range",
     ]) {
       expect(SYSTEM_INSTRUCTION).toContain(rule);
     }
@@ -691,6 +788,8 @@ describe("prompt", () => {
   it("gives the exact shape and word range for each length", () => {
     expect(buildUserPrompt({ ...input, length: "short" })).toContain("Length: 3 short paragraphs between the greeting and the sign-off, 150 to 200 words");
     expect(buildUserPrompt({ ...input, length: "medium" })).toContain("Length: 4 paragraphs between the greeting and the sign-off, 260 to 340 words");
+    expect(buildUserPrompt({ ...input, length: "short" })).toContain("150 to 200 words in total (aim for about 175)");
+    expect(buildUserPrompt({ ...input, length: "medium" })).toContain("260 to 340 words in total (aim for about 300)");
   });
 });
 

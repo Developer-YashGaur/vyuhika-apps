@@ -134,7 +134,7 @@ describe("generateJson with the app's own checks and wording", () => {
 });
 
 describe("generateJson logging", () => {
-  it("logs the attempt, the failed check names and safe numbers, but never the problem messages", async () => {
+  it("logs the attempt, the failed check names and safe facts, but never the problem messages", async () => {
     const warn = vi.mocked(console.warn);
     const ai = fakeAi(valid);
     await errorOf(
@@ -149,14 +149,15 @@ describe("generateJson logging", () => {
           { check: "length", message: "Another length problem" },
           { check: "opening", message: "Starts with SECRET-TEXT" },
         ],
-        logNumbers: () => ({ words: 12, notANumber: Number.NaN }),
+        logFacts: () => ({ words: 12, notANumber: Number.NaN, highlight: "gap", unsafe: "Some user Text!", missing: undefined }),
       }),
     );
     expect(warn.mock.calls.map((args) => args.join(" "))).toEqual([
-      "[test] attempt 1 of 2 failed checks: length, opening (words: 12)",
-      "[test] attempt 2 of 2 failed checks: length, opening (words: 12)",
+      "[test] attempt 1 of 2 failed checks: length, opening (words: 12, highlight: gap)",
+      "[test] attempt 2 of 2 failed checks: length, opening (words: 12, highlight: gap)",
     ]);
     expect(JSON.stringify(warn.mock.calls)).not.toContain("SECRET-TEXT");
     expect(JSON.stringify(warn.mock.calls)).not.toContain("hello"); // the AI's answer
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("Some user Text"); // only plain code words are logged
   });
 });
