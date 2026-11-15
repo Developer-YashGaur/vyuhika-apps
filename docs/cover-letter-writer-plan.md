@@ -30,7 +30,14 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
 - Last tuning: the role check only flags first-person claims and skips phrases copied from the job; a dropped or
   unmatched highlight is now a style note (`highlight-not-addressed`), only made-up evidence is a hard error; the
   prompt asks for placeholders that read as complete sentences and for the middle of each length range
-  (about 175 and 300 words). **Prompt and check tuning is finished; next is step 6.**
+  (about 175 and 300 words). Prompt and check tuning is finished.
+- Step 6: the form page `/apps/cover-letter-writer` (`components/cover-letter/`: `CoverLetterWriter`, `PillGroup`,
+  `WriteButton`). `lib/cover-letter/form.ts` has the pure helpers (`canWrite`, `suggestShort`, field limits from the
+  schema) and `lib/cover-letter/client.ts` has `requestCoverLetter` (letter-app error wording). The result is a
+  TEMPORARY plain letter box with "Start over", marked in a code comment as replaced in step 7. The page is `noindex`
+  (`coverLetterWriterMetadata`) until step 9; `lib/apps.ts` is unchanged. Resume Matcher screenshots were identical
+  (0 pixels differ). `node scripts/check-cover-letter-page.mjs` (dev server running) presses the arrow keys, checks the
+  button rules with the API faked, and saves screenshots to `screenshots/cover-letter-*.png`. **Next is step 7.**
 
 Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
 re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
@@ -168,7 +175,7 @@ Gemini is always faked in tests. The Resume Matcher's existing tests must keep p
 3. Move UI pieces to `components/shared/`, point the Resume Matcher at the new paths, remove the re-exports. ✅
 4. Cover letter prompt, schema and server-side checks, with tests. ✅
 5. `/api/cover-letter` route with its own rate limits, with tests. ✅
-6. Form page (inputs, tone and length pills). Suggest "short" when the resume is under about 1,200 characters.
+6. Form page (inputs, tone and length pills). Suggest "short" when the resume is under about 1,200 characters. ✅
 7. Loading and result view (editable letter, Copy, Download, Regenerate, gaps list). The result screen says
    "Check every fact before you send" and shows the word count and any style notes.
 8. Feedback attachments for this app, with tests.

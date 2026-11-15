@@ -60,3 +60,11 @@ export const resumeMatcherMetadata: Metadata = {
     images: [{ url: BRAND_FILES.ogResumeMatcher, alt: "Resume Matcher by Vyuhika Apps" }],
   },
 };
+
+// Hidden from search engines until the card goes live (step 9 makes it indexable and adds the share image).
+export const coverLetterWriterMetadata: Metadata = {
+  title: "Cover Letter Writer",
+  description:
+    "Paste your resume and a job description. Get a tailored cover letter that only uses what your resume shows. Free.",
+  robots: { index: false, follow: false },
+};

@@ -808,6 +808,82 @@ body {
   box-shadow: 0 0 16px -6px rgba(139, 92, 246, 0.8);
 }
 
+/* ================= Cover Letter Writer form ================= */
+
+/* One-line input and small text box in the "Optional details" panel (same look as the big text boxes). */
+.field-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  font-size: 0.975rem;
+  line-height: 1.6;
+  color: var(--color-ink);
+  background: rgba(5, 8, 22, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s ease;
+}
+textarea.field-input {
+  resize: vertical;
+}
+.field-input:focus {
+  outline: none;
+  border-color: rgba(var(--glow), 0.6);
+}
+
+/* A radio option shown as a pill. The real radio input is hidden but still focusable,
+   so the pill shows the focus ring and arrow keys work as in any radio group. */
+.pill-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.8rem 1.1rem;
+  border-radius: 18px;
+  cursor: pointer;
+  background: rgba(5, 8, 22, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.pill-option:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+}
+.pill-option:has(input:checked) {
+  border-color: rgba(34, 211, 238, 0.85);
+  background: rgba(34, 211, 238, 0.1);
+  box-shadow: 0 0 24px -8px rgba(34, 211, 238, 0.8);
+}
+.pill-option:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+.pill-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+/* The round "radio dot" before the title. */
+.pill-title::before {
+  content: "";
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 1.5px solid rgba(167, 177, 204, 0.7);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+input:checked + .pill-title::before {
+  border-color: var(--color-accent);
+  background: radial-gradient(circle, var(--color-accent) 40%, transparent 45%);
+  box-shadow: 0 0 10px var(--color-accent);
+}
+.pill-hint {
+  padding-left: 1.5rem;
+  font-size: 0.85rem;
+  text-wrap: balance;
+  color: var(--color-mist);
+}
+
 /* ================= Reduced motion ================= */
 
 @media (prefers-reduced-motion: reduce) {
@@ -825,6 +901,11 @@ body {
   }
   .btn-glow:hover {
     transform: none;
+  }
+  .pill-option,
+  .pill-title::before,
+  .field-input {
+    transition: none;
   }
 }
 
