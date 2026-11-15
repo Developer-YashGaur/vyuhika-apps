@@ -1,6 +1,7 @@
 // Checks the Cover Letter Writer form page in a real browser, with the API faked (no Gemini calls),
 // and takes screenshots of every state at phone and desktop width into screenshots/cover-letter-*.png.
-// It also presses the keys: arrow keys on the radio groups, Tab order and the button's disabled rules.
+// It also presses the keys: arrow keys on the radio groups, Tab order and the button's disabled rules,
+// and drives the result view: Next blank, gap cards, Copy, Download, Regenerate and the confirm panel.
 // Usage: start the dev server (npm run dev), then run: node scripts/check-cover-letter-page.mjs
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
@@ -11,33 +12,48 @@ const sizes = [
   { name: "1440", viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 },
 ];
 
+const blankNext = "[add a real example of working with Next.js here]";
+const blankCloud = "[add a real example of working with AWS or Docker here]";
 const fakeAnswer = {
   letter: `Dear Hiring Manager,
 
 Speed and accessibility sit at the heart of the dashboard you are building at Nimbus Cloud. For the past 4 years I have built fast, accessible web apps with React and TypeScript, and that is the work I want to do next.
 
-At ShopLane, where I have worked since 2022, I built the checkout flow that 20,000 shoppers use every day, and at ShopLane I [add a real example of working with Next.js here].
+At ShopLane, where I have worked since 2022, I built the checkout flow that 20,000 shoppers use every day. I improved page speed by rewriting the product list with virtualised rendering, and I worked with the backend team to design REST APIs for orders and payments.
 
-I would welcome the chance to talk about how I could help your team.
+Your role asks for Next.js, and at ShopLane I ${blankNext}. It also asks for cloud tools, and I ${blankCloud}.
+
+Before ShopLane, I built marketing sites with HTML, CSS and JavaScript at PixelCraft Studio, wrote SQL reports for the sales team, and worked in two-week Agile sprints using Git.
+
+I would welcome the chance to talk about how I could help your team build a faster, more accessible dashboard.
 
 Kind regards,
 Priya Sharma`,
-  gaps: [{ need: "Next.js", placeholder: "[add a real example of working with Next.js here]" }],
-  notes: [],
-  highlightHandling: "not-provided",
+  gaps: [
+    { need: "Next.js or a server-rendered framework", placeholder: blankNext },
+    { need: "AWS and Docker", placeholder: blankCloud },
+  ],
+  notes: ["highlight-not-addressed", "length", "cliche"],
+  highlightHandling: "gap",
   highlightEvidence: "",
 };
+const secondLetter = "Dear Hiring Manager,\n\nA brand new second draft that is short and has no blanks.\n\nKind regards,\nPriya Sharma";
+const rawNames = ["highlight-not-addressed", "cliche", "placement", "resume-mention"];
 
 const browser = await chromium.launch();
-let requestBody = null;
 
 for (const { name, ...options } of sizes) {
-  const context = await browser.newContext(options);
+  const context = await browser.newContext({ ...options, permissions: ["clipboard-read", "clipboard-write"] });
   const page = await context.newPage();
   const problems = [];
   page.on("pageerror", (err) => problems.push(`page error: ${err.message}`));
   // The faked 502 in the "error" state makes the browser log one line; that one is expected.
-  page.on("console", (msg) => msg.type() === "error" && !msg.text().includes("502") && problems.push(`console error: ${msg.text()}`));
+  page.on("console", (msg) => msg.type() === "error" && !/502|429/.test(msg.text()) && problems.push(`console error: ${msg.text()}`));
+  // Privacy: no letter or resume text in the console, and nothing sent to the feedback route.
+  const logged = [];
+  const feedbackCalls = [];
+  page.on("console", (msg) => logged.push(msg.text()));
+  page.on("request", (req) => req.url().includes("/api/feedback") && feedbackCalls.push(req.url()));
   const shot = (state, fullPage = true) => page.screenshot({ path: `screenshots/cover-letter-${name}-${state}.png`, fullPage });
   const button = page.getByRole("button", { name: "Write my cover letter" });
   const loadSamples = async () => {
@@ -162,26 +178,194 @@ for (const { name, ...options } of sizes) {
   await button.waitFor();
   assert.ok((await page.locator("#resume").inputValue()).length > 200, "text is kept after an error");
 
-  // ---- temporary result ----
+  // ---- result view ----
+  let reply = { json: fakeAnswer };
+  const bodies = [];
   await fresh((route) => {
-    requestBody = route.request().postDataJSON();
-    return route.fulfill({ json: fakeAnswer });
+    bodies.push(route.request().postDataJSON());
+    return route.fulfill(reply);
   });
   await loadSamples();
   await page.getByLabel("Company name").fill("Nimbus Cloud");
   await pick(tone, /Friendly/);
   await button.click();
   await page.getByRole("heading", { name: "Your cover letter" }).waitFor();
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(1200);
+  const letterBox = page.locator("#letter-text");
+  const status = page.locator('p[aria-live="polite"].sr-only');
+  const selected = () => letterBox.evaluate((el) => el.value.slice(el.selectionStart, el.selectionEnd));
+  const bodyText = () => page.locator("body").innerText();
+
+  assert.equal(await page.evaluate(() => document.activeElement?.id), "letter-heading", "focus moves to the result heading");
+  assert.deepEqual(Object.keys(bodies[0]).sort(), ["companyName", "jobDescription", "length", "resume", "tone"]);
+  assert.equal(bodies[0].tone, "friendly");
+  assert.match(await page.locator("body").innerText(), /Friendly tone/);
+  assert.match(await page.locator("body").innerText(), /Short length/);
+  assert.match(await bodyText(), /Check every fact before you send\. This letter is a draft written from your resume\./);
+  assert.match(await bodyText(), /2 blanks still to fill/);
+  assert.match(await bodyText(), /Your resume doesn't show what you wanted to highlight, so we left it out/);
+  assert.match(await bodyText(), /a bit shorter or longer than you picked/);
+  assert.match(await bodyText(), /A few lines may need a quick polish/);
+  for (const raw of rawNames) assert.ok(!(await bodyText()).includes(raw), `raw check name "${raw}" is never shown`);
+  assert.equal(await page.getByRole("button", { name: "Copy" }).isEnabled(), true, "Copy works with blanks left");
+  assert.equal(await page.getByRole("button", { name: "Download .txt" }).isEnabled(), true, "Download works with blanks left");
   await page.evaluate(() => window.scrollTo(0, 0));
-  assert.match(await page.locator("p.whitespace-pre-wrap").innerText(), /^Dear Hiring Manager,/);
-  await shot("result");
-  assert.deepEqual(Object.keys(requestBody).sort(), ["companyName", "jobDescription", "length", "resume", "tone"]);
-  assert.equal(requestBody.tone, "friendly");
-  assert.equal(requestBody.length, "short");
+  await page.waitForTimeout(800); // smooth scrolling settles
+  await shot("result-blanks");
+
+  // The letter box grows with its text and never gets its own scrollbar.
+  const noInnerScroll = () => letterBox.evaluate((el) => el.scrollHeight <= el.clientHeight + 1);
+  assert.ok(await noInnerScroll(), "letter box is as tall as its text");
+  const heightBefore = (await letterBox.boundingBox()).height;
+  await letterBox.evaluate((el) => {
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length); // (Control+End differs between systems)
+  });
+  await page.keyboard.type("\n\n\n\n\n\n\n\nextra");
+  assert.ok((await letterBox.boundingBox()).height > heightBefore, "box grows as the person types");
+  assert.ok(await noInnerScroll());
+  for (let i = 0; i < "\n\n\n\n\n\n\n\nextra".length; i++) await page.keyboard.press("Backspace"); // back to the AI's text
+  assert.equal(await letterBox.inputValue(), fakeAnswer.letter, "the test typing was removed again");
+
+  // Next blank walks through the blanks, wraps round, and announces itself.
+  const next = page.getByRole("button", { name: "Next blank" });
+  await next.click();
+  assert.equal(await selected(), blankNext);
+  assert.match(await status.innerText(), /Blank 1 of 2 selected/);
+  assert.equal(await page.evaluate(() => document.activeElement?.id), "letter-text", "focus moves to the letter");
+  await next.click();
+  assert.equal(await selected(), blankCloud);
+  assert.match(await status.innerText(), /Blank 2 of 2 selected: add a real example of working with AWS or Docker here/);
+  await page.waitForTimeout(700); // smooth scroll
+  await shot("next-blank", false); // the selected blank must be on screen
+  const onScreen = await letterBox.evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    return rect.top < window.innerHeight && rect.bottom > 0;
+  });
+  assert.ok(onScreen);
+  await next.click();
+  assert.equal(await selected(), blankNext, "wraps round to the first blank");
+
+  // Clicking a gap card selects that blank.
+  await page.getByRole("button", { name: /AWS and Docker/ }).click();
+  assert.equal(await selected(), blankCloud);
+  await page.getByRole("button", { name: /Next\.js or a server-rendered framework/ }).click();
+  assert.equal(await selected(), blankNext);
+
+  // Copy: the label changes, "Copied" is announced and the clipboard holds the letter.
+  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  await page.getByRole("button", { name: "Copied", exact: true }).waitFor();
+  assert.equal(await status.innerText(), "Copied");
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), await letterBox.inputValue());
+  await page.getByRole("button", { name: "Copy", exact: true }).waitFor({ timeout: 4000 });
+
+  // Download: made in the browser, named after the company.
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download .txt" }).click()]);
+  assert.equal(download.suggestedFilename(), "cover-letter-nimbus-cloud.txt");
+  const { readFile } = await import("node:fs/promises");
+  assert.equal(await readFile(await download.path(), "utf8"), await letterBox.inputValue());
+
+  // Fill both blanks by typing over the selection: the chip, the cards and Next blank follow.
+  await page.getByRole("button", { name: /Next\.js or a server-rendered framework/ }).click();
+  assert.equal(await selected(), blankNext);
+  await page.keyboard.type("I moved the checkout app to Next.js with server rendering");
+  assert.match(await bodyText(), /1 blank still to fill/);
+  await next.click();
+  assert.equal(await selected(), blankCloud);
+  await page.keyboard.type("I ship through AWS and Docker pipelines every week");
+  assert.match(await bodyText(), /All blanks filled/);
+  assert.equal(await page.getByText("Filled in").count(), 2);
+  assert.equal(await next.isDisabled(), true);
+  assert.match(await bodyText(), /Blanks are things the job asks for that your resume doesn't show\. Add a real example, or delete the sentence\./);
+  assert.equal(await page.getByRole("button", { name: "Copy", exact: true }).isEnabled(), true);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(800);
+  await shot("result-filled");
+  const edited = await letterBox.inputValue();
+
+  // Regenerate after edits asks first (an accessible panel, not window.confirm); Escape keeps the edits.
+  let nativeDialogs = 0;
+  page.on("dialog", (d) => {
+    nativeDialogs++;
+    d.dismiss();
+  });
+  const regenerate = page.getByRole("button", { name: "Regenerate" });
+  await regenerate.click();
+  const panel = page.getByRole("alertdialog", { name: "Replace your edits?" });
+  await panel.waitFor();
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Keep my edits", "the safe button has focus");
+  assert.equal(bodies.length, 1, "nothing was requested yet");
+  await page.keyboard.press("Escape");
+  await panel.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Regenerate", "focus returns to Regenerate");
+  assert.equal(bodies.length, 1);
+  assert.equal(await letterBox.inputValue(), edited);
+
+  // A failed regenerate (429 in the letter wording) keeps the letter and the edits on screen.
+  reply = {
+    status: 429,
+    json: { error: { code: "rate-limited", message: "You've written a lot of letters in a short time. Please wait a minute and try again." } },
+  };
+  await regenerate.click();
+  await panel.waitFor();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(800);
+  await shot("replace-panel");
+  await page.getByRole("button", { name: "Replace my edits" }).click();
+  const alert = page.getByRole("alert").filter({ hasText: "Please wait a minute" });
+  await alert.waitFor();
+  assert.equal(bodies.length, 2, "the same inputs were sent again");
+  assert.deepEqual(bodies[1], bodies[0], "regenerate sends the same inputs");
+  assert.match(await alert.innerText(), /Your current letter and your edits are still here/);
+  assert.equal(await letterBox.inputValue(), edited, "edits are kept after a failed regenerate");
+  assert.match(await bodyText(), /All blanks filled/);
+  assert.equal(await regenerate.isEnabled(), true, "Regenerate can be tried again");
+  await page.waitForTimeout(800);
+  await shot("regen-error");
+
+  // A successful regenerate (after "Replace my edits") swaps in the new letter, gaps and notes.
+  reply = { json: { letter: secondLetter, gaps: [], notes: [], highlightHandling: "not-provided", highlightEvidence: "" } };
+  await regenerate.click();
+  await panel.waitFor();
+  await page.getByRole("button", { name: "Replace my edits" }).click();
+  await page.getByText("Nothing to fill in.").waitFor();
+  assert.equal(await letterBox.inputValue(), secondLetter);
+  assert.equal(bodies.length, 3);
+  assert.match(await status.innerText(), /New letter ready/);
+  assert.equal(await page.getByRole("alert").filter({ hasText: "still here" }).count(), 0, "the old error is gone");
+  assert.ok(!(await bodyText()).includes("quick polish"), "old notes are gone");
+  // With no edits, Regenerate does not ask.
+  await regenerate.click();
+  await page.waitForTimeout(500);
+  assert.equal(bodies.length, 4, "no confirm panel when the letter was not edited");
+  assert.equal(await panel.count(), 0);
+  assert.equal(nativeDialogs, 0, "window.confirm is never used");
+
+  // Edit inputs goes back to the form with everything still filled in; Start over clears it.
+  await page.getByRole("button", { name: "Edit inputs" }).click();
+  await button.waitFor();
+  assert.ok((await page.locator("#resume").inputValue()).length > 200);
+  assert.equal(await page.getByLabel("Company name").inputValue(), "Nimbus Cloud");
+  assert.ok(await tone.getByRole("radio", { name: /Friendly/ }).isChecked());
+  await button.click();
+  await page.getByRole("heading", { name: "Your cover letter" }).waitFor();
   await page.getByRole("button", { name: "Start over" }).click();
   await button.waitFor();
   assert.equal(await page.locator("#resume").inputValue(), "", "Start over clears the form");
+  assert.equal(await page.getByLabel("Company name").inputValue(), "");
+
+  // Download without a company name uses the plain file name.
+  reply = { json: fakeAnswer };
+  await loadSamples();
+  await button.click();
+  await page.getByRole("heading", { name: "Your cover letter" }).waitFor();
+  const [plain] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download .txt" }).click()]);
+  assert.equal(plain.suggestedFilename(), "cover-letter.txt");
+
+  // Privacy: nothing was logged and nothing went to the feedback route.
+  assert.deepEqual(feedbackCalls, [], "no call to /api/feedback");
+  assert.ok(!logged.some((line) => /Dear Hiring Manager|Priya|ShopLane/.test(line)), "no letter or resume text in the console");
+  assert.equal(await page.evaluate(() => JSON.stringify([localStorage, sessionStorage]).includes("Hiring Manager")), false);
 
   assert.deepEqual(problems, [], `[${name}] browser problems`);
   console.log(`[${name}] all checks passed`);

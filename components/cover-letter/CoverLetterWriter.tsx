@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import LetterResult from "@/components/cover-letter/LetterResult";
 import PillGroup from "@/components/cover-letter/PillGroup";
 import WriteButton from "@/components/cover-letter/WriteButton";
 import ErrorState from "@/components/shared/ErrorState";
@@ -9,7 +10,7 @@ import LoadingState from "@/components/shared/LoadingState";
 import ResumeDropzone from "@/components/shared/ResumeDropzone";
 import TextPanel from "@/components/shared/TextPanel";
 import { AiError, type AiErrorCode } from "@/lib/ai/errors";
-import { requestCoverLetter } from "@/lib/cover-letter/client";
+import { requestCoverLetter, type CoverLetterResponse } from "@/lib/cover-letter/client";
 import {
   DEFAULT_LENGTH,
   DEFAULT_TONE,
@@ -55,7 +56,7 @@ export default function CoverLetterWriter() {
   const [highlight, setHighlight] = useState("");
   const [tone, setTone] = useState<Tone>(DEFAULT_TONE);
   const [length, setLength] = useState<LetterLength>(DEFAULT_LENGTH);
-  const [letter, setLetter] = useState("");
+  const [answer, setAnswer] = useState<CoverLetterResponse | null>(null);
   const [error, setError] = useState<AiError | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +71,19 @@ export default function CoverLetterWriter() {
     setResume(next);
   }
 
+  // Sends the form as it is now. Used by the first write and by Regenerate (same inputs).
+  function requestLetter() {
+    return requestCoverLetter({
+      resume: cleanText(resume),
+      jobDescription: cleanText(jobDescription),
+      companyName,
+      roleTitle,
+      highlight,
+      tone,
+      length,
+    });
+  }
+
   async function handleWrite() {
     if (!canWrite(resume, jobDescription)) return;
     setStep("loading");
@@ -77,16 +91,7 @@ export default function CoverLetterWriter() {
     scrollToTop();
     // The loading animation keeps running until the server answers.
     try {
-      const answer = await requestCoverLetter({
-        resume: cleanText(resume),
-        jobDescription: cleanText(jobDescription),
-        companyName,
-        roleTitle,
-        highlight,
-        tone,
-        length,
-      });
-      setLetter(answer.letter);
+      setAnswer(await requestLetter());
       setStep("result");
     } catch (err) {
       setError(err instanceof AiError ? err : new AiError("ai-failed"));
@@ -109,7 +114,7 @@ export default function CoverLetterWriter() {
     setHighlight("");
     setTone(DEFAULT_TONE);
     setLength(DEFAULT_LENGTH);
-    setLetter("");
+    setAnswer(null);
     setError(null);
     setStep("form");
     scrollToTop();
@@ -257,22 +262,17 @@ export default function CoverLetterWriter() {
           </motion.div>
         )}
 
-        {/* TEMPORARY result: plain text only. Step 7 replaces this box with the real result view
-            (editable letter, gaps list, Copy, Download, Regenerate). */}
-        {step === "result" && (
-          <motion.div
-            key="result"
-            className="glass-panel glow-cyan"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.35 }}
-          >
-            <h2 className="font-display text-xl font-medium tracking-[-0.03em] sm:text-2xl">Your cover letter</h2>
-            <p className="measure mt-5 whitespace-pre-wrap leading-relaxed">{letter}</p>
-            <button type="button" onClick={handleReset} className="btn-ghost mt-8">
-              Start over
-            </button>
+        {step === "result" && answer && (
+          <motion.div key="result" exit={{ opacity: 0 }}>
+            <LetterResult
+              initial={answer}
+              tone={tone}
+              length={length}
+              companyName={companyName}
+              regenerate={requestLetter}
+              onEdit={handleEdit}
+              onReset={handleReset}
+            />
           </motion.div>
         )}
       </AnimatePresence>

@@ -884,6 +884,122 @@ input:checked + .pill-title::before {
   color: var(--color-mist);
 }
 
+/* ---- Cover Letter Writer result view ---- */
+
+/* The editable letter: grows with its text (the page scrolls, not the box). */
+.letter-textarea {
+  display: block;
+  width: 100%;
+  min-height: 16rem;
+  resize: none;
+  overflow: hidden;
+  padding: 1.1rem 1.25rem;
+  border-radius: 14px;
+  font-size: 1.02rem;
+  line-height: 1.75;
+  color: var(--color-ink);
+  background: rgba(5, 8, 22, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s ease;
+}
+.letter-textarea:focus {
+  outline: none;
+  border-color: rgba(var(--glow), 0.6);
+}
+
+/* A bit less padding on phones, so the letter gets more width. */
+@media (max-width: 639px) {
+  .letter-panel {
+    padding: 1.1rem;
+  }
+  .letter-textarea {
+    padding: 0.85rem 0.9rem;
+  }
+}
+
+/* The gaps panel follows the reader down a long letter, but only where it fits on screen. */
+@media (min-width: 1024px) and (min-height: 760px) {
+  .gaps-sticky {
+    position: sticky;
+    top: 7rem;
+  }
+}
+
+/* A smaller button size, so five actions fit in one row on wide screens. */
+.btn-sm {
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+@media (min-width: 640px) {
+  .btn-sm { padding: 0 1.25rem; }
+}
+
+/* Calm message boxes: the draft reminder, the notes, the confirm panel and a failed regenerate. */
+.notice {
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.8rem 1rem;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--color-mist);
+}
+.notice-cyan {
+  background: rgba(34, 211, 238, 0.06);
+  border: 1px solid rgba(34, 211, 238, 0.28);
+}
+.notice-cyan svg {
+  color: var(--color-accent);
+}
+.notice-violet {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+}
+.notice-violet svg {
+  color: #c4b5fd;
+}
+.notice-rose {
+  color: #fecdd3;
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(251, 113, 133, 0.45);
+}
+
+/* One "Gaps to fill" card (a button: it selects the blank in the letter). */
+.gap-card {
+  display: flex;
+  width: 100%;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  text-align: left;
+  border-radius: 18px;
+  background: rgba(5, 8, 22, 0.55);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.gap-card:not(:disabled):hover {
+  border-color: rgba(167, 139, 250, 0.8);
+  background: rgba(139, 92, 246, 0.1);
+}
+.gap-card:disabled {
+  cursor: default;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.gap-number {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ddd6fe;
+  background: rgba(139, 92, 246, 0.18);
+  border: 1px solid rgba(167, 139, 250, 0.45);
+}
+
 /* ================= Reduced motion ================= */
 
 @media (prefers-reduced-motion: reduce) {
@@ -904,7 +1020,9 @@ input:checked + .pill-title::before {
   }
   .pill-option,
   .pill-title::before,
-  .field-input {
+  .field-input,
+  .letter-textarea,
+  .gap-card {
     transition: none;
   }
 }

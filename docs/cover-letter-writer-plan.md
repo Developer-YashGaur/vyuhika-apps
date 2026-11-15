@@ -37,7 +37,15 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
   TEMPORARY plain letter box with "Start over", marked in a code comment as replaced in step 7. The page is `noindex`
   (`coverLetterWriterMetadata`) until step 9; `lib/apps.ts` is unchanged. Resume Matcher screenshots were identical
   (0 pixels differ). `node scripts/check-cover-letter-page.mjs` (dev server running) presses the arrow keys, checks the
-  button rules with the API faked, and saves screenshots to `screenshots/cover-letter-*.png`. **Next is step 7.**
+  button rules with the API faked, and saves screenshots to `screenshots/cover-letter-*.png`. 
+- Step 7: the real result view (`components/cover-letter/LetterResult.tsx`, helpers in `lib/cover-letter/result.ts`).
+  Editable auto-growing letter, word count, tone and length chips, the "Check every fact" notice, a blanks chip with
+  "Next blank" (counts every `[...]`, including `[Your name]`), Copy, Download .txt (`cover-letter-<company>.txt`),
+  Regenerate (an accessible "Replace your edits?" panel, only after edits; a failed regenerate keeps the letter and the
+  edits and shows the error in the letter wording), Edit inputs and Start over (neither asks first). "Gaps to fill" cards
+  select their blank, and say "Filled in" once it is gone. Server `notes` become three friendly messages
+  (`noteMessages`); raw check names are never shown. Nothing from this page goes to the feedback store or a log
+  (`tests/cover-letter-result-view.test.tsx` proves it). **Next is step 8.**
 
 Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
 re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
@@ -177,7 +185,7 @@ Gemini is always faked in tests. The Resume Matcher's existing tests must keep p
 5. `/api/cover-letter` route with its own rate limits, with tests. ✅
 6. Form page (inputs, tone and length pills). Suggest "short" when the resume is under about 1,200 characters. ✅
 7. Loading and result view (editable letter, Copy, Download, Regenerate, gaps list). The result screen says
-   "Check every fact before you send" and shows the word count and any style notes.
+   "Check every fact before you send" and shows the word count and any style notes. ✅
 8. Feedback attachments for this app, with tests.
 9. Card goes live, metadata and share image.
 10. Full test run, build, screenshots on phone and desktop, then the pull request.
