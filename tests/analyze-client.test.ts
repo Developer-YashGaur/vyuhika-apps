@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { requestAnalysis } from "@/lib/analyze/client";
-import { AnalyzeError } from "@/lib/analyze/errors";
+import { AiError as AnalyzeError } from "@/lib/ai/errors";
 
 // Checks how the browser turns network problems and server errors into friendly errors.
 

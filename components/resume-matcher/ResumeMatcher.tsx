@@ -8,11 +8,12 @@ import LoadingState from "@/components/shared/LoadingState";
 import ResumeDropzone from "@/components/shared/ResumeDropzone";
 import TextPanel from "@/components/shared/TextPanel";
 import { requestAnalysis } from "@/lib/analyze/client";
-import { AnalyzeError, type AnalyzeErrorCode } from "@/lib/analyze/errors";
+import { AiError, type AiErrorCode } from "@/lib/ai/errors";
 import { setFeedbackDebug } from "@/lib/feedback/debug-store";
 import { sampleJobDescription, sampleResume } from "@/lib/samples";
 import type { MatchResult } from "@/lib/types";
-import { MAX_CHARS, MIN_CHARS, canAnalyze, cleanText, isTooLong } from "@/lib/validation";
+import { MAX_CHARS, MIN_CHARS, cleanText } from "@/lib/text-rules";
+import { canAnalyze, isTooLong } from "@/lib/validation";
 
 // The whole tool. It moves through these steps: form → loading → results (or error).
 type Step = "form" | "loading" | "results" | "error";
@@ -27,7 +28,7 @@ const loadingLines = [
 ];
 
 // Error titles; the message under each one comes from the error itself.
-const errorTitles: Record<AnalyzeErrorCode, string> = {
+const errorTitles: Record<AiErrorCode, string> = {
   "rate-limited": "Too many requests",
   timeout: "That took too long",
   "ai-failed": "We couldn't analyze this",
@@ -41,7 +42,7 @@ export default function ResumeMatcher() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [result, setResult] = useState<MatchResult | null>(null);
-  const [error, setError] = useState<AnalyzeError | null>(null);
+  const [error, setError] = useState<AiError | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
   // Lets the feedback panel offer to attach this result (score, summary and keywords only).
@@ -67,7 +68,7 @@ export default function ResumeMatcher() {
       setResult(await requestAnalysis(cleanText(resume), cleanText(jobDescription)));
       setStep("results");
     } catch (err) {
-      setError(err instanceof AnalyzeError ? err : new AnalyzeError("ai-failed"));
+      setError(err instanceof AiError ? err : new AiError("ai-failed"));
       setStep("error");
     }
   }

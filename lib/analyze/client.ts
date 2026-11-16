@@ -2,7 +2,7 @@ import { postJson } from "@/lib/api/post-json";
 import type { MatchResult } from "@/lib/types";
 
 // Runs in the browser: asks our /api/analyze route for a match.
-// Network problems and server errors become friendly AnalyzeErrors (see lib/api/post-json.ts).
+// Network problems and server errors become friendly AiErrors (see lib/api/post-json.ts).
 
 export function requestAnalysis(
   resume: string,

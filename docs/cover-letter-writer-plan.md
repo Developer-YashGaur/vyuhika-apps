@@ -65,9 +65,9 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
   `site.url` holds the public address, and `app/sitemap.ts` and `app/robots.ts` exist (live apps only; `/api/` and
   `/dev/` are blocked and never listed). **Next is step 10.**
 
-Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
-re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
-and its tests still import these old paths.
+The temporary re-exports from steps 1 and 2 (`lib/analyze/errors.ts`, `lib/analyze/gemini.ts`, the `stripDelimiters` re-export in
+`lib/analyze/prompt.ts` and the text-rule re-exports in `lib/validation.ts`) were removed in step 10. Everything imports from
+`lib/ai/` and `lib/text-rules.ts` now.
 
 ## Rules for the AI (they go in the prompt)
 

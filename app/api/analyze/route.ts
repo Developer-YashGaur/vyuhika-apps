@@ -1,7 +1,7 @@
 import "server-only";
 import { analyzeMatch } from "@/lib/analyze/analyze";
-import { ANALYZE_ERROR_MESSAGES, AnalyzeError } from "@/lib/analyze/errors";
-import { createGeminiGenerate } from "@/lib/analyze/gemini";
+import { AI_ERROR_MESSAGES, AiError } from "@/lib/ai/errors";
+import { createGeminiGenerate } from "@/lib/ai/gemini";
 import { parseAnalyzeInput } from "@/lib/analyze/input";
 import { errorResponse, readJsonBody } from "@/lib/api/route-helpers";
 import { DAY_MS, MINUTE_MS, createRateLimiter, getClientIp } from "@/lib/rate-limit";
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const message =
       limit.limit === "day"
         ? "You've reached today's limit for this free tool. Please try again tomorrow."
-        : ANALYZE_ERROR_MESSAGES["rate-limited"];
+        : AI_ERROR_MESSAGES["rate-limited"];
     return errorResponse("rate-limited", message, { "Retry-After": String(limit.retryAfterSeconds) });
   }
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const result = await analyzeMatch(checked.input.resume, checked.input.jobDescription, generate);
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    if (error instanceof AnalyzeError) return errorResponse(error.code, error.message);
+    if (error instanceof AiError) return errorResponse(error.code, error.message);
     console.error("[analyze] Unexpected error", { name: (error as Error)?.name });
     return errorResponse("ai-failed");
   }

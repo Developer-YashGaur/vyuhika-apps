@@ -49,8 +49,6 @@ Suggestions (exactly 3):
 
 Reply only with JSON that matches the given schema.`;
 
-export { stripDelimiters } from "@/lib/ai/delimiters";
-
 export function buildUserPrompt(resume: string, jobDescription: string): string {
   return [
     "Analyze how well this resume matches this job description.",

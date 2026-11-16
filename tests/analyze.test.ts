@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { analyzeMatch, parseAiResponse, type GenerateFn } from "@/lib/analyze/analyze";
-import { AnalyzeError } from "@/lib/analyze/errors";
+import { AiError as AnalyzeError } from "@/lib/ai/errors";
 import { parseAnalyzeInput } from "@/lib/analyze/input";
 import {
   JOB_END,
@@ -13,7 +13,7 @@ import {
 import { DAY_MS, MINUTE_MS, createRateLimiter } from "@/lib/rate-limit";
 import { enforceHonesty, mentions } from "@/lib/analyze/schema";
 import { sampleJobDescription, sampleResume } from "@/lib/samples";
-import { MAX_CHARS, MIN_CHARS } from "@/lib/validation";
+import { MAX_CHARS, MIN_CHARS } from "@/lib/text-rules";
 
 // No test here calls the real Gemini API: every AI answer comes from a fake `generate` function.
 
