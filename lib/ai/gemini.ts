@@ -1,5 +1,5 @@
 import "server-only"; // build fails if this file is ever imported into browser code
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import type { GenerateFn } from "@/lib/ai/generate-json";
 
 // The only file that talks to Google. The API key is read from the server's environment
@@ -21,6 +21,20 @@ export function getGeminiFallbackModel(): string {
   return process.env.GEMINI_FALLBACK_MODEL?.trim() || DEFAULT_GEMINI_FALLBACK_MODEL;
 }
 
+// How much the model "thinks" before answering. Google's docs (checked 2026-11-16) say gemini-3.5-flash-lite and
+// gemini-3.1-flash-lite already think at "minimal" by default, which is the lowest level (near-off, lowest latency),
+// so nothing is sent unless GEMINI_THINKING_LEVEL is set to minimal, low, medium or high. A higher level is slower.
+const THINKING_LEVELS: Record<string, ThinkingLevel> = {
+  minimal: ThinkingLevel.MINIMAL,
+  low: ThinkingLevel.LOW,
+  medium: ThinkingLevel.MEDIUM,
+  high: ThinkingLevel.HIGH,
+};
+
+export function getGeminiThinkingLevel(): ThinkingLevel | undefined {
+  return THINKING_LEVELS[process.env.GEMINI_THINKING_LEVEL?.trim().toLowerCase() ?? ""];
+}
+
 // Returns null when the key is missing, so the route can answer with a friendly error.
 export function createGeminiGenerate(): GenerateFn | null {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
@@ -29,6 +43,7 @@ export function createGeminiGenerate(): GenerateFn | null {
   const ai = new GoogleGenAI({ apiKey });
   const model = getGeminiModel();
   const fallbackModel = getGeminiFallbackModel();
+  const thinkingLevel = getGeminiThinkingLevel();
 
   return async ({ systemInstruction, prompt, jsonSchema, signal, fallback }) => {
     const response = await ai.models.generateContent({
@@ -39,6 +54,7 @@ export function createGeminiGenerate(): GenerateFn | null {
         responseMimeType: "application/json",
         responseJsonSchema: jsonSchema,
         abortSignal: signal,
+        ...(thinkingLevel && { thinkingConfig: { thinkingLevel } }),
       },
     });
     return response.text;

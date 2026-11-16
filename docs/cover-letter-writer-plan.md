@@ -86,8 +86,25 @@ The temporary re-exports from steps 1 and 2 (`lib/analyze/errors.ts`, `lib/analy
   Vercel's docs say the Hobby plan allows 300 s (default and maximum) with Fluid compute, which is on by default, so 60 s is
   honoured. The worst case (a slow call, two waits, three main tries and the fallback) is cut off by the 50 s limit and
   answers with the friendly timeout message.
-- **Logs:** only the try number, the HTTP status and fixed words, for example
-  `[cover-letter] temporary AI error, status 503 (try 1 of 3)` and `main model still failing; trying the fallback model once`.
+- **A time limit for every single call:** each call to Google also has its own limit, `AI_CALL_TIMEOUT_MS` (20 s), so one
+  stalled call can't use up the 50 s. A call that hits it counts as a temporary error: it is retried, then the fallback
+  model gets its turn. After a failure the fallback keeps a reserve (20 % of the request limit, 10 s): later tries of the
+  main model are shortened or skipped to leave it, and no call starts with less than 4 % (2 s) left. A call that ignores
+  its abort signal is abandoned, so it can't hang the request. If everything times out the person sees "took too long".
+- **Timing logs** (`console.info`, numbers and fixed words only), one line per call and one per request:
+  `[cover-letter] call main: 2705 ms, outcome 503, 2707 ms into the request`, kinds `main`, `retry-after-check`,
+  `retry-after-temporary-error` and `fallback`, outcomes `ok`, a status code, `timeout` (the call's own limit),
+  `request-timeout` (the whole request's limit) or `error`, then `[cover-letter] request ok: total 6451 ms`. The earlier
+  warnings (failed check names, "trying the fallback model once") are unchanged.
+- **Thinking:** Google's docs say `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite` already think at `minimal`, the
+  lowest level (near-off), so nothing is sent by default. `GEMINI_THINKING_LEVEL` (minimal, low, medium, high) can set it
+  for both models and both apps. One real call with `minimal` was accepted together with JSON output and took the same
+  time (2.6 s) as the default. Higher levels are slower, so there is no reason to raise it.
+- **Measured** (2026-11-16, dev server, sample data, 25 s apart): 5 letters took 2.5 s to 3.1 s when Gemini answered at
+  once and 6.6 s when one 503 came first; 2 analyses took 2.9 s and 5.5 s (one 503). Gemini's own answer time is about
+  2.5 to 3 s. The 503s were about 2 of 7 calls, each cost the failed call (1.6 to 2.7 s) plus the 1 s wait, and recovered on
+  the first retry. No stalls, no timeouts and no fallback were seen.
+- **Logs elsewhere:** the other warnings still show only the try number, the HTTP status and fixed words.
 
 ## Known limits
 
@@ -103,7 +120,7 @@ The temporary re-exports from steps 1 and 2 (`lib/analyze/errors.ts`, `lib/analy
   covered by the fallback model, but a long outage of both models still ends in the friendly "couldn't write this letter".
   Whether the fallback model is available on the free tier was not stated on Google's model pages; set
   `GEMINI_FALLBACK_MODEL` if it isn't.
-- **Retries cost time.** A request that meets temporary errors can take up to 50 s before it gives up.
+- **Retries cost time.** A request that meets temporary errors costs the failed call plus a 1 s or 2.5 s wait per retry, and can take up to 50 s before it gives up (a single call is cut off after 20 s).
 
 ## Rules for the AI (they go in the prompt)
 

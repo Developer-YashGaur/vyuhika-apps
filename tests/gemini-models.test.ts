@@ -7,6 +7,7 @@ vi.mock("@google/genai", () => ({
   GoogleGenAI: class {
     models = { generateContent };
   },
+  ThinkingLevel: { MINIMAL: "MINIMAL", LOW: "LOW", MEDIUM: "MEDIUM", HIGH: "HIGH" },
 }));
 
 const { DEFAULT_GEMINI_FALLBACK_MODEL, DEFAULT_GEMINI_MODEL, createGeminiGenerate, getGeminiFallbackModel } = await import(
@@ -50,6 +51,26 @@ describe("Gemini models", () => {
 
     vi.stubEnv("GEMINI_FALLBACK_MODEL", "   ");
     expect(getGeminiFallbackModel()).toBe(DEFAULT_GEMINI_FALLBACK_MODEL);
+  });
+
+  it("sends no thinking setting by default (Google's default for these models is already the lowest, minimal)", async () => {
+    await createGeminiGenerate()!(request);
+    const config = generateContent.mock.calls[0][0].config as Record<string, unknown>;
+    expect(config).not.toHaveProperty("thinkingConfig");
+  });
+
+  it("GEMINI_THINKING_LEVEL sets the thinking level for the main and the fallback model; bad values are ignored", async () => {
+    vi.stubEnv("GEMINI_THINKING_LEVEL", " Low ");
+    const generate = createGeminiGenerate()!;
+    await generate(request);
+    await generate({ ...request, fallback: true });
+    for (const [args] of generateContent.mock.calls) {
+      expect((args.config as Record<string, unknown>).thinkingConfig).toEqual({ thinkingLevel: "LOW" });
+    }
+    generateContent.mockClear();
+    vi.stubEnv("GEMINI_THINKING_LEVEL", "turbo");
+    await createGeminiGenerate()!(request);
+    expect(generateContent.mock.calls[0][0].config).not.toHaveProperty("thinkingConfig");
   });
 
   it("returns nothing without a key, so the route can answer with a friendly error", () => {

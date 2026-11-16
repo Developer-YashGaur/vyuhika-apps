@@ -24,6 +24,7 @@ Put these in `.env.local` for local development, and in the Vercel project's Env
 |---|---|---|
 | `GEMINI_API_KEY` | Yes | Google Gemini API key, used by the Resume Matcher (`/api/analyze`) and the Cover Letter Writer (`/api/cover-letter`). Secret. |
 | `GEMINI_MODEL` | No | Gemini model name. Defaults to `gemini-3.5-flash-lite`. |
+| `GEMINI_THINKING_LEVEL` | No | `minimal`, `low`, `medium` or `high`. Not sent by default: Google's docs say the default Gemini 3.x Flash-Lite models already think at `minimal`, the lowest level. A higher level is slower. |
 | `GEMINI_FALLBACK_MODEL` | No | Tried once if the main model keeps failing with temporary errors (HTTP 500, 503, 504 or a short 429). Defaults to `gemini-3.1-flash-lite`. |
 | `RESEND_API_KEY` | Yes | Resend API key, used to send feedback emails. Secret. |
 | `EMAIL_FROM` | Yes | Sender, for example `Vyuhika Apps <no_reply@vyuhika.com>`. Must use a domain verified in Resend. |

@@ -236,8 +236,167 @@ describe("the overall time limit", () => {
       if (calls === 1) return Promise.reject(e503());
       return new Promise((_, reject) => signal.addEventListener("abort", () => reject(new Error("aborted"))));
     };
-    expect((await errorOf(run(generate, { timeoutMs: 100 }))).code).toBe("timeout");
+    expect((await errorOf(run(generate, { timeoutMs: 300, callTimeoutMs: 10_000 }))).code).toBe("timeout");
+    expect(calls).toBeGreaterThanOrEqual(2);
+  });
+
+  it("stays below Vercel's maxDuration in both API routes, with a margin, and each call is shorter than the whole", async () => {
+    const { AI_CALL_TIMEOUT_MS, AI_TIMEOUT_MS } = await import("@/lib/ai/generate-json");
+    const analyze = await import("@/app/api/analyze/route");
+    const letter = await import("@/app/api/cover-letter/route");
+    for (const maxDuration of [analyze.maxDuration, letter.maxDuration]) {
+      expect(maxDuration).toBeGreaterThan(0);
+      expect(AI_TIMEOUT_MS).toBeLessThanOrEqual(maxDuration * 1000 - 5_000); // 5 s for parsing, checks and the response
+    }
+    expect(AI_CALL_TIMEOUT_MS).toBeLessThan(AI_TIMEOUT_MS / 2);
+  });
+});
+
+// A fake that ignores its abort signal and never answers, and one that answers after a while.
+const hang: GenerateFn = () => new Promise<string | undefined>(() => {});
+const slow = (ms: number, answer: string): GenerateFn => ({ signal }) =>
+  new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(answer), ms);
+    signal.addEventListener("abort", () => {
+      clearTimeout(timer);
+      reject(new Error("aborted"));
+    });
+  });
+
+describe("a time limit for every single call", () => {
+  it("a hanging call is cut off after its own limit and the retry on the main model recovers", async () => {
+    let calls = 0;
+    const generate: GenerateFn = (request) => (++calls === 1 ? hang(request) : Promise.resolve(good));
+    const started = Date.now();
+    expect(await run(generate, { timeoutMs: 5_000, callTimeoutMs: 60 })).toEqual({ greeting: "hello" });
     expect(calls).toBe(2);
+    expect(Date.now() - started).toBeLessThan(1_000); // not the whole 5 s
+  });
+
+  it("a call that is just slow is cut off too, even if it honours the abort signal", async () => {
+    let calls = 0;
+    const generate: GenerateFn = (request) => (++calls === 1 ? slow(10_000, good)(request) : Promise.resolve(good));
+    expect(await run(generate, { timeoutMs: 5_000, callTimeoutMs: 50 })).toEqual({ greeting: "hello" });
+    expect(calls).toBe(2);
+  });
+
+  it("a call that finishes inside its limit is left alone", async () => {
+    expect(await run(slow(20, good), { timeoutMs: 5_000, callTimeoutMs: 500 })).toEqual({ greeting: "hello" });
+  });
+
+  it("three stalled tries on the main model, then the fallback answers (the fallback keeps time in reserve)", async () => {
+    const requests: boolean[] = [];
+    const generate: GenerateFn = (request) => {
+      requests.push(!!request.fallback);
+      return request.fallback ? Promise.resolve(good) : hang(request);
+    };
+    // 1000 ms in total: the reserve is 200 ms, so the main model's tries are shortened to leave it.
+    const started = Date.now();
+    expect(await run(generate, { timeoutMs: 1_000, callTimeoutMs: 250 })).toEqual({ greeting: "hello" });
+    expect(requests.at(-1)).toBe(true);
+    expect(requests.filter((fallback) => !fallback).length).toBeGreaterThanOrEqual(1);
+    expect(Date.now() - started).toBeLessThan(1_000);
+  });
+
+  it("a stalled main model never starves the fallback: with only the reserve left, the main tries stop", async () => {
+    const requests: boolean[] = [];
+    const generate: GenerateFn = (request) => {
+      requests.push(!!request.fallback);
+      return request.fallback ? Promise.resolve(good) : hang(request);
+    };
+    // Each main try may use 400 ms, but only 1000 - 200 (reserve) = 800 ms are for the main model in total.
+    await run(generate, { timeoutMs: 1_000, callTimeoutMs: 400, retryDelaysMs: [0, 0, 0, 0] });
+    expect(requests.filter((fallback) => !fallback).length).toBeLessThanOrEqual(2);
+    expect(requests.at(-1)).toBe(true);
+  });
+
+  it("hanging everywhere ends with the friendly timeout message, within the overall limit", async () => {
+    const started = Date.now();
+    const failure = await errorOf(run(hang, { timeoutMs: 600, callTimeoutMs: 100 }));
+    expect(failure.code).toBe("timeout");
+    expect(Date.now() - started).toBeLessThan(1_500);
+  });
+
+  it("a per-call timeout on the last possible try ends as a timeout, not as a generic failure", async () => {
+    const failure = await errorOf(run(hang, { timeoutMs: 60_000, callTimeoutMs: 20, retryDelaysMs: [0] }));
+    expect(failure.code).toBe("timeout");
+  });
+
+  it("a per-call timeout doesn't use up the retry for failed checks", async () => {
+    const bad = JSON.stringify({ greeting: "goodbye" });
+    const check = (answer: { greeting: string }) => (answer.greeting === "hello" ? [] : [{ check: "greeting", message: "Say hello." }]);
+    let calls = 0;
+    const generate: GenerateFn = (request) => {
+      calls++;
+      if (calls === 1) return hang(request); // stalls, then times out
+      return Promise.resolve(calls === 2 ? bad : good);
+    };
+    expect(await run(generate, { timeoutMs: 5_000, callTimeoutMs: 50, check })).toEqual({ greeting: "hello" });
+    expect(calls).toBe(3);
+  });
+
+  it("an answer that only had style problems is returned when the retry stalls", async () => {
+    const styleOnly = (answer: { greeting: string }) =>
+      answer.greeting === "hello" ? [] : [{ check: "style", message: "x", severity: "should" as const }];
+    let calls = 0;
+    const generate: GenerateFn = (request) => (++calls === 1 ? Promise.resolve(JSON.stringify({ greeting: "goodbye" })) : hang(request));
+    expect(await run(generate, { timeoutMs: 600, callTimeoutMs: 80, check: styleOnly })).toEqual({ greeting: "goodbye" });
+  });
+});
+
+describe("timing logs", () => {
+  let info: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    info = vi.spyOn(console, "info").mockImplementation(() => {});
+  });
+  const lines = (): string[] => info.mock.calls.map((call: unknown[]) => String(call[0]));
+
+  it("log every call with its kind, its time and its outcome, and one line with the total", async () => {
+    const bad = JSON.stringify({ greeting: "goodbye" });
+    const check = (answer: { greeting: string }) => (answer.greeting === "hello" ? [] : [{ check: "greeting", message: "Say hello." }]);
+    // main: fails a check; retry-after-check: 503; retry-after-temporary-error: ok.
+    const ai = script(bad, e503(), good);
+    await run(ai.generate, { check });
+    const log = lines();
+    expect(log).toHaveLength(4);
+    expect(log[0]).toMatch(/^\[test\] call main: \d+ ms, outcome ok, \d+ ms into the request$/);
+    expect(log[1]).toMatch(/^\[test\] call retry-after-check: \d+ ms, outcome 503, \d+ ms into the request$/);
+    expect(log[2]).toMatch(/^\[test\] call retry-after-temporary-error: \d+ ms, outcome ok, \d+ ms into the request$/);
+    expect(log[3]).toMatch(/^\[test\] request ok: total \d+ ms$/);
+  });
+
+  it("log the fallback call and the outcomes timeout, request-timeout and error", async () => {
+    await run(script(apiError(503), apiError(503), new Error("boom"), good).generate).catch(() => {});
+    expect(lines().some((l) => /call fallback: \d+ ms, outcome ok/.test(l))).toBe(false); // "boom" is not temporary: no fallback
+    expect(lines().some((l) => /call retry-after-temporary-error: \d+ ms, outcome error/.test(l))).toBe(true);
+
+    info.mockClear();
+    await run(script(e503(), e503(), e503(), good).generate);
+    expect(lines().some((l) => /call fallback: \d+ ms, outcome ok/.test(l))).toBe(true);
+
+    info.mockClear();
+    await run(hang, { timeoutMs: 400, callTimeoutMs: 40 }).catch(() => {}); // each call stops at its own limit
+    expect(lines().some((l) => /outcome timeout,/.test(l))).toBe(true);
+    expect(lines().at(-1)).toMatch(/^\[test\] request failed: total \d+ ms$/);
+
+    info.mockClear();
+    await run(hang, { timeoutMs: 100, callTimeoutMs: 10_000 }).catch(() => {}); // the request's limit comes first
+    expect(lines().some((l) => /outcome request-timeout,/.test(l))).toBe(true);
+  });
+
+  it("never contain any text: not the prompt, the answer, the error message, the problems or the key", async () => {
+    const secret = "SECRET-RESUME-TEXT AIzaSyKEYKEYKEYKEYKEY dear hiring manager";
+    const badAnswer = JSON.stringify({ greeting: "SECRET-ANSWER-TEXT" });
+    const check = () => [{ check: "greeting", message: "SECRET-PROBLEM-TEXT" }];
+    const ai = script(badAnswer, apiError(503, secret), apiError(504, secret), apiError(429, secret), badAnswer);
+    await run(ai.generate, { check, prompt: "PROMPT-WITH-SECRET-RESUME" }).catch(() => {});
+    await run(hang, { prompt: "PROMPT-WITH-SECRET-RESUME", timeoutMs: 300, callTimeoutMs: 30 }).catch(() => {});
+    const everything = [...info.mock.calls, ...warn.mock.calls, ...error.mock.calls].map((call: unknown[]) => JSON.stringify(call)).join("\n");
+    expect(everything.length).toBeGreaterThan(200);
+    expect(everything).not.toMatch(/SECRET|AIza|hiring|PROMPT/i);
+    for (const line of lines()) {
+      expect(line).toMatch(/^\[test\] (call [a-z-]+: \d+ ms, outcome [a-z0-9-]+, \d+ ms into the request|request (ok|failed): total \d+ ms)$/);
+    }
   });
 });
 
@@ -246,22 +405,15 @@ describe("logs", () => {
     const secret = "SECRET-RESUME-TEXT AIzaSyKEYKEYKEYKEYKEY dear hiring manager";
     const ai = script(apiError(503, secret), apiError(503, secret), apiError(503, secret), apiError(504, secret));
     await errorOf(run(ai.generate, { prompt: "PROMPT-WITH-SECRET-RESUME" }));
-    const lines = [...warn.mock.calls, ...error.mock.calls].map((call) => JSON.stringify(call));
-    expect(lines.length).toBeGreaterThanOrEqual(5);
+    const lines = [...warn.mock.calls, ...error.mock.calls].map((call: unknown[]) => JSON.stringify(call));
+    expect(lines.length).toBeGreaterThanOrEqual(2);
     for (const line of lines) {
       expect(line).not.toMatch(/SECRET|AIza|hiring|PROMPT/i);
     }
-    // Every warning is a fixed sentence with numbers in it.
     for (const [message] of warn.mock.calls) {
       expect(message).toMatch(/^\[test\] [A-Za-z ;,()0-9]+$/);
     }
-    expect(warn.mock.calls.map((call: unknown[]) => call[0])).toEqual([
-      "[test] temporary AI error, status 503 (try 1 of 3)",
-      "[test] temporary AI error, status 503 (try 2 of 3)",
-      "[test] temporary AI error, status 503 (try 3 of 3)",
-      "[test] main model still failing; trying the fallback model once",
-      "[test] fallback model failed, status 504",
-    ]);
+    expect(warn.mock.calls.map((call: unknown[]) => call[0])).toEqual(["[test] main model still failing; trying the fallback model once"]);
   });
 });
 
