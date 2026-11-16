@@ -78,6 +78,9 @@ for (const { name, ...options } of sizes) {
   async function closeFeedback() {
     await page.keyboard.press("Escape");
     await feedbackDialog.waitFor({ state: "hidden" });
+    // The panel gives focus back to its button a moment later. Wait for that, or a space typed into the letter
+    // right after could land on the button and open the panel again.
+    await page.waitForFunction(() => document.activeElement?.getAttribute("aria-label") === "Send feedback");
   }
 
   async function fresh(route) {
