@@ -58,7 +58,12 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
   when a new request starts and when the result view goes away. If a Regenerate fails, the old letter is still on
   screen, so its summary comes back. The notification email has a labelled block for it (`letterDebugRows`, plain
   text in step), the confirmation says "letter settings and counts", and `/dev/emails?sample=letter` previews both.
-  No real email is sent by any test or script. **Next is step 9.**
+  No real email is sent by any test or script.
+- Step 9: the app is live. `lib/apps.ts` status is `live` (Interview Coach stays coming soon), the page is no longer
+  `noindex`, `coverLetterWriterMetadata` is written like the matcher's, `BRAND_FILES.ogCoverLetterWriter` points at
+  `public/og/cover-letter-writer.png` (made by `ogCoverLetterWriter()` in `scripts/generate-brand.ts`, `npm run brand`),
+  `site.url` holds the public address, and `app/sitemap.ts` and `app/robots.ts` exist (live apps only; `/api/` and
+  `/dev/` are blocked and never listed). **Next is step 10.**
 
 Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
 re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
@@ -201,7 +206,7 @@ is not shown disabled when there is none).
 
 - `lib/apps.ts`: status becomes `"live"`.
 - `lib/metadata.ts`: `coverLetterWriterMetadata`, written like the Resume Matcher's.
-- Share image: `BRAND_FILES.ogCoverLetter` and a new function in `scripts/generate-brand.ts`,
+- Share image: `BRAND_FILES.ogCoverLetterWriter` and a new function (`ogCoverLetterWriter()`) in `scripts/generate-brand.ts`,
   then `npm run brand` makes `public/og/cover-letter-writer.png`.
 
 ## 6. Tests and order of work
@@ -217,5 +222,5 @@ Gemini is always faked in tests. The Resume Matcher's existing tests must keep p
 7. Loading and result view (editable letter, Copy, Download, Regenerate, gaps list). The result screen says
    "Check every fact before you send" and shows the word count and any style notes. ✅
 8. Feedback attachments for this app, with tests. ✅
-9. Card goes live, metadata and share image.
+9. Card goes live, metadata and share image. ✅
 10. Full test run, build, screenshots on phone and desktop, then the pull request.

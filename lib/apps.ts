@@ -27,10 +27,10 @@ export const apps: AppInfo[] = [
     slug: "cover-letter-writer",
     name: "Cover Letter Writer",
     description:
-      "Turn your resume and a job post into a short cover letter in your own voice.",
+      "Upload your resume, paste a job, and get a draft that only uses facts from your resume, with blanks where you add your own examples.",
     tier: "Free",
     icon: "letter",
-    status: "coming-soon",
+    status: "live",
   },
   {
     slug: "interview-coach",

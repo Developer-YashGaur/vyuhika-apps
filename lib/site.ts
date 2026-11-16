@@ -4,6 +4,7 @@
 export const site = {
   name: "Vyuhika",
   tagline: "Intelligence, built in public.",
+  url: "https://apps.vyuhika.com", // the public address, used for metadata, the sitemap and robots.txt
   owner: {
     name: "Yash Gaur",
     firstName: "Yash",

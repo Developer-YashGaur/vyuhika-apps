@@ -97,7 +97,8 @@ for (const { name, ...options } of sizes) {
   assert.equal(await page.getByRole("heading", { name: "Cover Letter Writer", level: 1 }).count(), 1);
   assert.equal(await button.isDisabled(), true, "button starts disabled");
   assert.match(await page.locator("#write-hint").innerText(), /Add at least 200 characters/);
-  assert.equal(await page.locator('meta[name="robots"]').getAttribute("content"), "noindex, nofollow");
+  assert.equal(await page.locator('meta[name="robots"]').count(), 0, "the page can be indexed");
+  assert.equal(await page.locator('meta[property="og:image"]').getAttribute("content"), "https://apps.vyuhika.com/og/cover-letter-writer.png");
 
   // ---- radio groups: names, defaults and arrow keys ----
   const tone = page.getByRole("group", { name: "Tone" });

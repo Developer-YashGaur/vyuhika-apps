@@ -6,7 +6,7 @@ import manifest from "@/app/manifest";
 import Logo from "@/components/Logo";
 import { BRAND_FILES, LOGO_LAYOUTS, LOGO_VARIANTS, logoSrc } from "@/lib/brand/logo";
 import { LOGO_SIZES } from "@/lib/brand/logo-sizes";
-import { resumeMatcherMetadata, siteMetadata, siteViewport } from "@/lib/metadata";
+import { coverLetterWriterMetadata, resumeMatcherMetadata, siteMetadata, siteViewport } from "@/lib/metadata";
 
 // The brand files are made by `npm run brand` and `npm run email:images`. These tests check that
 // everything the site and emails point at exists and is well-formed.
@@ -20,6 +20,7 @@ const allPublicFiles = [
   BRAND_FILES.appIcon,
   BRAND_FILES.ogDefault,
   BRAND_FILES.ogResumeMatcher,
+  BRAND_FILES.ogCoverLetterWriter,
   ...BRAND_FILES.manifestIcons,
   ...BRAND_FILES.email,
   ...BRAND_FILES.kit,
@@ -103,7 +104,35 @@ describe("share images and metadata", () => {
     expect(JSON.stringify(resumeMatcherMetadata.twitter)).toContain(BRAND_FILES.ogResumeMatcher);
   });
 
-  it.each([BRAND_FILES.ogDefault, BRAND_FILES.ogResumeMatcher])("%s is 1200×630", async (url) => {
+  it("the Cover Letter Writer has its own title, description and share image, and can be indexed", () => {
+    expect(coverLetterWriterMetadata.title).toBe("Cover Letter Writer");
+    expect(coverLetterWriterMetadata.description).toBeTruthy();
+    expect(coverLetterWriterMetadata.robots).toBeUndefined(); // no noindex
+    expect(JSON.stringify(coverLetterWriterMetadata)).not.toMatch(/noindex|"index":false/);
+    expect(coverLetterWriterMetadata.openGraph).toMatchObject({
+      type: "website",
+      siteName: "Vyuhika Apps",
+      url: "/apps/cover-letter-writer",
+      title: "Cover Letter Writer | Vyuhika Apps",
+    });
+    expect(ogImages(coverLetterWriterMetadata)[0]).toMatchObject({ url: "/og/cover-letter-writer.png", width: 1200, height: 630 });
+    expect(coverLetterWriterMetadata.twitter).toMatchObject({ card: "summary_large_image", title: "Cover Letter Writer | Vyuhika Apps" });
+    expect(JSON.stringify(coverLetterWriterMetadata.twitter)).toContain("/og/cover-letter-writer.png");
+    // Same description in the page, Open Graph and Twitter, like the matcher's.
+    expect(coverLetterWriterMetadata.openGraph?.description).toBe(coverLetterWriterMetadata.description);
+    expect(coverLetterWriterMetadata.twitter?.description).toBe(coverLetterWriterMetadata.description);
+  });
+
+  it("the Resume Matcher's metadata is unchanged and still can be indexed", () => {
+    expect(resumeMatcherMetadata.robots).toBeUndefined();
+    expect(resumeMatcherMetadata.openGraph).toMatchObject({ url: "/apps/resume-matcher", title: "Resume Matcher | Vyuhika Apps" });
+  });
+
+  it("the site address comes from lib/site.ts", () => {
+    expect(String(siteMetadata.metadataBase)).toBe("https://apps.vyuhika.com/");
+  });
+
+  it.each([BRAND_FILES.ogDefault, BRAND_FILES.ogResumeMatcher, BRAND_FILES.ogCoverLetterWriter])("%s is 1200×630", async (url) => {
     const m = await sharp(publicPath(url)).metadata();
     expect([m.width, m.height]).toEqual([1200, 630]);
   });
