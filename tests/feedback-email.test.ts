@@ -246,3 +246,106 @@ describe("getEmailSettings", () => {
     expect(getEmailSettings({})).toBeNull();
   });
 });
+
+describe("cover letter debug block in the notification", () => {
+  const letter = sampleFeedback.letter;
+  const built = () => buildNotificationEmail(letter, settings.assetBaseUrl, new Date("2026-11-16T09:31:00Z"));
+
+  it("shows a labelled block with only the allowed fields, in the HTML and the plain text", async () => {
+    const { html, text } = await built();
+    expect(html).toContain("Settings and counts shared by the visitor");
+    expect(text).toContain("Settings and counts shared by the visitor (their resume, job text and letter are never included):");
+    const expected = [
+      ["Tone", "friendly"],
+      ["Length", "short"],
+      ["Words in letter", "248"],
+      ["Blanks left", "2"],
+      ["Company filled in", "yes"],
+      ["Role filled in", "yes"],
+      ["Highlight filled in", "no"],
+      ["Highlight handling", "not-provided"],
+      ["Server notes", "length"],
+    ];
+    for (const [name, value] of expected) {
+      expect(text).toContain(`${name}: ${value}`);
+      expect(html).toContain(name);
+      expect(html).toContain(value);
+    }
+    expect(html).not.toContain("Result shared by the visitor"); // the matcher's block
+    expect(html).not.toContain("/ 100");
+  });
+
+  it("the plain text has no other debug lines than the nine labelled ones", async () => {
+    const { text } = await built();
+    const block = text.split("never included):\n")[1].split("\n\n")[0].split("\n");
+    expect(block).toHaveLength(9);
+  });
+
+  it("says 'none' when there are no server notes", async () => {
+    const { text } = await buildNotificationEmail(
+      { ...letter, letterDebug: { ...letter.letterDebug!, notes: [] } },
+      settings.assetBaseUrl,
+    );
+    expect(text).toContain("Server notes: none");
+  });
+
+  it("escapes everything in the block", async () => {
+    const attack = {
+      ...letter,
+      letterDebug: { ...letter.letterDebug!, notes: ["<script>alert(1)</script>"], tone: "<b>x</b>" },
+    } as unknown as Feedback;
+    const { html } = await buildNotificationEmail(attack, settings.assetBaseUrl);
+    expect(html).not.toContain("<script>alert(1)");
+    expect(html).not.toContain("<b>x</b>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("never renders text that a sneaky object carries (letter, resume, job, highlight, gaps)", async () => {
+    const sneaky = {
+      ...letter,
+      letterDebug: {
+        ...letter.letterDebug!,
+        letter: "SECRET-LETTER-TEXT",
+        highlight: "SECRET-HIGHLIGHT",
+        highlightEvidence: "SECRET-EVIDENCE",
+        companyName: "SECRET-COMPANY",
+        roleTitle: "SECRET-ROLE",
+        gaps: [{ need: "SECRET-GAP", placeholder: "[SECRET-GAP]" }],
+      },
+      resume: sampleResume,
+      jobDescription: sampleJobDescription,
+    } as unknown as Feedback;
+    const notification = await buildNotificationEmail(sneaky, settings.assetBaseUrl);
+    const confirmation = await buildConfirmationEmail(sneaky, settings.assetBaseUrl);
+    for (const { html, text } of [notification, confirmation]) {
+      expect(html + text).not.toMatch(/SECRET-/);
+      expect(html + text).not.toContain("Dear Hiring Manager");
+    }
+  });
+
+  it("the matcher's block is not shown for a letter report", async () => {
+    const { text } = await built();
+    expect(text).not.toContain("Score:");
+    expect(text).not.toContain("Matched:");
+  });
+
+  it("the confirmation tells the visitor what was shared, in the letter app's words", async () => {
+    const { html, text } = await buildConfirmationEmail(letter, settings.assetBaseUrl);
+    expect(html).toContain("You also shared your letter settings and counts (not your resume, job text or letter).");
+    expect(text).toContain("You also shared your letter settings and counts (not your resume, job text or letter).");
+    expect(html).not.toContain("match score");
+  });
+});
+
+describe("the Resume Matcher's emails are unchanged", () => {
+  it("still show the score block and the matcher's confirmation line, and no letter block", async () => {
+    const notification = await buildNotificationEmail(wrongResult, settings.assetBaseUrl, new Date("2026-11-13T10:52:14Z"));
+    expect(notification.html).toContain("Result shared by the visitor (their resume and job text are never included)");
+    expect(notification.html).not.toContain("Settings and counts shared");
+    expect(notification.text).toContain("Result shared by the visitor (their resume and job text are never included):");
+    expect(notification.text).toContain("Missing: Next.js, GraphQL, AWS, Docker, CI/CD pipelines");
+    const confirmation = await buildConfirmationEmail(wrongResult, settings.assetBaseUrl);
+    expect(confirmation.text).toContain("You also shared your match score and keywords (not your resume or the job text).");
+    expect(confirmation.text).not.toContain("letter settings");
+  });
+});

@@ -45,7 +45,20 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
   edits and shows the error in the letter wording), Edit inputs and Start over (neither asks first). "Gaps to fill" cards
   select their blank, and say "Filled in" once it is gone. Server `notes` become three friendly messages
   (`noteMessages`); raw check names are never shown. Nothing from this page goes to the feedback store or a log
-  (`tests/cover-letter-result-view.test.tsx` proves it). **Next is step 8.**
+  (`tests/cover-letter-result-view.test.tsx` proves it).
+- Step 8, part A: Edit inputs and Start over use the same accessible "Replace your edits?" panel as Regenerate, but
+  only when the letter was edited (`ask()` in `LetterResult`; wording per button in `replacePanelWording`). Keep my
+  edits, Escape and the safe-first focus work the same, and focus goes back to the button that was pressed.
+- Step 8, part B: feedback attachments. `lib/feedback/pages.ts` is the table of allowed pages (`FEEDBACK_PAGES`), each
+  with its own strict zod schema for `debug`; the Resume Matcher's entry is exactly what it was. The cover letter
+  page may attach only the settings and counts in section 4. `Feedback` has a separate `letterDebug` field, so the
+  matcher's `debug` type is untouched. The store (`lib/feedback/debug-store.ts`) has a second slot for the letter app:
+  `LetterResult` stores the summary when a letter arrives (first letter or after Regenerate), `updateLetterBlanks`
+  keeps only the blank count current while the person edits, and the summary is cleared on Edit inputs, Start over,
+  when a new request starts and when the result view goes away. If a Regenerate fails, the old letter is still on
+  screen, so its summary comes back. The notification email has a labelled block for it (`letterDebugRows`, plain
+  text in step), the confirmation says "letter settings and counts", and `/dev/emails?sample=letter` previews both.
+  No real email is sent by any test or script. **Next is step 9.**
 
 Still in place from steps 1 and 2: `lib/analyze/errors.ts` and `lib/analyze/gemini.ts` are one-line
 re-exports of `lib/ai/`, and `lib/validation.ts` re-exports the shared text rules. The Resume Matcher
@@ -161,11 +174,28 @@ fixed words) and which highlight sub-check failed (`evidence-not-in-resume`, `dr
 
 ## 4. Feedback
 
-A "Wrong result" report from this page may attach **counts and settings only**: tone, length, word count,
-placeholder count, and which optional fields were filled in (yes/no).
-Never the gap labels, and never any resume, letter, job description or highlight text
-(that includes `highlightEvidence`, which is copied from the resume).
-The feedback schema is strict, so a request with any other field is rejected.
+A "Wrong result" report from this page may attach **counts and settings only**. The `debug` block has exactly these
+fields (`LetterFeedbackDebug` in `lib/feedback/rules.ts`):
+
+| Field | Value |
+|---|---|
+| `tone`, `length` | the settings used |
+| `wordCount` | words in the letter when it arrived |
+| `blanks` | `[...]` blanks in the letter **when the report is sent** (it follows the person's edits) |
+| `companyFilled`, `roleFilled`, `highlightFilled` | booleans only |
+| `highlightHandling` | `"not-provided"`, `"used"` or `"gap"` |
+| `notes` | names of the server's style notes, from a fixed list (`NOTE_NAMES`), for example `["length"]` |
+
+Never the letter, resume, job description, company, role, highlight text, `highlightEvidence` or gap labels.
+The schema is strict: any extra field, and specifically `letter`, `resume`, `jobDescription`, `highlight`,
+`highlightEvidence`, `companyName`, `roleTitle` or `gaps` anywhere in the request (top level, `context` or `debug`),
+fails the whole request with a 400. `notes` only accepts the fixed names, so free text can't ride along there either.
+A page that is not in `FEEDBACK_PAGES` can't attach anything (a block sent from one must still fit a strict schema,
+and is then dropped). A cover letter block sent from the Resume Matcher page, or the other way round, is a 400.
+
+On the page, the checkbox reads "Include my settings and counts to help debug (your resume, job text and letter are
+never included)". It only shows for the "Wrong result" type and only while a result exists (unlike the matcher's, it
+is not shown disabled when there is none).
 
 ## 5. Card, metadata, share image
 
@@ -186,6 +216,6 @@ Gemini is always faked in tests. The Resume Matcher's existing tests must keep p
 6. Form page (inputs, tone and length pills). Suggest "short" when the resume is under about 1,200 characters. ✅
 7. Loading and result view (editable letter, Copy, Download, Regenerate, gaps list). The result screen says
    "Check every fact before you send" and shows the word count and any style notes. ✅
-8. Feedback attachments for this app, with tests.
+8. Feedback attachments for this app, with tests. ✅
 9. Card goes live, metadata and share image.
 10. Full test run, build, screenshots on phone and desktop, then the pull request.

@@ -60,6 +60,28 @@ export function needsReplaceConfirm(current: string, original: string): boolean 
   return current !== original;
 }
 
+export type ReplaceAction = "regenerate" | "edit" | "reset";
+
+// The words in the "Replace your edits?" panel for the button that opened it.
+export function replacePanelWording(action: ReplaceAction): { text: string; confirm: string } {
+  if (action === "edit") {
+    return {
+      text: "Going back to the form drops the changes you made to this letter. You can write a new letter from there.",
+      confirm: "Edit inputs anyway",
+    };
+  }
+  if (action === "reset") {
+    return {
+      text: "Starting over clears the form and drops the changes you made to this letter.",
+      confirm: "Start over anyway",
+    };
+  }
+  return {
+    text: "Regenerating writes a new letter and replaces the changes you made to this one. It also counts toward your limit.",
+    confirm: "Replace my edits",
+  };
+}
+
 const HIGHLIGHT_NOTE =
   "Your resume doesn't show what you wanted to highlight, so we left it out. Add it to your resume, or write it in yourself.";
 const LENGTH_NOTE = "This letter is a bit shorter or longer than you picked. You can edit it freely.";

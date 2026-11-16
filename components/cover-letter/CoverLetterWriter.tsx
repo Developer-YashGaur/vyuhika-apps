@@ -22,6 +22,7 @@ import {
   suggestShort,
 } from "@/lib/cover-letter/form";
 import type { LetterLength, Tone } from "@/lib/cover-letter/schema";
+import { setLetterFeedbackDebug } from "@/lib/feedback/debug-store";
 import { sampleJobDescription, sampleResume } from "@/lib/samples";
 import { cleanText } from "@/lib/text-rules";
 
@@ -86,6 +87,7 @@ export default function CoverLetterWriter() {
 
   async function handleWrite() {
     if (!canWrite(resume, jobDescription)) return;
+    setLetterFeedbackDebug(null); // a new request starts, so no old result stays attachable
     setStep("loading");
     setError(null);
     scrollToTop();
@@ -101,11 +103,13 @@ export default function CoverLetterWriter() {
 
   // Back to the form with everything still filled in.
   function handleEdit() {
+    setLetterFeedbackDebug(null);
     setStep("form");
     scrollToTop();
   }
 
   function handleReset() {
+    setLetterFeedbackDebug(null);
     setResume("");
     setFileName(null);
     setJobDescription("");
@@ -269,6 +273,7 @@ export default function CoverLetterWriter() {
               tone={tone}
               length={length}
               companyName={companyName}
+              filled={{ company: !!companyName.trim(), role: !!roleTitle.trim(), highlight: !!highlight.trim() }}
               regenerate={requestLetter}
               onEdit={handleEdit}
               onReset={handleReset}

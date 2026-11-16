@@ -1,7 +1,7 @@
 import { Button, Heading, Link, Section, Text } from "@react-email/components";
 import EmailLayout, { MultilineText, colors } from "@/components/emails/EmailLayout";
 import type { Feedback } from "@/lib/feedback/schema";
-import { excerpt, feedbackTypeLabel } from "@/lib/feedback/email-text";
+import { LETTER_CONFIRMATION_LINE, excerpt, feedbackTypeLabel } from "@/lib/feedback/email-text";
 import { site } from "@/lib/site";
 
 // Confirmation to the visitor, sent only when they left an email address.
@@ -62,6 +62,11 @@ export default function FeedbackConfirmationEmail({ feedback, assetBaseUrl }: Pr
         {feedback.debug && (
           <Text style={{ margin: "10px 0 0", fontSize: "13px", lineHeight: "20px", color: colors.mist }}>
             You also shared your match score and keywords (not your resume or the job text).
+          </Text>
+        )}
+        {feedback.letterDebug && (
+          <Text style={{ margin: "10px 0 0", fontSize: "13px", lineHeight: "20px", color: colors.mist }}>
+            {LETTER_CONFIRMATION_LINE}
           </Text>
         )}
       </Section>

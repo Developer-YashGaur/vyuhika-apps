@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MATCHER_PATH } from "@/lib/feedback/rules";
+import { COVER_LETTER_PATH, MATCHER_PATH } from "@/lib/feedback/rules";
 import { sampleResume } from "@/lib/samples";
 
 // Tests the real /api/feedback route with the Resend email call faked (nothing is sent).
@@ -91,6 +91,49 @@ describe("POST /api/feedback", () => {
     });
     expect(response.status).toBe(400);
     expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  describe("a report from the Cover Letter Writer", () => {
+    const letterBody = {
+      ...body,
+      type: "wrong-result",
+      context: { ...body.context, path: COVER_LETTER_PATH },
+      debug: {
+        tone: "friendly",
+        length: "short",
+        wordCount: 190,
+        blanks: 1,
+        companyFilled: true,
+        roleFilled: false,
+        highlightFilled: false,
+        highlightHandling: "not-provided",
+        notes: ["length"],
+      },
+    };
+
+    it("sends the settings and counts in the email", async () => {
+      expect((await post(letterBody)).status).toBe(200);
+      const email = sendMock.mock.calls[0][0];
+      expect(email.text).toContain("Words in letter: 190");
+      expect(email.text).toContain("Server notes: length");
+      expect(email.html).toContain("Settings and counts shared by the visitor");
+    });
+
+    it.each(["letter", "resume", "jobDescription", "highlight", "highlightEvidence", "companyName", "roleTitle", "gaps"])(
+      "answers 400 and sends nothing when the debug block has %s",
+      async (name) => {
+        const response = await post({ ...letterBody, debug: { ...letterBody.debug, [name]: "secret text" } });
+        expect(response.status).toBe(400);
+        expect(sendMock).not.toHaveBeenCalled();
+        expect(JSON.stringify(errorLog.mock.calls)).not.toContain("secret text");
+      },
+    );
+
+    it("answers 400 for a forbidden name at the top of the request or in the context", async () => {
+      expect((await post({ ...letterBody, letter: "secret" })).status).toBe(400);
+      expect((await post({ ...letterBody, context: { ...letterBody.context, gaps: [] } })).status).toBe(400);
+      expect(sendMock).not.toHaveBeenCalled();
+    });
   });
 
   it("allows 3 messages per 10 minutes per visitor", async () => {

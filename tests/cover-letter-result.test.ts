@@ -9,6 +9,7 @@ import {
   needsReplaceConfirm,
   nextPlaceholderRange,
   noteMessages,
+  replacePanelWording,
 } from "@/lib/cover-letter/result";
 
 // The pure helpers behind the Cover Letter Writer result view.
@@ -156,5 +157,23 @@ describe("noteMessages", () => {
   it("ignores names it does not know and returns nothing for no notes", () => {
     expect(noteMessages([])).toEqual([]);
     expect(noteMessages(["something-new"])).toEqual([]);
+  });
+});
+
+describe("replacePanelWording (the shared \"Replace your edits?\" panel)", () => {
+  it("has its own text and confirm button for Regenerate, Edit inputs and Start over", () => {
+    const wording = (["regenerate", "edit", "reset"] as const).map((action) => replacePanelWording(action));
+    expect(wording.map((w) => w.confirm)).toEqual(["Replace my edits", "Edit inputs anyway", "Start over anyway"]);
+    expect(new Set(wording.map((w) => w.text)).size).toBe(3);
+  });
+
+  it("only Regenerate mentions the limit, since the other two don't send a request", () => {
+    expect(replacePanelWording("regenerate").text).toContain("counts toward your limit");
+    expect(replacePanelWording("edit").text).not.toContain("limit");
+    expect(replacePanelWording("reset").text).not.toContain("limit");
+  });
+
+  it("says plainly that edits are dropped", () => {
+    for (const action of ["edit", "reset"] as const) expect(replacePanelWording(action).text).toContain("changes you made");
   });
 });

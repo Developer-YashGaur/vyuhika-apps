@@ -10,6 +10,7 @@ export type LetterLength = (typeof LENGTHS)[number];
 
 // How the letter dealt with the "highlight" field (see lib/cover-letter/checks.ts).
 export const HIGHLIGHT_HANDLING = ["not-provided", "used", "gap"] as const;
+export type HighlightHandling = (typeof HIGHLIGHT_HANDLING)[number];
 
 export const COMPANY_MAX = 100;
 export const ROLE_MAX = 100;

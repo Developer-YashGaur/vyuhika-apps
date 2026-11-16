@@ -24,6 +24,7 @@ function render(over: Partial<CoverLetterResponse> = {}, props: { companyName?: 
       tone="friendly"
       length="medium"
       companyName={props.companyName ?? "Nimbus Cloud"}
+      filled={{ company: true, role: false, highlight: false }}
       regenerate={async () => answer}
       onEdit={noop}
       onReset={noop}
@@ -93,27 +94,42 @@ describe("LetterResult", () => {
   });
 });
 
-describe("privacy: nothing from this page goes to the feedback store or to a log", () => {
+describe("privacy: the page puts only a safe summary in the feedback store, and logs nothing", () => {
   beforeEach(() => vi.mocked(setFeedbackDebug).mockClear());
 
-  it("never calls the shared feedback store", () => {
+  it("never uses the Resume Matcher's slot of the feedback store", () => {
     render({ notes: ["length"] });
     renderToStaticMarkup(<CoverLetterWriter />);
     expect(setFeedbackDebug).not.toHaveBeenCalled();
   });
 
-  it("has no feedback or logging code in any file the page runs in the browser", () => {
+  // The files that talk to the feedback store. Every other file in the app must not mention it.
+  const STORE_USERS = [
+    "components/cover-letter/CoverLetterWriter.tsx",
+    "components/cover-letter/LetterResult.tsx",
+    "lib/cover-letter/feedback.ts",
+  ];
+
+  it("only the three store files mention feedback, and they only store null or the built summary", () => {
     const files = [
       ...readdirSync("components/cover-letter").map((f) => `components/cover-letter/${f}`),
       "lib/cover-letter/client.ts",
       "lib/cover-letter/form.ts",
       "lib/cover-letter/result.ts",
+      ...STORE_USERS.filter((f) => f.startsWith("lib/")),
     ];
     expect(files.length).toBeGreaterThanOrEqual(7);
-    for (const file of files) {
+    for (const file of new Set(files)) {
       const code = readFileSync(file, "utf8");
-      expect(code, `${file} must not use the feedback store`).not.toMatch(/feedback/i);
+      if (!STORE_USERS.includes(file)) expect(code, `${file} must not use the feedback store`).not.toMatch(/feedback/i);
       expect(code, `${file} must not log`).not.toMatch(/console\.|\bfetch\(|sendBeacon|gtag|analytics/);
+      expect(code, `${file} must not use the matcher's slot`).not.toMatch(/\bsetFeedbackDebug\(/);
+      for (const call of code.matchAll(/setLetterFeedbackDebug\(\s*([A-Za-z]+)/g)) {
+        expect(["null", "buildLetterFeedbackDebug"], `${file}: ${call[0]}`).toContain(call[1]);
+      }
+      for (const call of code.matchAll(/updateLetterBlanks\(\s*([a-z.A-Z]+)/g)) {
+        expect(call[1], `${file}: ${call[0]}`).toMatch(/^blanks(\.length)?$/);
+      }
     }
   });
 });

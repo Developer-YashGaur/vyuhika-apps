@@ -1,7 +1,9 @@
 // Checks the Cover Letter Writer form page in a real browser, with the API faked (no Gemini calls),
 // and takes screenshots of every state at phone and desktop width into screenshots/cover-letter-*.png.
 // It also presses the keys: arrow keys on the radio groups, Tab order and the button's disabled rules,
-// and drives the result view: Next blank, gap cards, Copy, Download, Regenerate and the confirm panel.
+// and drives the result view: Next blank, gap cards, Copy, Download, Regenerate and the "Replace your edits?" panel
+// (Regenerate, Edit inputs and Start over), and the feedback panel (the "settings and counts" checkbox,
+// what is sent, and when it is cleared). The feedback route is faked too, so no email is sent.
 // Usage: start the dev server (npm run dev), then run: node scripts/check-cover-letter-page.mjs
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
@@ -52,6 +54,7 @@ for (const { name, ...options } of sizes) {
   // Privacy: no letter or resume text in the console, and nothing sent to the feedback route.
   const logged = [];
   const feedbackCalls = [];
+  const feedbackSent = []; // the reports this script sends on purpose (the route is faked)
   page.on("console", (msg) => logged.push(msg.text()));
   page.on("request", (req) => req.url().includes("/api/feedback") && feedbackCalls.push(req.url()));
   const shot = (state, fullPage = true) => page.screenshot({ path: `screenshots/cover-letter-${name}-${state}.png`, fullPage });
@@ -63,8 +66,26 @@ for (const { name, ...options } of sizes) {
   // People click the whole pill (the radio itself is visually hidden).
   const pick = (group, label) => group.locator("label", { hasText: label }).click();
 
+  // The feedback panel: open it, pick a type, and look for the "settings and counts" checkbox.
+  const settingsBox = page.getByRole("checkbox", { name: /Include my settings and counts/ });
+  const feedbackDialog = page.getByRole("dialog");
+  async function openFeedback(type) {
+    await page.getByRole("button", { name: "Send feedback" }).click();
+    await feedbackDialog.waitFor();
+    await feedbackDialog.locator("label", { hasText: type }).click();
+    await page.waitForTimeout(250);
+  }
+  async function closeFeedback() {
+    await page.keyboard.press("Escape");
+    await feedbackDialog.waitFor({ state: "hidden" });
+  }
+
   async function fresh(route) {
     await page.unrouteAll();
+    await page.route("**/api/feedback", (route) => {
+      feedbackSent.push(route.request().postDataJSON());
+      return route.fulfill({ json: { ok: true } });
+    });
     await page.route("**/api/cover-letter", route);
     await page.goto(url, { waitUntil: "networkidle" });
     await page.waitForTimeout(1000);
@@ -213,6 +234,27 @@ for (const { name, ...options } of sizes) {
   await page.waitForTimeout(800); // smooth scrolling settles
   await shot("result-blanks");
 
+  // ---- feedback panel: the checkbox only shows for "Wrong result", and only because a result exists ----
+  await openFeedback("Bug");
+  assert.equal(await settingsBox.count(), 0, "no checkbox for a Bug report");
+  await feedbackDialog.locator("label", { hasText: "Wrong result" }).click();
+  await settingsBox.waitFor();
+  assert.equal(await settingsBox.isChecked(), false, "the checkbox starts unticked");
+  assert.equal(await settingsBox.isEnabled(), true);
+  assert.equal(
+    await feedbackDialog.locator("label.feedback-check").innerText(),
+    "Include my settings and counts to help debug (your resume, job text and letter are never included)",
+  );
+  assert.equal(await feedbackDialog.getByText(/match score|score and keywords/).count(), 0, "no matcher wording");
+  await feedbackDialog.getByRole("textbox", { name: "Your message" }).fill("The letter has the wrong length for what I picked.");
+  await settingsBox.focus();
+  await page.keyboard.press("Space");
+  assert.equal(await settingsBox.isChecked(), true, "Space ticks it (keyboard friendly)");
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `screenshots/cover-letter-${name}-feedback-panel.png` });
+  await closeFeedback();
+  assert.deepEqual(feedbackCalls, [], "nothing is sent just by looking at the panel");
+
   // The letter box grows with its text and never gets its own scrollbar.
   const noInnerScroll = () => letterBox.evaluate((el) => el.scrollHeight <= el.clientHeight + 1);
   assert.ok(await noInnerScroll(), "letter box is as tall as its text");
@@ -283,6 +325,61 @@ for (const { name, ...options } of sizes) {
   await shot("result-filled");
   const edited = await letterBox.inputValue();
 
+  // Sending a report: the blank count is the one at the moment of sending (0 now, it was 2), and only the
+  // safe summary goes along. Nothing from the letter, the form or the gaps.
+  await openFeedback("Wrong result");
+  await feedbackDialog.getByRole("textbox", { name: "Your message" }).fill("The letter has the wrong length for what I picked.");
+  await settingsBox.check();
+  await feedbackDialog.getByRole("button", { name: "Send" }).click();
+  await feedbackDialog.getByText("Thanks, it really helps").waitFor();
+  assert.equal(feedbackSent.length, 1);
+  assert.equal(feedbackSent[0].type, "wrong-result");
+  assert.equal(feedbackSent[0].context.path, "/apps/cover-letter-writer");
+  assert.deepEqual(feedbackSent[0].debug, {
+    tone: "friendly",
+    length: "short",
+    wordCount: fakeAnswer.letter.trim().split(/\s+/).length,
+    blanks: 0,
+    companyFilled: true,
+    roleFilled: false,
+    highlightFilled: false,
+    highlightHandling: "gap",
+    notes: ["length", "cliche", "highlight-not-addressed"], // the server's order, not the order they came in
+  });
+  const sentJson = JSON.stringify(feedbackSent[0]);
+  for (const text of ["Dear Hiring Manager", "Nimbus", "ShopLane", "Priya", "checkout", "Next.js", "AWS", "moved the checkout app", "Docker"]) {
+    assert.ok(!sentJson.includes(text), `the report never contains "${text}"`);
+  }
+  await feedbackDialog.getByRole("button", { name: "Close" }).first().click();
+  await feedbackDialog.waitFor({ state: "hidden" });
+
+  // Edit inputs and Start over share the "Replace your edits?" panel once the letter was edited.
+  // (Keep my edits and Escape stay on the result, and focus goes back to the button that was pressed.)
+  const replacePanel = page.getByRole("alertdialog", { name: "Replace your edits?" });
+  const editInputs = page.getByRole("button", { name: "Edit inputs" });
+  const startOver = page.getByRole("button", { name: "Start over" });
+  await editInputs.click();
+  await replacePanel.waitFor();
+  assert.match(await replacePanel.innerText(), /Going back to the form drops the changes you made to this letter/);
+  assert.equal(await replacePanel.getByRole("button", { name: "Edit inputs anyway" }).count(), 1);
+  assert.equal(await replacePanel.getByRole("button", { name: "Start over anyway" }).count(), 0);
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Keep my edits", "the safe button has focus");
+  await page.keyboard.press("Escape");
+  await replacePanel.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Edit inputs", "focus returns to Edit inputs");
+  assert.equal(await letterBox.inputValue(), edited, "still on the result with the edits");
+  await startOver.click();
+  await replacePanel.waitFor();
+  assert.match(await replacePanel.innerText(), /Starting over clears the form and drops the changes/);
+  await page.keyboard.press("Tab"); // Keep my edits -> the confirm button
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Start over anyway", "reachable with the keyboard");
+  await page.keyboard.press("Shift+Tab");
+  await page.keyboard.press("Enter"); // Keep my edits
+  await replacePanel.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), "Start over", "focus returns to Start over");
+  assert.equal(await letterBox.inputValue(), edited);
+  assert.equal(await page.getByRole("heading", { name: "Your cover letter" }).count(), 1, "still on the result");
+
   // Regenerate after edits asks first (an accessible panel, not window.confirm); Escape keeps the edits.
   let nativeDialogs = 0;
   page.on("dialog", (d) => {
@@ -342,17 +439,60 @@ for (const { name, ...options } of sizes) {
   assert.equal(nativeDialogs, 0, "window.confirm is never used");
 
   // Edit inputs goes back to the form with everything still filled in; Start over clears it.
+  // A letter that was not edited has nothing to lose, so neither asks first.
   await page.getByRole("button", { name: "Edit inputs" }).click();
   await button.waitFor();
+  assert.equal(await replacePanel.count(), 0, "no panel for Edit inputs when the letter was not edited");
   assert.ok((await page.locator("#resume").inputValue()).length > 200);
   assert.equal(await page.getByLabel("Company name").inputValue(), "Nimbus Cloud");
   assert.ok(await tone.getByRole("radio", { name: /Friendly/ }).isChecked());
   await button.click();
   await page.getByRole("heading", { name: "Your cover letter" }).waitFor();
+
+  // After Edit inputs and again after Start over, the feedback panel has no checkbox: the summary was cleared.
+  // (Edit inputs first, with an edited letter this time: the panel asks, and "Edit inputs anyway" goes back.)
+  await letterBox.evaluate((el) => el.focus());
+  await page.keyboard.type(" Edited once.");
+  await page.getByRole("button", { name: "Edit inputs" }).click();
+  await replacePanel.waitFor();
+  await replacePanel.getByRole("button", { name: "Edit inputs anyway" }).click();
+  await button.waitFor();
+  assert.equal(await page.getByLabel("Company name").inputValue(), "Nimbus Cloud", "Edit inputs keeps the form filled in");
+  await openFeedback("Wrong result");
+  assert.equal(await settingsBox.count(), 0, "no checkbox after Edit inputs");
+  await closeFeedback();
+
+  // A new request clears it too: while the letter is being written there is no checkbox.
+  await page.unroute("**/api/cover-letter");
+  await page.route("**/api/cover-letter", () => {}); // never answers
+  await button.click();
+  await page.getByText("This takes a few seconds.").waitFor();
+  await openFeedback("Wrong result");
+  assert.equal(await settingsBox.count(), 0, "no checkbox while a new letter is being written");
+  await closeFeedback();
+  await page.unroute("**/api/cover-letter");
+  await page.route("**/api/cover-letter", (route) => route.fulfill({ json: fakeAnswer }));
+  await page.reload({ waitUntil: "networkidle" });
+  await loadSamples();
+  await page.getByLabel("Company name").fill("Nimbus Cloud");
+  await button.click();
+  await page.getByRole("heading", { name: "Your cover letter" }).waitFor();
+  await openFeedback("Wrong result");
+  await settingsBox.waitFor(); // a new result: the checkbox is back
+  await closeFeedback();
+
+  await letterBox.evaluate((el) => el.focus());
+  await page.keyboard.type(" Edited again.");
   await page.getByRole("button", { name: "Start over" }).click();
+  await replacePanel.waitFor();
+  await replacePanel.getByRole("button", { name: "Start over anyway" }).click();
   await button.waitFor();
   assert.equal(await page.locator("#resume").inputValue(), "", "Start over clears the form");
   assert.equal(await page.getByLabel("Company name").inputValue(), "");
+  await openFeedback("Wrong result");
+  assert.equal(await settingsBox.count(), 0, "no checkbox after Start over");
+  await closeFeedback();
+  assert.equal(feedbackSent.length, 1, "only the one report this script sent on purpose");
 
   // Download without a company name uses the plain file name.
   reply = { json: fakeAnswer };
@@ -363,7 +503,7 @@ for (const { name, ...options } of sizes) {
   assert.equal(plain.suggestedFilename(), "cover-letter.txt");
 
   // Privacy: nothing was logged and nothing went to the feedback route.
-  assert.deepEqual(feedbackCalls, [], "no call to /api/feedback");
+  assert.equal(feedbackCalls.length, feedbackSent.length, "no call to /api/feedback except the report sent on purpose");
   assert.ok(!logged.some((line) => /Dear Hiring Manager|Priya|ShopLane/.test(line)), "no letter or resume text in the console");
   assert.equal(await page.evaluate(() => JSON.stringify([localStorage, sessionStorage]).includes("Hiring Manager")), false);
 

@@ -1,4 +1,4 @@
-import { FEEDBACK_TYPES } from "@/lib/feedback/rules";
+import { FEEDBACK_TYPES, type LetterFeedbackDebug } from "@/lib/feedback/rules";
 import type { Feedback } from "@/lib/feedback/schema";
 import { site } from "@/lib/site";
 
@@ -20,6 +20,25 @@ export function excerpt(text: string, max: number): string {
   if (trimmed.length <= max) return trimmed;
   return `${trimmed.slice(0, max).trimEnd()}…`;
 }
+
+// The labelled lines of the cover letter app's debug block (the HTML email shows the same rows).
+// Only settings, counts and yes/no answers: this is all the schema lets through.
+export function letterDebugRows(debug: LetterFeedbackDebug): [string, string][] {
+  const yesNo = (value: boolean) => (value ? "yes" : "no");
+  return [
+    ["Tone", debug.tone],
+    ["Length", debug.length],
+    ["Words in letter", String(debug.wordCount)],
+    ["Blanks left", String(debug.blanks)],
+    ["Company filled in", yesNo(debug.companyFilled)],
+    ["Role filled in", yesNo(debug.roleFilled)],
+    ["Highlight filled in", yesNo(debug.highlightFilled)],
+    ["Highlight handling", debug.highlightHandling],
+    ["Server notes", debug.notes.join(", ") || "none"],
+  ];
+}
+
+export const LETTER_DEBUG_TITLE = "Settings and counts shared by the visitor (their resume, job text and letter are never included)";
 
 // e.g. "[Vyuhika] Bug: The upload button does nothing on my phone…"
 // Line breaks and repeated spaces are collapsed, since a subject must be one line.
@@ -57,6 +76,9 @@ export function notificationText(feedback: Feedback, receivedAt: Date): string {
     `Screen: ${feedback.context.browser}`,
     `Reply to: ${feedback.email ?? "Not given"}`,
   ];
+  if (feedback.letterDebug) {
+    lines.push("", `${LETTER_DEBUG_TITLE}:`, ...letterDebugRows(feedback.letterDebug).map(([name, value]) => `${name}: ${value}`));
+  }
   if (feedback.debug) {
     lines.push(
       "",
@@ -71,6 +93,9 @@ export function notificationText(feedback: Feedback, receivedAt: Date): string {
   return lines.join("\n");
 }
 
+export const LETTER_CONFIRMATION_LINE =
+  "You also shared your letter settings and counts (not your resume, job text or letter).";
+
 export function confirmationText(feedback: Feedback, siteUrl: string, excerptChars: number): string {
   const lines = [
     "Thanks, we got your feedback",
@@ -81,6 +106,7 @@ export function confirmationText(feedback: Feedback, siteUrl: string, excerptCha
     excerpt(feedback.message, excerptChars),
   ];
   if (feedback.debug) lines.push("You also shared your match score and keywords (not your resume or the job text).");
+  if (feedback.letterDebug) lines.push(LETTER_CONFIRMATION_LINE);
   lines.push(
     "",
     "We read every message. If you asked a question, we'll reply to this address.",

@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { AiError } from "@/lib/ai/errors";
 import type { CoverLetterResponse } from "@/lib/cover-letter/client";
+import { buildLetterFeedbackDebug } from "@/lib/cover-letter/feedback";
 import { LENGTH_OPTIONS, TONE_OPTIONS } from "@/lib/cover-letter/form";
 import {
   blanksLabel,
@@ -14,9 +15,12 @@ import {
   needsReplaceConfirm,
   nextPlaceholderRange,
   noteMessages,
+  replacePanelWording,
+  type ReplaceAction,
   type Range,
 } from "@/lib/cover-letter/result";
 import type { LetterLength, Tone } from "@/lib/cover-letter/schema";
+import { setLetterFeedbackDebug, updateLetterBlanks } from "@/lib/feedback/debug-store";
 
 // The result view: the editable letter on the left, the "Gaps to fill" cards on the right.
 // The letter text lives here, so the person's edits survive a failed regenerate.
@@ -33,24 +37,31 @@ type Props = {
   tone: Tone;
   length: LetterLength;
   companyName: string;
+  // Which optional fields were filled in (yes or no only; the feedback panel can attach this, never the text).
+  filled: { company: boolean; role: boolean; highlight: boolean };
   // Asks the server for a new letter with the same inputs. Throws an AiError when it fails.
   regenerate: () => Promise<CoverLetterResponse>;
   onEdit: () => void;
   onReset: () => void;
 };
 
-export default function LetterResult({ initial, tone, length, companyName, regenerate, onEdit, onReset }: Props) {
+export default function LetterResult({ initial, tone, length, companyName, filled, regenerate, onEdit, onReset }: Props) {
   const [answer, setAnswer] = useState(initial);
   const [letter, setLetter] = useState(initial.letter);
   const [copied, setCopied] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [busy, setBusy] = useState(false);
   const [regenError, setRegenError] = useState<AiError | null>(null);
-  const [confirming, setConfirming] = useState(false);
+  // Which button is waiting for an answer from the "Replace your edits?" panel (null when no panel shows).
+  const [confirming, setConfirming] = useState<ReplaceAction | null>(null);
 
   const headingRef = useRef<HTMLHeadingElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const regenerateRef = useRef<HTMLButtonElement>(null);
+  const buttonRefs = {
+    regenerate: useRef<HTMLButtonElement>(null),
+    edit: useRef<HTMLButtonElement>(null),
+    reset: useRef<HTMLButtonElement>(null),
+  };
   const keepRef = useRef<HTMLButtonElement>(null);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -58,6 +69,25 @@ export default function LetterResult({ initial, tone, length, companyName, regen
   const notes = noteMessages(answer.notes);
   const toneLabel = TONE_OPTIONS.find((o) => o.value === tone)?.label ?? tone;
   const lengthLabel = LENGTH_OPTIONS.find((o) => o.value === length)?.label ?? length;
+
+  // The feedback panel may attach a safe summary of this result: settings and counts, never any text.
+  // It is stored when a letter arrives (the first one, or after Regenerate) and cleared when this view goes away.
+  const { company, role, highlight } = filled;
+  useEffect(() => {
+    setLetterFeedbackDebug(
+      buildLetterFeedbackDebug({
+        tone,
+        length,
+        letter: answer.letter,
+        filled: { company, role, highlight },
+        highlightHandling: answer.highlightHandling,
+        notes: answer.notes,
+      }),
+    );
+  }, [answer, tone, length, company, role, highlight]);
+  useEffect(() => () => setLetterFeedbackDebug(null), []);
+  // Only the number of blanks follows the person's edits.
+  useEffect(() => updateLetterBlanks(blanks.length), [blanks.length]);
 
   // Screen readers start at the new heading, like on the error screen.
   useEffect(() => {
@@ -135,8 +165,9 @@ export default function LetterResult({ initial, tone, length, companyName, regen
   }
 
   async function runRegenerate() {
-    setConfirming(false);
+    setConfirming(null);
     setRegenError(null);
+    setLetterFeedbackDebug(null); // a new request has started
     setBusy(true);
     setAnnouncement("Writing a new letter…");
     try {
@@ -147,20 +178,48 @@ export default function LetterResult({ initial, tone, length, companyName, regen
     } catch (err) {
       // The current letter and the person's edits stay exactly as they were.
       setRegenError(err instanceof AiError ? err : new AiError("ai-failed"));
+      // The old letter is still on screen, so its summary comes back.
+      setLetterFeedbackDebug(
+        buildLetterFeedbackDebug({
+          tone,
+          length,
+          letter: answer.letter,
+          filled: { company, role, highlight },
+          highlightHandling: answer.highlightHandling,
+          notes: answer.notes,
+        }),
+      );
+      updateLetterBlanks(blanks.length);
       setAnnouncement("");
     } finally {
       setBusy(false);
     }
   }
 
-  function handleRegenerate() {
-    if (needsReplaceConfirm(letter, answer.letter)) setConfirming(true);
-    else runRegenerate();
+  // Regenerate, Edit inputs and Start over all throw away the person's edits, so they ask first.
+  // A letter that was not edited has nothing to lose, so no panel shows.
+  function ask(action: ReplaceAction) {
+    if (needsReplaceConfirm(letter, answer.letter)) setConfirming(action);
+    else runAction(action);
   }
 
+  function runAction(action: ReplaceAction) {
+    if (action === "regenerate") runRegenerate();
+    else if (action === "edit") onEdit();
+    else onReset();
+  }
+
+  function confirmReplace() {
+    if (!confirming) return;
+    setConfirming(null);
+    runAction(confirming);
+  }
+
+  // The button that opened the panel gets focus back.
   function keepEdits() {
-    setConfirming(false);
-    regenerateRef.current?.focus();
+    const action = confirming;
+    setConfirming(null);
+    if (action) buttonRefs[action].current?.focus();
   }
 
   return (
@@ -223,18 +282,18 @@ export default function LetterResult({ initial, tone, length, companyName, regen
             </button>
             <button
               type="button"
-              ref={regenerateRef}
-              onClick={handleRegenerate}
+              ref={buttonRefs.regenerate}
+              onClick={() => ask("regenerate")}
               disabled={busy}
               aria-busy={busy}
               className="btn-ghost btn-sm"
             >
               {busy ? "Writing…" : "Regenerate"}
             </button>
-            <button type="button" onClick={onEdit} className="btn-ghost btn-sm">
+            <button type="button" ref={buttonRefs.edit} onClick={() => ask("edit")} className="btn-ghost btn-sm">
               Edit inputs
             </button>
-            <button type="button" onClick={onReset} className="btn-ghost btn-sm">
+            <button type="button" ref={buttonRefs.reset} onClick={() => ask("reset")} className="btn-ghost btn-sm">
               Start over
             </button>
           </div>
@@ -251,15 +310,14 @@ export default function LetterResult({ initial, tone, length, companyName, regen
                 Replace your edits?
               </h3>
               <p id="replace-text">
-                Regenerating writes a new letter and replaces the changes you made to this one. It also counts toward
-                your limit.
+                {replacePanelWording(confirming).text}
               </p>
               <div className="mt-1 flex flex-wrap gap-3">
                 <button type="button" ref={keepRef} onClick={keepEdits} className="btn-ghost btn-sm">
                   Keep my edits
                 </button>
-                <button type="button" onClick={runRegenerate} className="btn-glow btn-sm">
-                  Replace my edits
+                <button type="button" onClick={confirmReplace} className="btn-glow btn-sm">
+                  {replacePanelWording(confirming).confirm}
                 </button>
               </div>
             </div>
