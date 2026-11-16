@@ -1,3 +1,5 @@
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Instrument_Sans, Unbounded } from "next/font/google";
 import Backdrop from "@/components/Backdrop";
 import FeedbackWidget from "@/components/feedback/FeedbackWidget";
@@ -34,6 +36,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <div className="relative z-10">{children}</div>
           <FeedbackWidget />
         </MotionProvider>
+        {/* Visitor counts (page views, countries, devices, referrers) and page speed. No cookies, nothing visible. */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { trackEvent } from "@/lib/analytics";
 import { ACCEPT_ATTRIBUTE, ResumeFileError, readResumeFile } from "@/lib/resume-file";
+import { getFileKind } from "@/lib/resume-file/rules";
 
 // Drag-and-drop (or click to browse) for a resume file. The file is read in the
 // browser and its text is handed to `onText`; nothing is uploaded anywhere.
@@ -24,6 +26,9 @@ export default function ResumeDropzone({ fileName, onText, onRemove }: Props) {
     setReading(true);
     try {
       onText(await readResumeFile(file), file.name);
+      // Counted after the file was read: only its type (pdf, docx or txt), never its name or its text.
+      const kind = getFileKind(file);
+      if (kind) trackEvent("resume_file_selected", { file_type: kind });
     } catch (err) {
       setError(
         err instanceof ResumeFileError

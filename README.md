@@ -17,6 +17,10 @@ Vyuhika Apps: a growing collection of useful digital tools, some free and some p
 
 The list on the home page lives in `lib/apps.ts`. An app with an `externalUrl` (like Koshvia) is built and hosted somewhere else: its card opens that site in a new tab, it has no page or API here, it is not in the sitemap, and this code never calls it. The sitemap (`/sitemap.xml`) lists the home page and every live app on this site, and `robots.txt` blocks `/api/` and `/dev/`.
 
+## Privacy and analytics
+
+We use cookie-free Vercel analytics to count page views, countries, devices, referrers and page speed, plus five fixed events (app name, tone, length, feedback type or resume file type only; custom events show on Vercel's Pro plan), and we never send resume, job, letter, highlight, company or role text, file names, email addresses or typed links.
+
 ## Environment variables
 
 Put these in `.env.local` for local development, and in the Vercel project's Environment Variables for production. Never commit real values.
@@ -24,6 +28,7 @@ Put these in `.env.local` for local development, and in the Vercel project's Env
 | Name | Required | What it's for |
 |---|---|---|
 | `GEMINI_API_KEY` | Yes | Google Gemini API key, used by the Resume Matcher (`/api/analyze`) and the Cover Letter Writer (`/api/cover-letter`). Secret. |
+| `GOOGLE_SITE_VERIFICATION` | No | The code from Google Search Console (the `content` of the verification meta tag). Adds `<meta name="google-site-verification">` only when set. |
 | `GEMINI_MODEL` | No | Gemini model name. Defaults to `gemini-3.5-flash-lite`. |
 | `GEMINI_THINKING_LEVEL` | No | `minimal`, `low`, `medium` or `high`. Not sent by default: Google's docs say the default Gemini 3.x Flash-Lite models already think at `minimal`, the lowest level. A higher level is slower. |
 | `GEMINI_FALLBACK_MODEL` | No | Tried once if the main model keeps failing with temporary errors (HTTP 500, 503, 504 or a short 429). Defaults to `gemini-3.1-flash-lite`. |

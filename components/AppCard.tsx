@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
 import AppIcon from "@/components/AppIcon";
 import ExternalHint from "@/components/ExternalHint";
+import { trackEvent } from "@/lib/analytics";
 import { appHref, isExternal, pricingLabel, type AppInfo } from "@/lib/apps";
 import { externalLinkProps } from "@/lib/site";
 
@@ -99,7 +100,13 @@ export default function AppCard({ app, featured = false, cellClass = "" }: Props
         className={`bento-card ${app.pricing === "pro" ? "card-pro" : "card-free"} ${isLive ? "" : "is-locked"}`}
       >
         {isLive && external ? (
-          <a href={appHref(app)} {...externalLinkProps} className="bento-inner">
+          <a
+            href={appHref(app)}
+            {...externalLinkProps}
+            className="bento-inner"
+            onClick={() => trackEvent("external_app_clicked", { app: app.slug })}
+            onAuxClick={(e) => e.button === 1 && trackEvent("external_app_clicked", { app: app.slug })} // middle click
+          >
             {content}
           </a>
         ) : isLive ? (

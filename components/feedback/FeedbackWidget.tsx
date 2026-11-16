@@ -2,6 +2,7 @@
 
 import { useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { motion } from "framer-motion";
+import { pageName, trackEvent } from "@/lib/analytics";
 import { sendFeedback } from "@/lib/feedback/client";
 import { useFeedbackDebug, useLetterFeedbackDebug } from "@/lib/feedback/debug-store";
 import {
@@ -124,6 +125,7 @@ export default function FeedbackWidget() {
               : undefined,
       });
       setStatus("sent");
+      trackEvent("feedback_sent", { type, page: pageName(path) }); // the type and a fixed page word, never the message
     } catch (err) {
       setError((err as Error).message);
       setStatus("editing");

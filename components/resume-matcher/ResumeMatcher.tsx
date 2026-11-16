@@ -12,6 +12,7 @@ import { AiError, type AiErrorCode } from "@/lib/ai/errors";
 import { setFeedbackDebug } from "@/lib/feedback/debug-store";
 import { sampleJobDescription, sampleResume } from "@/lib/samples";
 import type { MatchResult } from "@/lib/types";
+import { trackEvent } from "@/lib/analytics";
 import { MAX_CHARS, MIN_CHARS, cleanText } from "@/lib/text-rules";
 import { canAnalyze, isTooLong } from "@/lib/validation";
 
@@ -67,6 +68,7 @@ export default function ResumeMatcher() {
     try {
       setResult(await requestAnalysis(cleanText(resume), cleanText(jobDescription)));
       setStep("results");
+      trackEvent("resume_analyzed", { app: "resume-matcher" }); // counted only after a successful analysis
     } catch (err) {
       setError(err instanceof AiError ? err : new AiError("ai-failed"));
       setStep("error");
