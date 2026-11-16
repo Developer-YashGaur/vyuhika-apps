@@ -9,7 +9,7 @@ const siteName = "Vyuhika Apps";
 const description = `Useful AI tools, some free and some paid. ${site.tagline}`;
 
 export const siteMetadata: Metadata = {
-  metadataBase: new URL("https://apps.vyuhika.com"),
+  metadataBase: new URL(site.url),
   title: { default: siteName, template: `%s | ${siteName}` },
   description,
   applicationName: siteName,
@@ -58,5 +58,29 @@ export const resumeMatcherMetadata: Metadata = {
     title: `${matcherTitle} | ${siteName}`,
     description: matcherDescription,
     images: [{ url: BRAND_FILES.ogResumeMatcher, alt: "Resume Matcher by Vyuhika Apps" }],
+  },
+};
+
+const letterTitle = "Cover Letter Writer";
+const letterDescription =
+  "Paste your resume and a job description. Get a tailored cover letter that only uses what your resume shows, with blanks where you add your own examples. Free.";
+
+export const coverLetterWriterMetadata: Metadata = {
+  title: letterTitle,
+  description: letterDescription,
+  openGraph: {
+    type: "website",
+    siteName,
+    url: "/apps/cover-letter-writer",
+    title: `${letterTitle} | ${siteName}`,
+    description: letterDescription,
+    locale: "en",
+    images: [{ url: BRAND_FILES.ogCoverLetterWriter, ...OG_IMAGE_SIZE, alt: "Cover Letter Writer by Vyuhika Apps" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${letterTitle} | ${siteName}`,
+    description: letterDescription,
+    images: [{ url: BRAND_FILES.ogCoverLetterWriter, alt: "Cover Letter Writer by Vyuhika Apps" }],
   },
 };

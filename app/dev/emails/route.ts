@@ -5,14 +5,15 @@ import { sampleFeedback } from "@/lib/feedback/email-samples";
 // Blocked in production builds (including Vercel previews), where it answers 404.
 
 const templates = ["notification", "confirmation"] as const;
-const samples = ["bug", "wrong-result"] as const;
+const samples = ["bug", "wrong-result", "letter"] as const;
 
 export async function GET(request: Request) {
   if (process.env.NODE_ENV === "production") return new Response("Not found", { status: 404 });
 
   const url = new URL(request.url);
   const template = url.searchParams.get("template");
-  const sample = url.searchParams.get("sample") === "bug" ? "bug" : "wrong-result";
+  const requested = url.searchParams.get("sample");
+  const sample = samples.find((s) => s === requested) ?? "wrong-result";
   const format = url.searchParams.get("format");
 
   if (!templates.includes(template as (typeof templates)[number])) {
@@ -33,9 +34,10 @@ export async function GET(request: Request) {
 
   // Load images from this dev server, since they aren't deployed yet.
   const feedback = sampleFeedback[sample];
+  const receivedAt = new Date(sample === "letter" ? "2026-11-16T09:30:09.000Z" : "2026-11-13T10:52:14.000Z");
   const email =
     template === "notification"
-      ? await buildNotificationEmail(feedback, url.origin, new Date("2026-11-13T10:52:14.000Z"))
+      ? await buildNotificationEmail(feedback, url.origin, receivedAt)
       : await buildConfirmationEmail(feedback, url.origin);
 
   if (format === "text") {

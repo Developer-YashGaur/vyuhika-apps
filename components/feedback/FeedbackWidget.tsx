@@ -3,8 +3,9 @@
 import { useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { motion } from "framer-motion";
 import { sendFeedback } from "@/lib/feedback/client";
-import { useFeedbackDebug } from "@/lib/feedback/debug-store";
+import { useFeedbackDebug, useLetterFeedbackDebug } from "@/lib/feedback/debug-store";
 import {
+  COVER_LETTER_PATH,
   FEEDBACK_TYPES,
   MATCHER_PATH,
   MESSAGE_MAX,
@@ -26,6 +27,7 @@ export default function FeedbackWidget() {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const ids = useId();
   const debug = useFeedbackDebug();
+  const letterDebug = useLetterFeedbackDebug();
 
   const [open, setOpen] = useState(false);
   const [path, setPath] = useState("/");
@@ -44,6 +46,8 @@ export default function FeedbackWidget() {
   const emailOk = email.trim() === "" || isValidEmail(email.trim());
   const onMatcher = path === MATCHER_PATH;
   const showResultOption = onMatcher && type === "wrong-result";
+  // On the letter page the option only shows once a letter exists.
+  const showLetterOption = path === COVER_LETTER_PATH && type === "wrong-result" && !!letterDebug;
 
   function openPanel() {
     // Read the path when opening (not during render) so server and browser HTML always match.
@@ -110,8 +114,14 @@ export default function FeedbackWidget() {
           timestamp: new Date().toISOString(),
           browser: describeBrowser(navigator.userAgent, window.innerWidth, window.innerHeight),
         },
-        // Only score, summary and keywords; the store never holds resume or job text.
-        debug: showResultOption && includeResult && debug ? debug : undefined,
+        // Only what each app's store keeps (the matcher's score and keywords, or the letter app's settings and
+        // counts); the stores never hold resume, job or letter text.
+        debug:
+          showResultOption && includeResult && debug
+            ? debug
+            : showLetterOption && includeResult
+              ? letterDebug
+              : undefined,
       });
       setStatus("sent");
     } catch (err) {
@@ -276,6 +286,15 @@ export default function FeedbackWidget() {
                     <span>
                       Include my score and keywords to help debug (your resume and job text are never included)
                       {!debug && <span className="mt-1 block text-mist">Run an analysis first to include a result.</span>}
+                    </span>
+                  </label>
+                )}
+
+                {showLetterOption && (
+                  <label className="feedback-check">
+                    <input type="checkbox" checked={includeResult} onChange={(e) => setIncludeResult(e.target.checked)} />
+                    <span>
+                      Include my settings and counts to help debug (your resume, job text and letter are never included)
                     </span>
                   </label>
                 )}

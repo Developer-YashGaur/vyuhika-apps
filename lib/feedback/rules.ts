@@ -1,3 +1,4 @@
+import type { HighlightHandling, LetterLength, Tone } from "@/lib/cover-letter/schema";
 import type { MatchResult } from "@/lib/types";
 
 // Feedback rules shared by the browser (form) and the server (API route).
@@ -18,6 +19,9 @@ export const EMAIL_MAX = 254;
 // The only page where results can be attached to a "Wrong result" report.
 export const MATCHER_PATH = "/apps/resume-matcher";
 
+// The Cover Letter Writer's page. Its reports may attach counts and settings only (see LetterFeedbackDebug).
+export const COVER_LETTER_PATH = "/apps/cover-letter-writer";
+
 // The parts of a result that may be attached to feedback. Never the resume or job text.
 export type FeedbackDebug = Pick<MatchResult, "score" | "summary" | "matchedKeywords" | "missingKeywords">;
 
@@ -30,6 +34,20 @@ export function pickDebugInfo(result: FeedbackDebug): FeedbackDebug {
     missingKeywords: [...result.missingKeywords],
   };
 }
+
+// What a "Wrong result" report from the Cover Letter Writer may attach: settings, counts and yes/no answers.
+// Never the letter, resume, job text, company, role, highlight, highlightEvidence or gap labels.
+export type LetterFeedbackDebug = {
+  tone: Tone;
+  length: LetterLength;
+  wordCount: number;
+  blanks: number; // blanks still in the letter when the report is sent
+  companyFilled: boolean;
+  roleFilled: boolean;
+  highlightFilled: boolean;
+  highlightHandling: HighlightHandling;
+  notes: string[]; // names of the server's style notes, for example ["length"]
+};
 
 // A simple check (something@something.something), good enough to catch typos.
 export function isValidEmail(email: string): boolean {

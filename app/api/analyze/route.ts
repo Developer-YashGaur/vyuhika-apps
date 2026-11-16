@@ -1,8 +1,9 @@
 import "server-only";
 import { analyzeMatch } from "@/lib/analyze/analyze";
-import { ANALYZE_ERROR_MESSAGES, AnalyzeError, type AnalyzeErrorCode } from "@/lib/analyze/errors";
-import { createGeminiGenerate } from "@/lib/analyze/gemini";
+import { AI_ERROR_MESSAGES, AiError } from "@/lib/ai/errors";
+import { createGeminiGenerate } from "@/lib/ai/gemini";
 import { parseAnalyzeInput } from "@/lib/analyze/input";
+import { errorResponse, readJsonBody } from "@/lib/api/route-helpers";
 import { DAY_MS, MINUTE_MS, createRateLimiter, getClientIp } from "@/lib/rate-limit";
 
 // POST /api/analyze with { resume, jobDescription } → a MatchResult (see lib/types.ts).
@@ -17,34 +18,16 @@ const limiter = createRateLimiter([
   { name: "minute", max: 5, windowMs: MINUTE_MS },
 ]);
 
-const STATUS: Record<AnalyzeErrorCode, number> = {
-  "invalid-input": 400,
-  "rate-limited": 429,
-  timeout: 504,
-  "ai-failed": 502,
-  offline: 503, // only used by the browser, listed for completeness
-};
-
-function errorResponse(code: AnalyzeErrorCode, message = ANALYZE_ERROR_MESSAGES[code], headers?: HeadersInit) {
-  return Response.json({ error: { code, message } }, { status: STATUS[code], headers });
-}
+// Vercel's Hobby plan allows up to 300 s (with Fluid compute, the default). The AI time limit is 50 s
+// (AI_TIMEOUT_MS), so 60 s covers a slow call, a temporary-error retry, the fallback model and the checks.
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   // 1. Size and format checks.
-  const declaredSize = Number(request.headers.get("content-length") ?? 0);
-  if (declaredSize > MAX_BODY_BYTES) return errorResponse("invalid-input", "That's too much text to analyze.");
+  const read = await readJsonBody(request, MAX_BODY_BYTES, "That's too much text to analyze.");
+  if (!read.ok) return read.response;
 
-  const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) return errorResponse("invalid-input", "That's too much text to analyze.");
-
-  let body: unknown;
-  try {
-    body = JSON.parse(raw);
-  } catch {
-    return errorResponse("invalid-input");
-  }
-
-  const checked = parseAnalyzeInput(body);
+  const checked = parseAnalyzeInput(read.body);
   if (!checked.ok) return errorResponse("invalid-input", checked.message);
 
   // 2. Rate limit per visitor.
@@ -53,7 +36,7 @@ export async function POST(request: Request) {
     const message =
       limit.limit === "day"
         ? "You've reached today's limit for this free tool. Please try again tomorrow."
-        : ANALYZE_ERROR_MESSAGES["rate-limited"];
+        : AI_ERROR_MESSAGES["rate-limited"];
     return errorResponse("rate-limited", message, { "Retry-After": String(limit.retryAfterSeconds) });
   }
 
@@ -68,7 +51,7 @@ export async function POST(request: Request) {
     const result = await analyzeMatch(checked.input.resume, checked.input.jobDescription, generate);
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    if (error instanceof AnalyzeError) return errorResponse(error.code, error.message);
+    if (error instanceof AiError) return errorResponse(error.code, error.message);
     console.error("[analyze] Unexpected error", { name: (error as Error)?.name });
     return errorResponse("ai-failed");
   }

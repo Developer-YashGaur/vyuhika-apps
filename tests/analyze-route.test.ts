@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sampleJobDescription, sampleResume } from "@/lib/samples";
-import { MAX_CHARS } from "@/lib/validation";
+import { MAX_CHARS } from "@/lib/text-rules";
 
 // Tests the real /api/analyze route with Gemini swapped for a fake (no network calls).
 
@@ -16,7 +16,7 @@ const fakeAnswer = {
   ],
 };
 
-vi.mock("@/lib/analyze/gemini", () => ({
+vi.mock("@/lib/ai/gemini", () => ({
   createGeminiGenerate: () => async () => JSON.stringify(fakeAnswer),
 }));
 

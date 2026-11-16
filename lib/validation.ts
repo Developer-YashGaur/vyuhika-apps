@@ -1,18 +1,6 @@
-// Input rules for the Resume Matcher.
+import { MAX_CHARS, MIN_CHARS, countChars } from "@/lib/text-rules";
 
-export const MIN_CHARS = 200;
-// About 6-8 pages of text. Longer input is almost always a paste mistake, and it costs more to analyze.
-export const MAX_CHARS = 15000;
-
-// Removes spaces and blank lines at the start and end.
-export function cleanText(text: string): string {
-  return text.trim();
-}
-
-// How many real characters the text has (ignoring outer whitespace).
-export function countChars(text: string): number {
-  return cleanText(text).length;
-}
+// Input rules for the Resume Matcher. The shared length rules live in lib/text-rules.ts.
 
 export function isLongEnough(text: string): boolean {
   return countChars(text) >= MIN_CHARS;

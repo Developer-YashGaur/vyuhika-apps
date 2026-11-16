@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { MatchResult } from "@/lib/types";
 
 // The exact JSON shape we ask Gemini for. The same zod schema is used twice:
-// 1. turned into a JSON Schema and sent to Gemini, so it answers in this shape;
+// 1. turned into a JSON Schema and sent to Gemini, so it answers in this shape (lib/ai/generate-json.ts);
 // 2. used on the server to check Gemini's answer before it reaches the page.
 
 const keyword = z.string().trim().min(1).max(60);
@@ -42,14 +42,6 @@ export const matchResultSchema = z.object({
 // Fails to compile if the schema and lib/types.ts ever drift apart.
 const _sameShape: MatchResult = {} as z.infer<typeof matchResultSchema>;
 void _sameShape;
-
-// The JSON Schema version for Gemini. "$schema" is removed because Gemini only accepts a
-// subset of JSON Schema; length limits it ignores are still enforced by zod on our side.
-export function matchResultJsonSchema(): Record<string, unknown> {
-  const schema = z.toJSONSchema(matchResultSchema) as Record<string, unknown>;
-  delete schema.$schema;
-  return schema;
-}
 
 // Lowercases and swaps punctuation for spaces, keeping + and # for names like C++ and C#.
 function normalize(text: string): string {

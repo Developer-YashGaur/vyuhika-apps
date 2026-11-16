@@ -2,7 +2,7 @@
 //   public/brand/       logo SVGs: icon, horizontal and stacked lockups × 5 colour versions, plus the app-icon tile
 //   public/brand/kit/   PNGs for social profiles: avatar (1024), transparent icon (512), banner (1200×300)
 //   public/icons/       web manifest icons (192, 512, maskable 512)
-//   public/og/          share images (1200×630) for the site and the Resume Matcher
+//   public/og/          share images (1200×630) for the site, the Resume Matcher and the Cover Letter Writer
 //   public/email/       small logo PNG for email footers (the email header images are made by email:images)
 //   app/                favicon.ico, icon.svg, apple-icon.png (Next.js picks these up automatically)
 //   lib/brand/logo-sizes.ts   the lockups' sizes, for the <Logo> component
@@ -332,6 +332,28 @@ function ogResumeMatcher(fonts: Fonts, icon: Built, lockup: Built): string {
   ].join("\n  "), "Resume Matcher by Vyuhika Apps");
 }
 
+function ogCoverLetterWriter(fonts: Fonts, icon: Built, lockup: Built): string {
+  const id = "og-clw";
+  const { defs, body } = scene(1200, 630, id);
+  const title1 = outline(fonts.bold, "Cover Letter", 80, 0.01);
+  const title2 = outline(fonts.bold, "Writer", 80, 0.01);
+  const sub = outline(fonts.semi, "Honest drafts from your real resume", 34, 0.01);
+  const badge = outline(fonts.bold, "FREE", 20, 0.12);
+  const url = outline(fonts.medium, "apps.vyuhika.com", 24, 0.04);
+  const x = 96;
+  return svgFile(1200, 630, id, [defs, iconGlowDef(id)], [
+    body,
+    glowingIcon(icon, 1005, 300, 240, id),
+    nest(lockup, x, 64, 230),
+    textPath(title1, x, 178, ink),
+    textPath(title2, x, 178 + 80 + 30, ink),
+    textPath(sub, x, 440, "#c8d0e6"),
+    `<rect x="${x}" y="512" width="${round(badge.width + 36)}" height="40" rx="20" fill="none" stroke="${cyan}" stroke-width="2"/>`,
+    textPath(badge, x + 18, 522, cyan),
+    textPath(url, x + badge.width + 64, 520, "#aab4cf"),
+  ].join("\n  "), "Cover Letter Writer by Vyuhika Apps");
+}
+
 function banner(fonts: Fonts, icon: Built): string {
   const id = "banner";
   const { defs, body } = scene(1200, 300, id);
@@ -421,6 +443,7 @@ async function main() {
   // 3. Share images.
   await writeFile("public/og/vyuhika.png", await png(ogDefault(fonts, icon), 1200, 630));
   await writeFile("public/og/resume-matcher.png", await png(ogResumeMatcher(fonts, icon, logos["horizontal-color"]), 1200, 630));
+  await writeFile("public/og/cover-letter-writer.png", await png(ogCoverLetterWriter(fonts, icon, logos["horizontal-color"]), 1200, 630));
 
   // 4. Brand kit.
   await writeFile("public/brand/kit/avatar-1024.png", await png(avatar(icon), 1024));

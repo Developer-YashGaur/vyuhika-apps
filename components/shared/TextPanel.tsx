@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { MAX_CHARS, MIN_CHARS, countChars } from "@/lib/validation";
+import { MAX_CHARS, MIN_CHARS, countChars } from "@/lib/text-rules";
 
 // A large glass panel with a text box, a character counter and a "Load sample" link.
 // Anything passed as `children` (like the file upload) appears above the text box.
@@ -41,7 +41,7 @@ export default function TextPanel({ id, label, placeholder, value, onChange, onL
         placeholder={placeholder}
         aria-describedby={`${id}-count`}
         spellCheck={false}
-        className="matcher-textarea mt-4"
+        className="text-panel-textarea mt-4"
       />
 
       <p id={`${id}-count`} className="mt-3 flex items-center gap-2 text-sm">

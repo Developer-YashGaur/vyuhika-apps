@@ -1,7 +1,7 @@
 import { Column, Heading, Row, Section, Text } from "@react-email/components";
 import EmailLayout, { MultilineText, colors } from "@/components/emails/EmailLayout";
 import type { Feedback } from "@/lib/feedback/schema";
-import { feedbackTypeLabel, formatEmailTime } from "@/lib/feedback/email-text";
+import { LETTER_DEBUG_TITLE, feedbackTypeLabel, formatEmailTime, letterDebugRows } from "@/lib/feedback/email-text";
 
 // Internal email to support@: everything needed to understand and reproduce the feedback.
 // Only receives the validated Feedback object, which can't hold resume or job text.
@@ -88,6 +88,33 @@ export default function FeedbackNotificationEmail({ feedback, assetBaseUrl, rece
           </Row>
         ))}
       </Section>
+
+      {feedback.letterDebug && (
+        <Section
+          bgcolor="#0f1638"
+          style={{
+            marginTop: "24px",
+            backgroundColor: "#0f1638",
+            border: `1px solid ${colors.cardBorder}`,
+            borderRadius: "12px",
+            padding: "18px",
+          }}
+        >
+          <Text style={{ margin: 0, fontSize: "13px", lineHeight: "20px", color: colors.mist }}>{LETTER_DEBUG_TITLE}</Text>
+          {letterDebugRows(feedback.letterDebug).map(([name, value]) => (
+            <Row key={name}>
+              <Column style={{ width: "150px", verticalAlign: "top", padding: "6px 0" }}>
+                <Text style={{ margin: 0, fontSize: "13px", lineHeight: "20px", color: colors.mist }}>{name}</Text>
+              </Column>
+              <Column style={{ verticalAlign: "top", padding: "6px 0" }}>
+                <Text style={{ margin: 0, fontSize: "14px", lineHeight: "20px", color: colors.ink, wordBreak: "break-word" }}>
+                  {value}
+                </Text>
+              </Column>
+            </Row>
+          ))}
+        </Section>
+      )}
 
       {feedback.debug && (
         <Section

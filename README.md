@@ -6,14 +6,26 @@
 </p>
 
 Vyuhika Apps: a growing collection of useful AI tools, some free and some paid, built in public by Yash Gaur.
+## Apps
+
+| App | Status | Page | API |
+|---|---|---|---|
+| Resume Matcher (Free) | Live | `/apps/resume-matcher` | `/api/analyze` |
+| Cover Letter Writer (Free) | Live | `/apps/cover-letter-writer` | `/api/cover-letter` |
+| Interview Coach (Pro) | Coming soon | none yet | none yet |
+
+The list on the home page lives in `lib/apps.ts`. The sitemap (`/sitemap.xml`) lists the home page and every live app, and `robots.txt` blocks `/api/` and `/dev/`.
+
 ## Environment variables
 
 Put these in `.env.local` for local development, and in the Vercel project's Environment Variables for production. Never commit real values.
 
 | Name | Required | What it's for |
 |---|---|---|
-| `GEMINI_API_KEY` | Yes | Google Gemini API key, used by the Resume Matcher (`/api/analyze`). Secret. |
+| `GEMINI_API_KEY` | Yes | Google Gemini API key, used by the Resume Matcher (`/api/analyze`) and the Cover Letter Writer (`/api/cover-letter`). Secret. |
 | `GEMINI_MODEL` | No | Gemini model name. Defaults to `gemini-3.5-flash-lite`. |
+| `GEMINI_THINKING_LEVEL` | No | `minimal`, `low`, `medium` or `high`. Not sent by default: Google's docs say the default Gemini 3.x Flash-Lite models already think at `minimal`, the lowest level. A higher level is slower. |
+| `GEMINI_FALLBACK_MODEL` | No | Tried once if the main model keeps failing with temporary errors (HTTP 500, 503, 504 or a short 429). Defaults to `gemini-3.1-flash-lite`. |
 | `RESEND_API_KEY` | Yes | Resend API key, used to send feedback emails. Secret. |
 | `EMAIL_FROM` | Yes | Sender, for example `Vyuhika Apps <no_reply@vyuhika.com>`. Must use a domain verified in Resend. |
 | `FEEDBACK_TO_EMAIL` | Yes | Inbox that receives feedback notifications, for example `support@vyuhika.com`. |

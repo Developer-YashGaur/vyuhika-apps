@@ -14,7 +14,7 @@ export default function AppGrid() {
       whileInView="show"
       viewport={{ once: true, amount: 0.2 }}
       transition={{ staggerChildren: 0.12 }}
-      className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:grid-rows-[repeat(2,minmax(260px,auto))] 2xl:grid-cols-4 2xl:grid-rows-[minmax(clamp(360px,22vw,460px),auto)]"
+      className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:grid-rows-[repeat(2,minmax(260px,1fr))] 2xl:grid-cols-4 2xl:grid-rows-[minmax(clamp(360px,22vw,460px),auto)]"
     >
       {apps.map((app, i) => (
         <AppCard key={app.slug} app={app} featured={i === 0} />

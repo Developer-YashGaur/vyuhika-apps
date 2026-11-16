@@ -3,6 +3,8 @@
 // The rules live in the "system instruction", which is separate from the user's text.
 // The user's text only ever goes between the delimiters below, and is treated as data.
 
+import { stripDelimiters } from "@/lib/ai/delimiters";
+
 export const RESUME_START = "<<<RESUME_START>>>";
 export const RESUME_END = "<<<RESUME_END>>>";
 export const JOB_START = "<<<JOB_DESCRIPTION_START>>>";
@@ -46,12 +48,6 @@ Suggestions (exactly 3):
   job's wording for things they already do, and showing results that are already in the resume more clearly.
 
 Reply only with JSON that matches the given schema.`;
-
-// Removes our delimiter markers from user text, so pasted text can't close a block early
-// and pretend to be outside the data.
-export function stripDelimiters(text: string): string {
-  return text.replace(/<<<\s*(RESUME|JOB_DESCRIPTION)_(START|END)\s*>>>/gi, "");
-}
 
 export function buildUserPrompt(resume: string, jobDescription: string): string {
   return [

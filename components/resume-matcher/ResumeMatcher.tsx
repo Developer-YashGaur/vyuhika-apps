@@ -2,20 +2,39 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import ErrorState from "@/components/resume-matcher/ErrorState";
-import LoadingState from "@/components/resume-matcher/LoadingState";
-import ResumeDropzone from "@/components/resume-matcher/ResumeDropzone";
 import Results from "@/components/resume-matcher/Results";
-import TextPanel from "@/components/resume-matcher/TextPanel";
+import ErrorState from "@/components/shared/ErrorState";
+import LoadingState from "@/components/shared/LoadingState";
+import ResumeDropzone from "@/components/shared/ResumeDropzone";
+import TextPanel from "@/components/shared/TextPanel";
 import { requestAnalysis } from "@/lib/analyze/client";
-import { AnalyzeError } from "@/lib/analyze/errors";
+import { AiError, type AiErrorCode } from "@/lib/ai/errors";
 import { setFeedbackDebug } from "@/lib/feedback/debug-store";
 import { sampleJobDescription, sampleResume } from "@/lib/samples";
 import type { MatchResult } from "@/lib/types";
-import { MAX_CHARS, MIN_CHARS, canAnalyze, cleanText, isTooLong } from "@/lib/validation";
+import { MAX_CHARS, MIN_CHARS, cleanText } from "@/lib/text-rules";
+import { canAnalyze, isTooLong } from "@/lib/validation";
 
 // The whole tool. It moves through these steps: form → loading → results (or error).
 type Step = "form" | "loading" | "results" | "error";
+
+// Shown one after another while the match is being analysed.
+const loadingLines = [
+  "Reading your resume...",
+  "Scanning job requirements...",
+  "Matching skills and keywords...",
+  "Finding gaps...",
+  "Writing suggestions...",
+];
+
+// Error titles; the message under each one comes from the error itself.
+const errorTitles: Record<AiErrorCode, string> = {
+  "rate-limited": "Too many requests",
+  timeout: "That took too long",
+  "ai-failed": "We couldn't analyze this",
+  offline: "You're offline",
+  "invalid-input": "Please check your text",
+};
 
 export default function ResumeMatcher() {
   const [step, setStep] = useState<Step>("form");
@@ -23,7 +42,7 @@ export default function ResumeMatcher() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [jobDescription, setJobDescription] = useState("");
   const [result, setResult] = useState<MatchResult | null>(null);
-  const [error, setError] = useState<AnalyzeError | null>(null);
+  const [error, setError] = useState<AiError | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
   // Lets the feedback panel offer to attach this result (score, summary and keywords only).
@@ -49,7 +68,7 @@ export default function ResumeMatcher() {
       setResult(await requestAnalysis(cleanText(resume), cleanText(jobDescription)));
       setStep("results");
     } catch (err) {
-      setError(err instanceof AnalyzeError ? err : new AnalyzeError("ai-failed"));
+      setError(err instanceof AiError ? err : new AiError("ai-failed"));
       setStep("error");
     }
   }
@@ -165,7 +184,7 @@ export default function ResumeMatcher() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <LoadingState />
+            <LoadingState lines={loadingLines} />
           </motion.div>
         )}
 
@@ -177,7 +196,14 @@ export default function ResumeMatcher() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35 }}
           >
-            <ErrorState error={error} onRetry={handleAnalyze} onEdit={handleEdit} />
+            <ErrorState
+              error={error}
+              titles={errorTitles}
+              retryLabel="Try again"
+              editLabel="Edit your text"
+              onRetry={handleAnalyze}
+              onEdit={handleEdit}
+            />
           </motion.div>
         )}
 

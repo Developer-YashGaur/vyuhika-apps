@@ -1,4 +1,4 @@
-import type { FeedbackDebug, FeedbackType } from "@/lib/feedback/rules";
+import type { FeedbackDebug, FeedbackType, LetterFeedbackDebug } from "@/lib/feedback/rules";
 
 // Runs in the browser: sends feedback to our own API route and turns failures into friendly messages.
 
@@ -8,7 +8,7 @@ export type FeedbackRequest = {
   email: string;
   website: string; // the hidden honeypot field, normally empty
   context: { path: string; timestamp: string; browser: string };
-  debug?: FeedbackDebug;
+  debug?: FeedbackDebug | LetterFeedbackDebug; // which one depends on the page (lib/feedback/pages.ts)
 };
 
 const FALLBACK_ERROR = "We couldn't send your feedback right now. Please try again later.";

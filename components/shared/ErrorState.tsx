@@ -1,26 +1,21 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { AnalyzeError, AnalyzeErrorCode } from "@/lib/analyze/errors";
+import type { AiError, AiErrorCode } from "@/lib/ai/errors";
 
-// Shown when the analysis fails. The message comes from lib/analyze/errors.ts
-// (or the server); the title and icon depend on what went wrong.
-
-const titles: Record<AnalyzeErrorCode, string> = {
-  "rate-limited": "Too many requests",
-  timeout: "That took too long",
-  "ai-failed": "We couldn't analyze this",
-  offline: "You're offline",
-  "invalid-input": "Please check your text",
-};
+// Shown when an AI request fails. The message comes from the error (lib/ai/errors.ts or the server);
+// each app passes its own titles and button wording. The icon depends on what went wrong.
 
 type Props = {
-  error: AnalyzeError;
+  error: AiError;
+  titles: Record<AiErrorCode, string>;
+  retryLabel: string;
+  editLabel: string;
   onRetry: () => void;
   onEdit: () => void;
 };
 
-export default function ErrorState({ error, onRetry, onEdit }: Props) {
+export default function ErrorState({ error, titles, retryLabel, editLabel, onRetry, onEdit }: Props) {
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   // Move keyboard and screen reader focus to the error, so it's read out straight away.
@@ -40,11 +35,11 @@ export default function ErrorState({ error, onRetry, onEdit }: Props) {
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
         {error.code !== "invalid-input" && (
           <button type="button" onClick={onRetry} className="btn-glow">
-            Try again
+            {retryLabel}
           </button>
         )}
         <button type="button" onClick={onEdit} className="btn-ghost">
-          Edit your text
+          {editLabel}
         </button>
       </div>
     </div>

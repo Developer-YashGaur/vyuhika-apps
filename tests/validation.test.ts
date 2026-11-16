@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MAX_CHARS, MIN_CHARS, canAnalyze, cleanText, countChars, isLongEnough, isTooLong, scoreLabel } from "@/lib/validation";
+import { MAX_CHARS, MIN_CHARS, cleanText, countChars } from "@/lib/text-rules";
+import { canAnalyze, isLongEnough, isTooLong, scoreLabel } from "@/lib/validation";
 
 const enough = "a".repeat(MIN_CHARS);
 const tooShort = "a".repeat(MIN_CHARS - 1);

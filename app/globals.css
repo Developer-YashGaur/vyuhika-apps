@@ -591,7 +591,7 @@ body {
   box-shadow: 0 0 0 1px rgba(var(--glow), 0.3), 0 0 50px -14px rgba(var(--glow), 0.55);
 }
 
-.matcher-textarea {
+.text-panel-textarea {
   flex: 1;
   width: 100%;
   min-height: 240px;
@@ -606,12 +606,12 @@ body {
   transition: border-color 0.2s ease;
 }
 @media (min-width: 1024px) {
-  .matcher-textarea { min-height: clamp(360px, 42vh, 640px); }
+  .text-panel-textarea { min-height: clamp(360px, 42vh, 640px); }
 }
-.matcher-textarea::placeholder {
+.text-panel-textarea::placeholder {
   color: rgba(167, 177, 204, 0.6);
 }
-.matcher-textarea:focus {
+.text-panel-textarea:focus {
   outline: none;
   border-color: rgba(var(--glow), 0.6);
 }
@@ -808,6 +808,198 @@ body {
   box-shadow: 0 0 16px -6px rgba(139, 92, 246, 0.8);
 }
 
+/* ================= Cover Letter Writer form ================= */
+
+/* One-line input and small text box in the "Optional details" panel (same look as the big text boxes). */
+.field-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  font-size: 0.975rem;
+  line-height: 1.6;
+  color: var(--color-ink);
+  background: rgba(5, 8, 22, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s ease;
+}
+textarea.field-input {
+  resize: vertical;
+}
+.field-input:focus {
+  outline: none;
+  border-color: rgba(var(--glow), 0.6);
+}
+
+/* A radio option shown as a pill. The real radio input is hidden but still focusable,
+   so the pill shows the focus ring and arrow keys work as in any radio group. */
+.pill-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.8rem 1.1rem;
+  border-radius: 18px;
+  cursor: pointer;
+  background: rgba(5, 8, 22, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.pill-option:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+}
+.pill-option:has(input:checked) {
+  border-color: rgba(34, 211, 238, 0.85);
+  background: rgba(34, 211, 238, 0.1);
+  box-shadow: 0 0 24px -8px rgba(34, 211, 238, 0.8);
+}
+.pill-option:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+.pill-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+/* The round "radio dot" before the title. */
+.pill-title::before {
+  content: "";
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 1.5px solid rgba(167, 177, 204, 0.7);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+input:checked + .pill-title::before {
+  border-color: var(--color-accent);
+  background: radial-gradient(circle, var(--color-accent) 40%, transparent 45%);
+  box-shadow: 0 0 10px var(--color-accent);
+}
+.pill-hint {
+  padding-left: 1.5rem;
+  font-size: 0.85rem;
+  text-wrap: balance;
+  color: var(--color-mist);
+}
+
+/* ---- Cover Letter Writer result view ---- */
+
+/* The editable letter: grows with its text (the page scrolls, not the box). */
+.letter-textarea {
+  display: block;
+  width: 100%;
+  min-height: 16rem;
+  resize: none;
+  overflow: hidden;
+  padding: 1.1rem 1.25rem;
+  border-radius: 14px;
+  font-size: 1.02rem;
+  line-height: 1.75;
+  color: var(--color-ink);
+  background: rgba(5, 8, 22, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s ease;
+}
+.letter-textarea:focus {
+  outline: none;
+  border-color: rgba(var(--glow), 0.6);
+}
+
+/* A bit less padding on phones, so the letter gets more width. */
+@media (max-width: 639px) {
+  .letter-panel {
+    padding: 1.1rem;
+  }
+  .letter-textarea {
+    padding: 0.85rem 0.9rem;
+  }
+}
+
+/* The gaps panel follows the reader down a long letter, but only where it fits on screen. */
+@media (min-width: 1024px) and (min-height: 760px) {
+  .gaps-sticky {
+    position: sticky;
+    top: 7rem;
+  }
+}
+
+/* A smaller button size, so five actions fit in one row on wide screens. */
+.btn-sm {
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+@media (min-width: 640px) {
+  .btn-sm { padding: 0 1.25rem; }
+}
+
+/* Calm message boxes: the draft reminder, the notes, the confirm panel and a failed regenerate. */
+.notice {
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.8rem 1rem;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--color-mist);
+}
+.notice-cyan {
+  background: rgba(34, 211, 238, 0.06);
+  border: 1px solid rgba(34, 211, 238, 0.28);
+}
+.notice-cyan svg {
+  color: var(--color-accent);
+}
+.notice-violet {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.35);
+}
+.notice-violet svg {
+  color: #c4b5fd;
+}
+.notice-rose {
+  color: #fecdd3;
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(251, 113, 133, 0.45);
+}
+
+/* One "Gaps to fill" card (a button: it selects the blank in the letter). */
+.gap-card {
+  display: flex;
+  width: 100%;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  text-align: left;
+  border-radius: 18px;
+  background: rgba(5, 8, 22, 0.55);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.gap-card:not(:disabled):hover {
+  border-color: rgba(167, 139, 250, 0.8);
+  background: rgba(139, 92, 246, 0.1);
+}
+.gap-card:disabled {
+  cursor: default;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.gap-number {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ddd6fe;
+  background: rgba(139, 92, 246, 0.18);
+  border: 1px solid rgba(167, 139, 250, 0.45);
+}
+
 /* ================= Reduced motion ================= */
 
 @media (prefers-reduced-motion: reduce) {
@@ -825,6 +1017,13 @@ body {
   }
   .btn-glow:hover {
     transform: none;
+  }
+  .pill-option,
+  .pill-title::before,
+  .field-input,
+  .letter-textarea,
+  .gap-card {
+    transition: none;
   }
 }
 

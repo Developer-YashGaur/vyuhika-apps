@@ -2,7 +2,7 @@ import type { Feedback } from "@/lib/feedback/schema";
 
 // Example feedback used by the email preview (/dev/emails) and scripts/send-test-emails.ts.
 
-export const sampleFeedback: Record<"bug" | "wrong-result", Feedback> = {
+export const sampleFeedback: Record<"bug" | "wrong-result" | "letter", Feedback> = {
   bug: {
     type: "bug",
     message:
@@ -28,6 +28,28 @@ export const sampleFeedback: Record<"bug" | "wrong-result", Feedback> = {
       summary: "Strong React and TypeScript, but missing Next.js, AWS and Docker, which the job requires.",
       matchedKeywords: ["React", "TypeScript", "REST APIs", "SQL", "Git", "Agile"],
       missingKeywords: ["Next.js", "GraphQL", "AWS", "Docker", "CI/CD pipelines"],
+    },
+  },
+  // A "Wrong result" report from the Cover Letter Writer: settings and counts only.
+  letter: {
+    type: "wrong-result",
+    message: "The letter is far longer than the short length I picked, and two blanks are in the middle of sentences.",
+    email: "priya@example.com",
+    context: {
+      path: "/apps/cover-letter-writer",
+      timestamp: "2026-11-16T09:30:05.000Z",
+      browser: "Chrome on macOS, 1440×900 window",
+    },
+    letterDebug: {
+      tone: "friendly",
+      length: "short",
+      wordCount: 248,
+      blanks: 2,
+      companyFilled: true,
+      roleFilled: true,
+      highlightFilled: false,
+      highlightHandling: "not-provided",
+      notes: ["length"],
     },
   },
 };
