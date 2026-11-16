@@ -6,7 +6,7 @@ import { site } from "@/lib/site";
 // Kept here, not in the layout, so tests can check them.
 
 const siteName = "Vyuhika Apps";
-const description = `Useful AI tools, some free and some paid. ${site.tagline}`;
+const description = `Useful digital tools, some free and some paid. ${site.tagline}`;
 
 export const siteMetadata: Metadata = {
   metadataBase: new URL(site.url),

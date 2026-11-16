@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { motion, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
 import AppIcon from "@/components/AppIcon";
-import { appHref, type AppInfo } from "@/lib/apps";
+import ExternalHint from "@/components/ExternalHint";
+import { appHref, isExternal, pricingLabel, type AppInfo } from "@/lib/apps";
+import { externalLinkProps } from "@/lib/site";
 
-// One card in the bento grid. Free apps glow cyan, Pro apps glow violet.
+// One card in the bento grid. Free and "Free + Pro" apps glow cyan, Pro apps glow violet.
 // Effects: a spotlight that follows the cursor, an animated gradient border,
 // and a gentle 3D tilt. Live apps are links; "coming soon" apps are locked.
+// An external app's card opens its own site in a new tab (with the shared arrow hint).
 
 const MAX_TILT = 5; // degrees (the big card tilts less, since it is wider)
 
@@ -16,8 +19,15 @@ export const cardReveal = {
   show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] as const } },
 };
 
-export default function AppCard({ app, featured = false }: { app: AppInfo; featured?: boolean }) {
+type Props = {
+  app: AppInfo;
+  featured?: boolean;
+  cellClass?: string; // how many grid columns this card takes (set by AppGrid)
+};
+
+export default function AppCard({ app, featured = false, cellClass = "" }: Props) {
   const isLive = app.status === "live";
+  const external = isExternal(app);
   const reduceMotion = useReducedMotion();
 
   const rotateX = useSpring(useMotionValue(0), { stiffness: 150, damping: 18 });
@@ -51,12 +61,13 @@ export default function AppCard({ app, featured = false }: { app: AppInfo; featu
         <span className={`card-icon ${featured ? "card-icon-lg" : ""}`}>
           <AppIcon name={app.icon} />
         </span>
-        <span className="badge">{app.tier}</span>
+        <PricingBadge pricing={app.pricing} />
       </div>
 
       <div className={featured ? "mt-auto pt-16" : "mt-auto pt-10"}>
+        <p className="card-category">{app.category}</p>
         <h3
-          className={`font-display font-medium tracking-[-0.03em] text-ink ${
+          className={`mt-2 font-display font-medium tracking-[-0.03em] text-ink ${
             featured ? "text-3xl sm:text-4xl" : "text-xl"
           }`}
         >
@@ -67,7 +78,10 @@ export default function AppCard({ app, featured = false }: { app: AppInfo; featu
         </p>
         <p className="mt-6 text-sm font-semibold">
           {isLive ? (
-            <span className="text-accent">Open {app.name}</span>
+            <span className="text-accent">
+              Open {app.name}
+              {external && <ExternalHint />}
+            </span>
           ) : (
             <span className="shimmer-text">Coming soon</span>
           )}
@@ -77,14 +91,18 @@ export default function AppCard({ app, featured = false }: { app: AppInfo; featu
   );
 
   return (
-    <motion.li variants={cardReveal} className={`bento-cell ${featured ? "sm:col-span-2 lg:row-span-2 2xl:row-span-1" : ""}`}>
+    <motion.li variants={cardReveal} className={`bento-cell ${cellClass}`}>
       <motion.div
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
         style={{ rotateX, rotateY, transformPerspective: 1100 }}
-        className={`bento-card ${app.tier === "Pro" ? "card-pro" : "card-free"} ${isLive ? "" : "is-locked"}`}
+        className={`bento-card ${app.pricing === "pro" ? "card-pro" : "card-free"} ${isLive ? "" : "is-locked"}`}
       >
-        {isLive ? (
+        {isLive && external ? (
+          <a href={appHref(app)} {...externalLinkProps} className="bento-inner">
+            {content}
+          </a>
+        ) : isLive ? (
           <Link href={appHref(app)} className="bento-inner">
             {content}
           </Link>
@@ -93,6 +111,16 @@ export default function AppCard({ app, featured = false }: { app: AppInfo; featu
         )}
       </motion.div>
     </motion.li>
+  );
+}
+
+// "Free", "Pro", or "Free + Pro" (cyan and violet, for apps that are free to start with a paid tier).
+function PricingBadge({ pricing }: { pricing: AppInfo["pricing"] }) {
+  if (pricing !== "freemium") return <span className="badge">{pricingLabel(pricing)}</span>;
+  return (
+    <span className="badge badge-freemium">
+      <span className="badge-part-free">Free</span> + <span className="badge-part-pro">Pro</span>
+    </span>
   );
 }
 
