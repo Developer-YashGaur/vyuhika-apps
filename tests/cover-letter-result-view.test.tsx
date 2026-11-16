@@ -122,7 +122,14 @@ describe("privacy: the page puts only a safe summary in the feedback store, and 
     for (const file of new Set(files)) {
       const code = readFileSync(file, "utf8");
       if (!STORE_USERS.includes(file)) expect(code, `${file} must not use the feedback store`).not.toMatch(/feedback/i);
-      expect(code, `${file} must not log`).not.toMatch(/console\.|\bfetch\(|sendBeacon|gtag|analytics/);
+      expect(code, `${file} must not log`).not.toMatch(/console\.|\bfetch\(|sendBeacon|gtag/);
+      // Visitor counting is allowed in one place only: CoverLetterWriter counts a written letter, with the tone and
+      // length (fixed words) and nothing else. tests/analytics-call-sites.test.tsx checks that exact call.
+      const withoutAllowedCount = code
+        .replace('import { trackEvent } from "@/lib/analytics";\n', "")
+        .replace('trackEvent("cover_letter_written", { app: "cover-letter-writer", tone, length });', "");
+      const countingAllowed = file === "components/cover-letter/CoverLetterWriter.tsx";
+      expect(countingAllowed ? withoutAllowedCount : code, `${file} must not count visitors`).not.toMatch(/analytics|trackEvent/);
       expect(code, `${file} must not use the matcher's slot`).not.toMatch(/\bsetFeedbackDebug\(/);
       for (const call of code.matchAll(/setLetterFeedbackDebug\(\s*([A-Za-z]+)/g)) {
         expect(["null", "buildLetterFeedbackDebug"], `${file}: ${call[0]}`).toContain(call[1]);

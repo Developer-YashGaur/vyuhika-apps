@@ -8,11 +8,19 @@ import { site } from "@/lib/site";
 const siteName = "Vyuhika Apps";
 const description = `Useful digital tools, some free and some paid. ${site.tagline}`;
 
+// Optional: lets Google Search Console check that you own the site, with a meta tag. It is only added when the
+// GOOGLE_SITE_VERIFICATION environment variable is set (the code from Search Console, nothing else).
+export function siteVerification(code: string | undefined): Metadata["verification"] {
+  const trimmed = code?.trim();
+  return trimmed ? { google: trimmed } : undefined;
+}
+
 export const siteMetadata: Metadata = {
   metadataBase: new URL(site.url),
   title: { default: siteName, template: `%s | ${siteName}` },
   description,
   applicationName: siteName,
+  verification: siteVerification(process.env.GOOGLE_SITE_VERIFICATION),
   openGraph: {
     type: "website",
     siteName,

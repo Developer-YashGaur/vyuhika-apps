@@ -22,6 +22,7 @@ import {
   suggestShort,
 } from "@/lib/cover-letter/form";
 import type { LetterLength, Tone } from "@/lib/cover-letter/schema";
+import { trackEvent } from "@/lib/analytics";
 import { setLetterFeedbackDebug } from "@/lib/feedback/debug-store";
 import { sampleJobDescription, sampleResume } from "@/lib/samples";
 import { cleanText } from "@/lib/text-rules";
@@ -73,8 +74,9 @@ export default function CoverLetterWriter() {
   }
 
   // Sends the form as it is now. Used by the first write and by Regenerate (same inputs).
-  function requestLetter() {
-    return requestCoverLetter({
+  // Every letter that arrives is counted, with the tone and length only (never any text).
+  async function requestLetter() {
+    const letter = await requestCoverLetter({
       resume: cleanText(resume),
       jobDescription: cleanText(jobDescription),
       companyName,
@@ -83,6 +85,8 @@ export default function CoverLetterWriter() {
       tone,
       length,
     });
+    trackEvent("cover_letter_written", { app: "cover-letter-writer", tone, length });
+    return letter;
   }
 
   async function handleWrite() {
