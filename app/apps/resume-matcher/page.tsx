@@ -1,7 +1,12 @@
 import Link from "next/link";
+import AppGuide from "@/components/AppGuide";
+import Footer from "@/components/Footer";
+import JsonLd from "@/components/JsonLd";
+import MoreTools from "@/components/MoreTools";
 import Navbar from "@/components/Navbar";
 import ResumeMatcher from "@/components/resume-matcher/ResumeMatcher";
 import { resumeMatcherMetadata } from "@/lib/metadata";
+import { appStructuredData } from "@/lib/structured-data";
 
 export const metadata = resumeMatcherMetadata;
 
@@ -9,6 +14,7 @@ export default function ResumeMatcherPage() {
   return (
     <>
       <Navbar />
+      <JsonLd data={appStructuredData("resume-matcher")} />
       <main id="top" className="gutter pt-28 pb-28 sm:pt-32">
         <Link href="/#apps" className="back-link">
           <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
@@ -29,7 +35,12 @@ export default function ResumeMatcherPage() {
         </header>
 
         <ResumeMatcher />
+
+        <AppGuide slug="resume-matcher" name="Resume Matcher" />
+        <MoreTools currentSlug="resume-matcher" />
       </main>
+
+      <Footer />
     </>
   );
 }

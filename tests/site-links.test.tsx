@@ -46,7 +46,14 @@ describe("links come from lib/site.ts", () => {
     const html = renderToStaticMarkup(<Footer />);
     const made = links(html).find((l) => l.text.startsWith(site.owner.name));
     expect(made?.href).toBe(site.owner.portfolio);
-    expect(links(html).map((l) => l.href)).toEqual([site.owner.portfolio, site.links.linkedin, site.links.youtube]);
+    // The portfolio, then the live apps on this site (internal links), then the social links.
+    expect(links(html).map((l) => l.href)).toEqual([
+      site.owner.portfolio,
+      "/apps/resume-matcher",
+      "/apps/cover-letter-writer",
+      site.links.linkedin,
+      site.links.youtube,
+    ]);
     expectSafeExternal(html);
   });
 

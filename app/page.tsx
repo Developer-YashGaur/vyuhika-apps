@@ -2,13 +2,19 @@ import AppGrid from "@/components/AppGrid";
 import BuiltBy from "@/components/BuiltBy";
 import Footer from "@/components/Footer";
 import Hero from "@/components/Hero";
+import JsonLd from "@/components/JsonLd";
 import Marquee from "@/components/Marquee";
 import Navbar from "@/components/Navbar";
 import Reveal from "@/components/Reveal";
+import { homeMetadata } from "@/lib/metadata";
+import { homeStructuredData } from "@/lib/structured-data";
+
+export const metadata = homeMetadata;
 
 export default function Home() {
   return (
     <>
+      <JsonLd data={homeStructuredData()} />
       <Navbar onHome />
       <main id="top">
         <Hero />

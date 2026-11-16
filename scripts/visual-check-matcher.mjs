@@ -7,6 +7,12 @@
 //   node scripts/visual-check-matcher.mjs capture screenshots/visual/after
 //   node scripts/visual-check-matcher.mjs compare screenshots/visual/before screenshots/visual/after
 //
+// When content was added BELOW the tool (so the page is taller), compare only the tool area instead:
+//   node scripts/visual-check-matcher.mjs compare-tool-area screenshots/visual/before screenshots/visual/after
+// Capture those pictures with HIDE_FIXED=1: the navbar, background and Feedback button are "fixed" and a full-page picture
+// puts them in different places on a taller page, which would show up as false differences.
+// It cuts both pictures to the "before" height minus the page's bottom padding, so only the part above the new content is compared.
+//
 // To get the same picture every time, animations are frozen at the same point:
 // - the browser runs on a fake clock that only moves when we say so (Framer Motion, timers, the dot canvas);
 // - Math.random always gives the same numbers (the dot canvas places its dots randomly);
@@ -146,6 +152,11 @@ async function capture(outDir) {
 
       await act(page);
 
+      if (process.env.HIDE_FIXED) {
+        await page.evaluate(() => {
+          for (const el of document.querySelectorAll("body *")) if (getComputedStyle(el).position === "fixed") el.style.visibility = "hidden";
+        });
+      }
       await page.screenshot({ path: `${outDir}/${name}-${state}.png`, fullPage: true, animations: "disabled", caret: "hide" });
       console.log(`saved ${outDir}/${name}-${state}.png`);
       await context.close();
@@ -155,14 +166,27 @@ async function capture(outDir) {
   await browser.close();
 }
 
-async function compare(beforeDir, afterDir) {
+// The page's bottom padding under the tool (pb-28 = 7rem). Everything below this line in the "before" picture is empty space.
+const BOTTOM_PADDING_PX = 112;
+
+async function compare(beforeDir, afterDir, toolAreaOnly = false) {
   const diffDir = `${afterDir}-diff`;
   await mkdir(diffDir, { recursive: true });
   let failures = 0;
 
   for (const file of (await readdir(beforeDir)).filter((f) => f.endsWith(".png")).sort()) {
-    const a = await sharp(`${beforeDir}/${file}`).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-    const b = await sharp(`${afterDir}/${file}`).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    let a = sharp(`${beforeDir}/${file}`);
+    let b = sharp(`${afterDir}/${file}`);
+    if (toolAreaOnly) {
+      // The phone pictures are taken at 2x, so the padding is twice as many pixels.
+      const scale = file.startsWith("390") ? 2 : 1;
+      const { width, height } = await a.metadata();
+      const crop = { left: 0, top: 0, width, height: height - BOTTOM_PADDING_PX * scale };
+      a = sharp(await a.extract(crop).toBuffer());
+      b = sharp(await b.extract(crop).toBuffer());
+    }
+    a = await a.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    b = await b.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
     if (a.info.width !== b.info.width || a.info.height !== b.info.height) {
       console.log(`FAIL ${file}: size changed ${a.info.width}x${a.info.height} → ${b.info.width}x${b.info.height}`);
@@ -203,4 +227,5 @@ async function compare(beforeDir, afterDir) {
 const [command, dirA, dirB] = process.argv.slice(2);
 if (command === "capture" && dirA) await capture(dirA);
 else if (command === "compare" && dirA && dirB) await compare(dirA, dirB);
-else console.log("Usage: capture <dir> | compare <beforeDir> <afterDir>");
+else if (command === "compare-tool-area" && dirA && dirB) await compare(dirA, dirB, true);
+else console.log("Usage: capture <dir> | compare <beforeDir> <afterDir> | compare-tool-area <beforeDir> <afterDir>");

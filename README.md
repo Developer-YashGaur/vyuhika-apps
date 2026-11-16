@@ -17,6 +17,20 @@ Vyuhika Apps: a growing collection of useful digital tools, some free and some p
 
 The list on the home page lives in `lib/apps.ts`. An app with an `externalUrl` (like Koshvia) is built and hosted somewhere else: its card opens that site in a new tab, it has no page or API here, it is not in the sitemap, and this code never calls it. The sitemap (`/sitemap.xml`) lists the home page and every live app on this site, and `robots.txt` blocks `/api/` and `/dev/`.
 
+## Search visibility (SEO)
+
+- **Text under each tool** (what it does, how it works, who it is for, what it does not do, FAQ): written in `lib/app-content.ts` and shown by `components/AppGuide.tsx`. It is plain server-rendered HTML, so it is in the page source without JavaScript. Every sentence must stay true to the code (file size, character limits, daily and per-minute limits); `tests/search-visibility.test.tsx` checks the numbers against the code. Update the `updated` date there when you change a page's words: the sitemap uses it as `lastModified`.
+- **Structured data (JSON-LD)** is built in `lib/structured-data.ts` and printed by `components/JsonLd.tsx`:
+  - Home page: `WebSite` and `Organization` (name "Vyuhika Apps", the site URL, and the logo `/brand/kit/icon-512.png` from `BRAND_FILES.logo`).
+  - Each app page: `SoftwareApplication` (category, operating system "Web", a free offer with price `0`), `FAQPage` (the same FAQ as the page, read from `lib/app-content.ts`) and `BreadcrumbList`.
+  - The price currency is **INR** (`PRICE_CURRENCY` in `lib/structured-data.ts`). Change it there if you want USD or another code.
+  - Never add ratings, reviews or counts. We have none, and a test fails if they appear.
+- **Titles, descriptions, canonical links and share cards** are in `lib/metadata.ts` (`homeMetadata`, `resumeMatcherMetadata`, `coverLetterWriterMetadata`). Titles stay about 60 characters or less and descriptions about 160 or less (tested).
+- **Sitemap** (`app/sitemap.ts`): `lastModified` comes from the dates in `lib/app-content.ts` (`HOME_UPDATED` for the home page), not from the build date.
+- **Internal links**: the footer lists every live app on this site, and each app page ends with a "More tools" row (`components/MoreTools.tsx`) that also links to Koshvia in a new tab.
+- When you add an app: add it to `lib/apps.ts`, give it an entry in `lib/app-content.ts`, a metadata export in `lib/metadata.ts`, and use `<JsonLd data={appStructuredData(slug)} />`, `<AppGuide />` and `<MoreTools />` on its page.
+- Check the new text and screenshots: `npm run build`, `npm start`, then `URL=http://localhost:3000 npm run screenshots:guide`.
+
 ## Privacy and analytics
 
 We use cookie-free Vercel analytics to count page views, countries, devices, referrers and page speed, plus five fixed events (app name, tone, length, feedback type or resume file type only; custom events show on Vercel's Pro plan), and we never send resume, job, letter, highlight, company or role text, file names, email addresses or typed links.
