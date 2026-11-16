@@ -56,7 +56,7 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.55, ease }}
           className="measure mt-8 text-lg leading-relaxed text-mist sm:text-xl"
         >
-          Small AI tools that each solve one real problem. Every one is built in the open,
+          Small digital tools that each solve one real problem. Every one is built in the open,
           from the first commit to launch day.
         </motion.p>
 

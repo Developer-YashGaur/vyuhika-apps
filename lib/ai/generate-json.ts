@@ -235,7 +235,9 @@ type CallKind = "main" | "retry-after-check" | "retry-after-temporary-error" | "
 // One single call to Google with its own time limit (also inside the request's limit), logged with its kind,
 // how long it took and how it ended. The log has numbers and fixed words only: never any text or the key.
 async function timedCall(run: Run, request: Parameters<GenerateFn>[0], kind: CallKind, maxMs: number): Promise<string | undefined> {
-  const callSignal = AbortSignal.any([run.signal, AbortSignal.timeout(Math.max(1, maxMs))]);
+  // The call's own limit only matters when it is shorter than what is left of the request's limit.
+  const callSignal =
+    maxMs < run.deadline - Date.now() ? AbortSignal.any([run.signal, AbortSignal.timeout(Math.max(1, maxMs))]) : run.signal;
   const started = Date.now();
   let outcome = "ok";
   try {

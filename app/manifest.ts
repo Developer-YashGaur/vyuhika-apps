@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Vyuhika Apps",
     short_name: "Vyuhika",
-    description: `Useful AI tools, some free and some paid. ${site.tagline}`,
+    description: `Useful digital tools, some free and some paid. ${site.tagline}`,
     start_url: "/",
     display: "standalone",
     background_color: BRAND_COLORS.space,

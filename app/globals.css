@@ -512,6 +512,25 @@ body {
   color: #c4b5fd; /* lighter violet so the small text stays readable */
 }
 
+/* "Free + Pro": a cyan word and a violet word on a cyan-to-violet wash, for apps that are free to start. */
+.badge-freemium {
+  white-space: nowrap;
+  color: #aab4cf;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.14), rgba(139, 92, 246, 0.2));
+  border-color: rgba(147, 160, 245, 0.5);
+}
+.badge-part-free { color: #67e8f9; }
+.badge-part-pro { color: #c4b5fd; }
+
+/* The small label above a card's title ("Careers", "Finance"). */
+.card-category {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #aab4cf;
+}
+
 /* Locked cards: a light sweep across the "Coming soon" label. */
 .shimmer-text {
   background: linear-gradient(90deg, #a7b1cc 0%, #a7b1cc 40%, #ffffff 50%, #a7b1cc 60%, #a7b1cc 100%);

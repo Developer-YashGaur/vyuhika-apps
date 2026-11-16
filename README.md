@@ -5,16 +5,17 @@
   </picture>
 </p>
 
-Vyuhika Apps: a growing collection of useful AI tools, some free and some paid, built in public by Yash Gaur.
+Vyuhika Apps: a growing collection of useful digital tools, some free and some paid, built in public by Yash Gaur.
 ## Apps
 
-| App | Status | Page | API |
-|---|---|---|---|
-| Resume Matcher (Free) | Live | `/apps/resume-matcher` | `/api/analyze` |
-| Cover Letter Writer (Free) | Live | `/apps/cover-letter-writer` | `/api/cover-letter` |
-| Interview Coach (Pro) | Coming soon | none yet | none yet |
+| App | Category | Pricing | Status | Where | API |
+|---|---|---|---|---|---|
+| Resume Matcher | Careers | Free | Live | `/apps/resume-matcher` | `/api/analyze` |
+| Cover Letter Writer | Careers | Free | Live | `/apps/cover-letter-writer` | `/api/cover-letter` |
+| Koshvia | Finance | Free + Pro | Live, external | https://koshvia.vyuhika.com (opens in a new tab) | none (a separate site) |
+| Interview Coach | Careers | Pro | Coming soon | none yet | none yet |
 
-The list on the home page lives in `lib/apps.ts`. The sitemap (`/sitemap.xml`) lists the home page and every live app, and `robots.txt` blocks `/api/` and `/dev/`.
+The list on the home page lives in `lib/apps.ts`. An app with an `externalUrl` (like Koshvia) is built and hosted somewhere else: its card opens that site in a new tab, it has no page or API here, it is not in the sitemap, and this code never calls it. The sitemap (`/sitemap.xml`) lists the home page and every live app on this site, and `robots.txt` blocks `/api/` and `/dev/`.
 
 ## Environment variables
 
