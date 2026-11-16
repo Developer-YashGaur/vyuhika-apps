@@ -19,6 +19,7 @@ const { default: ResumeMatcher } = await import("@/components/resume-matcher/Res
 const { default: CoverLetterWriter } = await import("@/components/cover-letter/CoverLetterWriter");
 const { default: FeedbackWidget } = await import("@/components/feedback/FeedbackWidget");
 const { default: AppGrid } = await import("@/components/AppGrid");
+const { default: ExternalAppLink } = await import("@/components/ExternalAppLink");
 const { default: ResumeDropzone } = await import("@/components/shared/ResumeDropzone");
 
 beforeEach(() => {
@@ -69,6 +70,15 @@ describe("each event is fired at the right moment, with fixed words only", () =>
     expect(code.indexOf("external_app_clicked")).toBeGreaterThan(code.indexOf("{...externalLinkProps}"));
     const internalLink = code.slice(code.indexOf("<Link"), code.indexOf("</Link>"));
     expect(internalLink).not.toContain("trackEvent");
+  });
+
+  it("external_app_clicked: the \"More tools\" link on app pages counts it the same way, and renders nothing by itself", () => {
+    const code = read("components/ExternalAppLink.tsx");
+    expect(code.split('trackEvent("external_app_clicked", { app: slug })')).toHaveLength(3); // click and middle click
+    expect(code.indexOf("external_app_clicked")).toBeGreaterThan(code.indexOf("{...externalLinkProps}"));
+    const html = renderToStaticMarkup(<ExternalAppLink slug="koshvia" href="https://koshvia.vyuhika.com">Koshvia</ExternalAppLink>);
+    expect(html).toContain('target="_blank"');
+    expect(trackEvent).not.toHaveBeenCalled();
   });
 
   it("resume_file_selected: after the file was read, with the file type only", () => {

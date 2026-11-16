@@ -1329,3 +1329,33 @@ a:focus-visible > .logo-glow {
     filter: drop-shadow(0 0 14px rgba(34, 211, 238, 0.45));
   }
 }
+
+/* ================= App page guide (text under the tool) ================= */
+
+/* The big number on a "How it works" step. */
+.guide-step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  box-shadow: 0 0 24px -6px rgba(34, 211, 238, 0.6);
+}
+
+/* A link card in the "More tools" row: the whole card is the link. */
+.more-tools-link {
+  display: block;
+  height: 100%;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.more-tools-link:hover {
+  box-shadow: 0 0 0 1px rgba(var(--glow), 0.35), 0 0 50px -14px rgba(var(--glow), 0.55);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .more-tools-link:hover { transform: translateY(-2px); }
+}

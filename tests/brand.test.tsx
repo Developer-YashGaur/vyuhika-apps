@@ -23,6 +23,7 @@ const allPublicFiles = [
   BRAND_FILES.ogCoverLetterWriter,
   ...BRAND_FILES.manifestIcons,
   ...BRAND_FILES.email,
+  BRAND_FILES.logo,
   ...BRAND_FILES.kit,
 ];
 
@@ -98,14 +99,14 @@ describe("share images and metadata", () => {
   });
 
   it("the Resume Matcher has its own title, description and share image", () => {
-    expect(resumeMatcherMetadata.title).toBe("Resume Matcher");
+    expect(resumeMatcherMetadata.title).toEqual({ absolute: "Free Resume Matcher: Compare Resume to Job Description" });
     expect(resumeMatcherMetadata.description).toBeTruthy();
     expect(ogImages(resumeMatcherMetadata)[0].url).toBe(BRAND_FILES.ogResumeMatcher);
     expect(JSON.stringify(resumeMatcherMetadata.twitter)).toContain(BRAND_FILES.ogResumeMatcher);
   });
 
   it("the Cover Letter Writer has its own title, description and share image, and can be indexed", () => {
-    expect(coverLetterWriterMetadata.title).toBe("Cover Letter Writer");
+    expect(coverLetterWriterMetadata.title).toEqual({ absolute: "Free Cover Letter Writer: From Resume and Job Description" });
     expect(coverLetterWriterMetadata.description).toBeTruthy();
     expect(coverLetterWriterMetadata.robots).toBeUndefined(); // no noindex
     expect(JSON.stringify(coverLetterWriterMetadata)).not.toMatch(/noindex|"index":false/);
@@ -113,19 +114,19 @@ describe("share images and metadata", () => {
       type: "website",
       siteName: "Vyuhika Apps",
       url: "/apps/cover-letter-writer",
-      title: "Cover Letter Writer | Vyuhika Apps",
+      title: "Free Cover Letter Writer: From Resume and Job Description",
     });
     expect(ogImages(coverLetterWriterMetadata)[0]).toMatchObject({ url: "/og/cover-letter-writer.png", width: 1200, height: 630 });
-    expect(coverLetterWriterMetadata.twitter).toMatchObject({ card: "summary_large_image", title: "Cover Letter Writer | Vyuhika Apps" });
+    expect(coverLetterWriterMetadata.twitter).toMatchObject({ card: "summary_large_image", title: "Free Cover Letter Writer: From Resume and Job Description" });
     expect(JSON.stringify(coverLetterWriterMetadata.twitter)).toContain("/og/cover-letter-writer.png");
     // Same description in the page, Open Graph and Twitter, like the matcher's.
     expect(coverLetterWriterMetadata.openGraph?.description).toBe(coverLetterWriterMetadata.description);
     expect(coverLetterWriterMetadata.twitter?.description).toBe(coverLetterWriterMetadata.description);
   });
 
-  it("the Resume Matcher's metadata is unchanged and still can be indexed", () => {
+  it("the Resume Matcher can still be indexed, and its share card matches its title", () => {
     expect(resumeMatcherMetadata.robots).toBeUndefined();
-    expect(resumeMatcherMetadata.openGraph).toMatchObject({ url: "/apps/resume-matcher", title: "Resume Matcher | Vyuhika Apps" });
+    expect(resumeMatcherMetadata.openGraph).toMatchObject({ url: "/apps/resume-matcher", title: "Free Resume Matcher: Compare Resume to Job Description" });
   });
 
   it("the site address comes from lib/site.ts", () => {

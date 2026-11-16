@@ -15,6 +15,7 @@
     "email:test": "node --env-file=.env.local --import tsx scripts/send-test-emails.ts",
     "screenshots:emails": "node scripts/screenshots-emails.mjs",
     "screenshots:links": "node scripts/screenshots-links.mjs",
+    "screenshots:guide": "node scripts/screenshots-guide.mjs",
     "brand": "tsx scripts/generate-brand.ts",
     "screenshots:brand": "node scripts/screenshots-brand.mjs"
   },

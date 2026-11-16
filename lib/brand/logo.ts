@@ -38,6 +38,7 @@ export const BRAND_FILES = {
   ogCoverLetterWriter: "/og/cover-letter-writer.png",
   manifestIcons: ["/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png"],
   email: ["/email/header.png", "/email/header.gif", "/email/logo-icon.png"],
+  logo: "/brand/kit/icon-512.png", // square logo for search engines (Organization structured data)
   kit: ["/brand/kit/avatar-1024.png", "/brand/kit/icon-512.png", "/brand/kit/banner-1200x300.png"],
 } as const;
 
