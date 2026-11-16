@@ -12,6 +12,15 @@ export function getGeminiModel(): string {
   return process.env.GEMINI_MODEL?.trim() || DEFAULT_GEMINI_MODEL;
 }
 
+// Used once when the main model keeps failing with temporary errors (HTTP 500, 503, 504 or a short 429).
+// A different stable, fast, low-cost model that supports JSON answers (Google's model pages, checked 2026-11-16).
+// Override with GEMINI_FALLBACK_MODEL in .env.local.
+export const DEFAULT_GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
+
+export function getGeminiFallbackModel(): string {
+  return process.env.GEMINI_FALLBACK_MODEL?.trim() || DEFAULT_GEMINI_FALLBACK_MODEL;
+}
+
 // Returns null when the key is missing, so the route can answer with a friendly error.
 export function createGeminiGenerate(): GenerateFn | null {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
@@ -19,10 +28,11 @@ export function createGeminiGenerate(): GenerateFn | null {
 
   const ai = new GoogleGenAI({ apiKey });
   const model = getGeminiModel();
+  const fallbackModel = getGeminiFallbackModel();
 
-  return async ({ systemInstruction, prompt, jsonSchema, signal }) => {
+  return async ({ systemInstruction, prompt, jsonSchema, signal, fallback }) => {
     const response = await ai.models.generateContent({
-      model,
+      model: fallback ? fallbackModel : model,
       contents: prompt,
       config: {
         systemInstruction,

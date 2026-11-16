@@ -72,6 +72,23 @@ The temporary re-exports from steps 1 and 2 (`lib/analyze/errors.ts`, `lib/analy
 `lib/analyze/prompt.ts` and the text-rule re-exports in `lib/validation.ts`) were removed in step 10. Everything imports from
 `lib/ai/` and `lib/text-rules.ts` now.
 
+## Temporary Gemini errors (added after step 10)
+
+`lib/ai/generate-json.ts` keeps two separate retry budgets, so one never uses up the other:
+- **Answer retry** (unchanged): one retry when the answer is broken or fails a check.
+- **Provider retry:** inside every call to the AI, an HTTP 500, 503 or 504, or a short-lived 429 (a `retryDelay` of 5 s or
+  less), is tried again after about 1 s and then 2.5 s. If the main model is still failing, the fallback model
+  (`GEMINI_FALLBACK_MODEL`, default `gemini-3.1-flash-lite`, a stable low-cost model that supports JSON answers) gets one
+  try. Never retried: 400, 401, 403, a 429 about the daily quota, a 429 with a long or missing delay, and errors with no
+  status. The case seen live (first answer fails a check, the retry gets a 503, then recovers) works, and a first answer
+  that only failed style checks is returned if the retry can't reach the AI.
+- **Time:** the whole request, waits included, stops at `AI_TIMEOUT_MS` (50 s). Both API routes set `maxDuration = 60`.
+  Vercel's docs say the Hobby plan allows 300 s (default and maximum) with Fluid compute, which is on by default, so 60 s is
+  honoured. The worst case (a slow call, two waits, three main tries and the fallback) is cut off by the 50 s limit and
+  answers with the friendly timeout message.
+- **Logs:** only the try number, the HTTP status and fixed words, for example
+  `[cover-letter] temporary AI error, status 503 (try 1 of 3)` and `main model still failing; trying the fallback model once`.
+
 ## Known limits
 
 - **Rate limits are in memory.** Both limiters (and the feedback one) live in the server process, so on Vercel each
@@ -81,8 +98,12 @@ The temporary re-exports from steps 1 and 2 (`lib/analyze/errors.ts`, `lib/analy
   a number word with no unit after it ("one of", "the first", or "I tried three") is not treated as a number.
 - **The model can still attach a true fact to the wrong thing.** The checks catch invented numbers, leadership claims and
   made-up highlights, but not every misplaced fact. That is why the result says "Check every fact before you send".
-- **Gemini's free-tier quotas can run out** (and the service can answer 503 when busy). The person then sees the friendly
-  "couldn't write this letter" or "too many letters" message, and nothing is lost.
+- **Gemini's free-tier quotas can run out.** A daily-quota 429 is not retried, and the fallback model is not tried for it,
+  so the person sees the friendly "too many letters" message. Temporary outages (500, 503, 504) are now retried and
+  covered by the fallback model, but a long outage of both models still ends in the friendly "couldn't write this letter".
+  Whether the fallback model is available on the free tier was not stated on Google's model pages; set
+  `GEMINI_FALLBACK_MODEL` if it isn't.
+- **Retries cost time.** A request that meets temporary errors can take up to 50 s before it gives up.
 
 ## Rules for the AI (they go in the prompt)
 

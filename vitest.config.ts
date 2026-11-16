@@ -2,6 +2,10 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  test: {
+    // A few tests make the fake AI fail with HTTP 500, which is retried with real waits (about 3.5 s).
+    testTimeout: 15_000,
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./", import.meta.url)),

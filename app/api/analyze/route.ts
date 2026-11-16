@@ -18,6 +18,10 @@ const limiter = createRateLimiter([
   { name: "minute", max: 5, windowMs: MINUTE_MS },
 ]);
 
+// Vercel's Hobby plan allows up to 300 s (with Fluid compute, the default). The AI time limit is 50 s
+// (AI_TIMEOUT_MS), so 60 s covers a slow call, a temporary-error retry, the fallback model and the checks.
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   // 1. Size and format checks.
   const read = await readJsonBody(request, MAX_BODY_BYTES, "That's too much text to analyze.");

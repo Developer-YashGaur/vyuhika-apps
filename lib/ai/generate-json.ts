@@ -4,6 +4,13 @@ import { AI_ERROR_MESSAGES, AiError, type AiErrorCode } from "@/lib/ai/errors";
 // Asks the AI for a JSON answer, checks it with a zod schema (and optionally the app's own checks),
 // and retries once if the answer is broken. Shared by every app: each app brings its own
 // instructions, prompt, schema and error wording.
+//
+// Two separate kinds of retry (neither uses up the other's budget):
+// 1. Answer retry: the answer was broken or failed a check, so the AI gets one more try (MAX_ATTEMPTS).
+// 2. Provider retry: Google had a temporary problem (HTTP 500, 503, 504, or a short-lived 429). That call is
+//    tried again after about 1 s, then 2.5 s, and if the main model is still failing the fallback model gets one try.
+//    This happens inside each call of kind 1, so "first answer fails a check, retry gets a 503, then recovers" works.
+// The whole request, waits included, stays inside one time limit.
 
 // One call to the AI. Passed in as a parameter so tests can use a fake instead of Gemini.
 export type GenerateFn = (request: {
@@ -11,10 +18,18 @@ export type GenerateFn = (request: {
   prompt: string;
   jsonSchema: Record<string, unknown>;
   signal: AbortSignal;
+  fallback?: boolean; // true: use the fallback model (see lib/ai/gemini.ts)
 }) => Promise<string | undefined>;
 
-// The whole request (including the retry) must finish within this time.
-export const AI_TIMEOUT_MS = 30_000;
+// The whole request (both kinds of retry, waits included) must finish within this time.
+// The API routes set maxDuration = 60 (Vercel's Hobby limit is 300 s), so this leaves a safe margin.
+export const AI_TIMEOUT_MS = 50_000;
+
+// Waits before the 2nd and 3rd try of the main model after a temporary provider error.
+export const TEMPORARY_RETRY_DELAYS_MS = [1_000, 2_500];
+
+// A short-lived 429 asks us to wait at most this long; a longer wait won't fit our schedule.
+const MAX_SHORT_RETRY_DELAY_S = 5;
 
 const MAX_ATTEMPTS = 2; // the first try, plus one retry if the answer is invalid
 
@@ -46,6 +61,7 @@ type GenerateJsonOptions<T> = {
   generate: GenerateFn;
   logLabel: string; // shown in server logs, like "analyze", so we know which app failed
   timeoutMs?: number;
+  retryDelaysMs?: number[]; // waits between tries after a temporary provider error (tests use short ones)
   // Extra checks on a well-formed answer. Returns a list of problems (empty when all is fine).
   // The messages are sent back to the AI with the retry, so it knows what to fix.
   check?: (answer: T) => CheckProblem[];
@@ -69,6 +85,7 @@ export async function generateJson<T>({
   generate,
   logLabel,
   timeoutMs = AI_TIMEOUT_MS,
+  retryDelaysMs = TEMPORARY_RETRY_DELAYS_MS,
   check,
   logFacts,
   messages = {},
@@ -86,8 +103,13 @@ export async function generateJson<T>({
 
     let text: string | undefined;
     try {
-      text = await generate(request);
+      text = await generateWithProviderRetries(generate, request, signal, logLabel, retryDelaysMs);
     } catch (error) {
+      // The retry can't reach the AI, but an earlier answer only had style problems: that one is still good.
+      if (styleOnlyAnswer !== undefined && !signal.aborted && isProviderFailure(error)) {
+        console.warn(`[${logLabel}] AI unavailable for the retry; returning an answer that only failed style checks`);
+        return styleOnlyAnswer;
+      }
       throw toAiError(error, signal, logLabel, friendlyError);
     }
 
@@ -111,6 +133,77 @@ export async function generateJson<T>({
     return styleOnlyAnswer;
   }
   throw friendlyError("ai-failed");
+}
+
+function statusOf(error: unknown): number | undefined {
+  const status = (error as { status?: unknown })?.status;
+  return typeof status === "number" ? status : undefined;
+}
+
+// Does the error come from Google's side (an HTTP status) rather than from our own code?
+function isProviderFailure(error: unknown): boolean {
+  return statusOf(error) !== undefined;
+}
+
+// Temporary problems on Google's side that are worth trying again:
+// - HTTP 500, 503 and 504.
+// - HTTP 429 only when it is short-lived. A 429 about the daily quota will not clear in seconds, and a 429 that
+//   says nothing about the wait is not retried (like before). 400, 401 and 403 are never retried.
+// The error's message is only read here to classify it. It is never logged.
+export function isTemporaryError(error: unknown): boolean {
+  const status = statusOf(error);
+  if (status === 500 || status === 503 || status === 504) return true;
+  if (status !== 429) return false;
+
+  const message = String((error as { message?: unknown })?.message ?? "");
+  if (/per ?day|daily/i.test(message)) return false;
+  const delay = /"?retryDelay"?\s*[:=]\s*"?(\d+(?:\.\d+)?)\s*s/i.exec(message);
+  return delay !== null && Number(delay[1]) <= MAX_SHORT_RETRY_DELAY_S;
+}
+
+// Waits `ms`, or less if the request's time limit runs out first.
+function wait(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) return resolve();
+    const done = () => {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    signal.addEventListener("abort", done, { once: true });
+  });
+}
+
+// One call to the AI, with the provider retries: the main model up to 1 + delays.length times, then the fallback
+// model once. Only the try number, the HTTP status and "fallback" are logged, never any text.
+async function generateWithProviderRetries(
+  generate: GenerateFn,
+  request: Parameters<GenerateFn>[0],
+  signal: AbortSignal,
+  logLabel: string,
+  delays: number[],
+): Promise<string | undefined> {
+  const tries = delays.length + 1;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await generate({ ...request, fallback: false });
+    } catch (error) {
+      if (signal.aborted || !isTemporaryError(error)) throw error;
+      console.warn(`[${logLabel}] temporary AI error, status ${statusOf(error)} (try ${i + 1} of ${tries})`);
+      if (i === tries - 1) break;
+      await wait(delays[i], signal);
+      if (signal.aborted) throw error;
+    }
+  }
+
+  console.warn(`[${logLabel}] main model still failing; trying the fallback model once`);
+  try {
+    return await generate({ ...request, fallback: true });
+  } catch (error) {
+    if (!signal.aborted) console.warn(`[${logLabel}] fallback model failed, status ${statusOf(error)}`);
+    throw error;
+  }
 }
 
 // "length, opening" — each failed check's name once, in order.
