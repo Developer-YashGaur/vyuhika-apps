@@ -63,11 +63,26 @@ Branch: `feat/cover-letter-writer`. Each step is approved by the owner before th
   `noindex`, `coverLetterWriterMetadata` is written like the matcher's, `BRAND_FILES.ogCoverLetterWriter` points at
   `public/og/cover-letter-writer.png` (made by `ogCoverLetterWriter()` in `scripts/generate-brand.ts`, `npm run brand`),
   `site.url` holds the public address, and `app/sitemap.ts` and `app/robots.ts` exist (live apps only; `/api/` and
-  `/dev/` are blocked and never listed). **Next is step 10.**
+  `/dev/` are blocked and never listed). 
+- Step 10: the temporary re-exports are gone, and the final checks were run (lint, type check, tests, production build,
+  both visual scripts, the security checks and a production-server check of the routes). See "Known limits" below.
+  **All 10 steps are done.**
 
 The temporary re-exports from steps 1 and 2 (`lib/analyze/errors.ts`, `lib/analyze/gemini.ts`, the `stripDelimiters` re-export in
 `lib/analyze/prompt.ts` and the text-rule re-exports in `lib/validation.ts`) were removed in step 10. Everything imports from
 `lib/ai/` and `lib/text-rules.ts` now.
+
+## Known limits
+
+- **Rate limits are in memory.** Both limiters (and the feedback one) live in the server process, so on Vercel each
+  server instance has its own counts and they reset when an instance restarts. They slow down casual abuse but are not a
+  hard cap. A shared store (for example Redis) would be needed for real limits.
+- **Number words are only caught next to a unit.** "four years" or "twenty-five clients" is checked against the inputs, but
+  a number word with no unit after it ("one of", "the first", or "I tried three") is not treated as a number.
+- **The model can still attach a true fact to the wrong thing.** The checks catch invented numbers, leadership claims and
+  made-up highlights, but not every misplaced fact. That is why the result says "Check every fact before you send".
+- **Gemini's free-tier quotas can run out** (and the service can answer 503 when busy). The person then sees the friendly
+  "couldn't write this letter" or "too many letters" message, and nothing is lost.
 
 ## Rules for the AI (they go in the prompt)
 
@@ -223,4 +238,4 @@ Gemini is always faked in tests. The Resume Matcher's existing tests must keep p
    "Check every fact before you send" and shows the word count and any style notes. ✅
 8. Feedback attachments for this app, with tests. ✅
 9. Card goes live, metadata and share image. ✅
-10. Full test run, build, screenshots on phone and desktop, then the pull request.
+10. Full test run, build, screenshots on phone and desktop, then the pull request. ✅
