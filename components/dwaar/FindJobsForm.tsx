@@ -125,13 +125,13 @@ export default function FindJobsForm({ companies }: { companies: CompanyChoice[]
       )}
 
       <section aria-labelledby="find-companies">
-        <h2 id="find-companies" className="dw-h2 dw-display">Companies with employees ready to refer</h2>
+        <h2 id="find-companies" className="dw-h2 dw-display">Companies on Dwaar</h2>
         <p className="dw-muted mt-2 max-w-2xl">
-          These companies have employees on Dwaar who chose to receive requests.
+          Every company in our list is shown. Companies with employees who chose to receive requests come first.
           {picked ? ` You chose “${picked}”.` : " Choose a job above first, or pick a company and add the job later."}
         </p>
         {companies.length === 0 ? (
-          <p className="dw-card mt-6">No company has employees accepting requests yet. You can still ask for a referral at any listed company.</p>
+          <p className="dw-card mt-6">No company is listed yet. Please check back soon.</p>
         ) : (
           <ul className="dw-grid mt-6">
             {companies.map((c) => (
@@ -139,7 +139,9 @@ export default function FindJobsForm({ companies }: { companies: CompanyChoice[]
                 <div>
                   <p className="dw-display text-lg">{c.name}</p>
                   <p className="dw-muted text-sm">
-                    {c.referrers} {c.referrers === 1 ? "employee" : "employees"} accepting requests
+                    {c.referrers === 0
+                      ? "No employee is accepting requests yet. Your request waits until one joins."
+                      : `${c.referrers} ${c.referrers === 1 ? "employee" : "employees"} accepting requests`}
                   </p>
                 </div>
                 <Link href={askHref(c.id)} className="dw-btn dw-btn-primary dw-btn-sm">Ask here</Link>
