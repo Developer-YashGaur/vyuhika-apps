@@ -65,10 +65,7 @@ export default function DwaarPrivacyPage() {
             </p>
             <p className="mt-3">
               When you cancel a request, we delete its resume file and clear its job description and score. When you delete your
-              Dwaar profile, we cancel your open requests and do the same for all your requests. Resume files of requests
-              that closed on their own (expired or accepted) are not deleted automatically yet. We plan to delete them 90 days
-              after the request closes. Until that is switched on, write to support@vyuhika.com and we will delete a file for you.
-            </p>
+              Dwaar profile, we cancel your open requests and do the same for all your requests. A request that closed (accepted or cancelled) loses its resume file, job description and score 90 days later. A request that is still open after 180 days is cancelled and loses them too. This clean-up runs once a day.</p>
           </section>
           <section>
             <h2 className="font-display text-xl font-medium">Why we collect it</h2>
