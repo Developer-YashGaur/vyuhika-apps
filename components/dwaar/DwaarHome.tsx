@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { deleteProfileAction, signInWithGoogle, signOut } from "@/app/apps/dwaar/actions";
+import InviteCard from "@/components/dwaar/InviteCard";
 import WorkEmailConfirm from "@/components/dwaar/WorkEmailConfirm";
+import { inviteRewardsEnabled } from "@/lib/dwaar/features";
+import { getInviteSummary } from "@/lib/dwaar/invites";
 import { getMyProfile, listCompanyOptions } from "@/lib/dwaar/profile";
 import { workEmailConfirmationConfigured } from "@/lib/dwaar/work-email";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -10,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 // What the Dwaar front page shows: sign in, finish your profile, or your profile.
 // It reads the signed-in person from cookies, so the page wraps it in <Suspense>.
 
-type Params = { error?: string; saved?: string; deleted?: string; confirmed?: string };
+type Params = { error?: string; saved?: string; deleted?: string; confirmed?: string; invite?: string };
 
 const ERRORS: Record<string, string> = {
   signin: "Sign-in did not finish. Please try again.",
@@ -57,6 +60,8 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
     const options = await listCompanyOptions(supabase);
     companyName = options.find((c) => c.id === profile.provider_company_id)?.name ?? null;
   }
+
+  const invites = profile.is_candidate && inviteRewardsEnabled() ? await getInviteSummary(supabase) : null;
 
   return (
     <>
@@ -106,6 +111,8 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
           <SignOutButton />
         </div>
       </section>
+
+      {invites && <InviteCard summary={invites} initialCode={params.invite} />}
 
       {profile.is_provider && profile.provider_work_email && !profile.work_email_verified_at && (
         <WorkEmailConfirm email={profile.provider_work_email} available={workEmailConfirmationConfigured()} />

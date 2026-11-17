@@ -5,3 +5,9 @@
 export function boostPaymentsEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DWAAR_BOOST_ENABLED?.trim().toLowerCase() === "true";
 }
+
+// Invite rewards are OFF until you switch them on. Turn on with DWAAR_INVITES_ENABLED=true here, and set
+// invite_rewards_enabled to 'true' in the database table private.dwaar_config (the database pays out the credits).
+export function inviteRewardsEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DWAAR_INVITES_ENABLED?.trim().toLowerCase() === "true";
+}

@@ -8,13 +8,14 @@ import { deleteMyProfile, getMyProfile, saveMyProfile } from "@/lib/dwaar/profil
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
 import { sendMessage } from "@/lib/dwaar/chat";
+import { redeemInvite } from "@/lib/dwaar/invites";
 import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
 import { ROLE_MESSAGES, findRoles, type RoleSuggestion } from "@/lib/dwaar/role-finder";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
 import { deliverBoost, deliverMessage } from "@/lib/dwaar/deliver-boost";
-import { boostPaymentsEnabled } from "@/lib/dwaar/features";
+import { boostPaymentsEnabled, inviteRewardsEnabled } from "@/lib/dwaar/features";
 import { razorpayKeys } from "@/lib/dwaar/razorpay";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
@@ -307,6 +308,22 @@ export async function sendMessageAction(requestId: string, _previous: ChatFormSt
   if (!result.ok) return { message: result.message, sent: false };
   revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
   return { message: null, sent: true };
+}
+
+// ---- Invite codes ----
+
+export type InviteFormState = { message: string | null; ok: boolean };
+
+export async function redeemInviteAction(_previous: InviteFormState, formData: FormData): Promise<InviteFormState> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  if (!inviteRewardsEnabled()) return { message: "Invite codes are not open yet.", ok: false };
+
+  const result = await redeemInvite(supabase, formData.get("code"));
+  if (result.ok) revalidatePath("/apps/dwaar");
+  return { message: result.message, ok: result.ok };
 }
 
 // ---- Find jobs for my resume ----
