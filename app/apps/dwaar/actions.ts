@@ -9,6 +9,7 @@ import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
 import { sendMessage } from "@/lib/dwaar/chat";
 import { redeemInvite } from "@/lib/dwaar/invites";
+import { spendCreditsOnBoost, spendMessage } from "@/lib/dwaar/credit-boost";
 import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
 import { ROLE_MESSAGES, findRoles, type RoleSuggestion } from "@/lib/dwaar/role-finder";
@@ -308,6 +309,24 @@ export async function sendMessageAction(requestId: string, _previous: ChatFormSt
   if (!result.ok) return { message: result.message, sent: false };
   revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
   return { message: null, sent: true };
+}
+
+// ---- Boost paid with credits ----
+
+export type SpendActionState = { ok: true } | { ok: false; message: string };
+
+export async function spendCreditsAction(requestId: string): Promise<SpendActionState> {
+  if (!supabaseConfigured()) return { ok: false, message: spendMessage("failed") };
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  if (!inviteRewardsEnabled()) return { ok: false, message: spendMessage("failed") };
+  if (typeof requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(requestId)) return { ok: false, message: spendMessage("failed") };
+
+  const result = await spendCreditsOnBoost(supabase, requestId);
+  if (result.kind !== "paid") return { ok: false, message: spendMessage(result.kind) };
+  revalidatePath("/apps/dwaar/requests");
+  return { ok: true };
 }
 
 // ---- Invite codes ----

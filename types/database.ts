@@ -677,6 +677,7 @@ export type Database = {
       }
       dwaar_send_message: { Args: { p_body: string; p_request_id: string }; Returns: string }
       dwaar_credit_balance: { Args: never; Returns: number }
+      dwaar_spend_credits_on_boost: { Args: { p_request_id: string }; Returns: string }
       dwaar_my_invite_code: { Args: never; Returns: string }
       dwaar_use_invite: { Args: { p_code: string }; Returns: string }
       dwaar_my_accepted_requests: {

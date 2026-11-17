@@ -4,11 +4,13 @@ import { after, connection } from "next/server";
 import { Suspense } from "react";
 import { cancelRequestAction } from "@/app/apps/dwaar/actions";
 import BoostButton from "@/components/dwaar/BoostButton";
+import CreditBoostButton from "@/components/dwaar/CreditBoostButton";
 import BoostForm from "@/components/dwaar/BoostForm";
 import RequestCard from "@/components/dwaar/RequestCard";
 import ScoreCard from "@/components/dwaar/ScoreCard";
 import { listMyBoosts, type MyBoost } from "@/lib/dwaar/boost";
-import { boostPaymentsEnabled } from "@/lib/dwaar/features";
+import { boostPaymentsEnabled, inviteRewardsEnabled } from "@/lib/dwaar/features";
+import { BOOST_CREDIT_COST, getCreditBalance } from "@/lib/dwaar/credit-boost";
 import { notifyProviders } from "@/lib/dwaar/notify";
 import { serverSecret } from "@/lib/dwaar/work-email";
 import { getEmailSettings } from "@/lib/email/settings";
@@ -70,6 +72,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   }
   const analysisById = new Map(analyses.map((a) => [a.requestId, a]));
   const boostOn = boostPaymentsEnabled();
+  const credits = inviteRewardsEnabled() ? await getCreditBalance(supabase) : 0;
   const checkNote: Record<string, string> = {
     done: " Your resume match score is on the card below.",
     limit: " You have used today's 5 resume checks, so there is no score this time.",
@@ -104,7 +107,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
         <ul className="dw-grid">
           {requests.map((r) => (
             <li key={r.out_id}>
-              <RequestItem request={r} analysis={analysisById.get(r.out_id)} boost={boosts.get(r.out_id)} boostOn={boostOn} />
+              <RequestItem request={r} analysis={analysisById.get(r.out_id)} boost={boosts.get(r.out_id)} boostOn={boostOn} credits={credits} />
             </li>
           ))}
         </ul>
@@ -113,7 +116,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   );
 }
 
-function RequestItem({ request: r, analysis, boost, boostOn }: { request: MyRequest; analysis?: Analysis; boost?: MyBoost; boostOn: boolean }) {
+function RequestItem({ request: r, analysis, boost, boostOn, credits }: { request: MyRequest; analysis?: Analysis; boost?: MyBoost; boostOn: boolean; credits: number }) {
   const stamp = statusStamp(r.out_status);
   return (
     <RequestCard
@@ -144,7 +147,12 @@ function RequestItem({ request: r, analysis, boost, boostOn }: { request: MyRequ
       ) : boost?.status === "paid" ? (
         <BoostForm orderId={boost.orderId} />
       ) : (
-        boostOn && r.out_has_resume && <BoostButton requestId={r.out_id} />
+        r.out_has_resume && (
+          <>
+            {credits >= BOOST_CREDIT_COST && <CreditBoostButton requestId={r.out_id} credits={credits} />}
+            {boostOn && <BoostButton requestId={r.out_id} />}
+          </>
+        )
       )}
       <div className="flex flex-wrap items-center gap-3">
         <a href={r.out_job_url} target="_blank" rel="noopener noreferrer" className="dw-link text-sm">
