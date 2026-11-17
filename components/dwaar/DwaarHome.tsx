@@ -151,7 +151,7 @@ function SignedOut({ disabled = false }: { disabled?: boolean }) {
       <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">Sign in at reception</h2>
       <p className="mt-3 leading-relaxed dw-muted">
         Sign in with Google to create your Dwaar profile. Choose whether you want referrals, want to refer people, or both.
-        Asking for and giving referrals is not open yet.
+        Dwaar is in early access, so things may change.
       </p>
       <form action={signInWithGoogle} className="mt-6">
         <button type="submit" disabled={disabled} className="btn-glow btn-lg">Continue with Google</button>
