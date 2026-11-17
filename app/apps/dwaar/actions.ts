@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { CONSENT_VERSION } from "@/lib/dwaar/consent";
 import { deleteMyProfile, getMyProfile, saveMyProfile } from "@/lib/dwaar/profile";
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
+import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
+import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { confirmWorkEmailCode, requestWorkEmailCode, serverSecret } from "@/lib/dwaar/work-email";
 import { getEmailSettings } from "@/lib/email/settings";
 import { createResendSender } from "@/lib/feedback/deliver";
@@ -106,4 +108,35 @@ export async function confirmWorkEmailAction(previous: WorkEmailState, formData:
   const result = await confirmWorkEmailCode(supabase, typeof typed === "string" ? typed : "");
   if (!result.ok) return { ...previous, error: result.message };
   redirect("/apps/dwaar?confirmed=1");
+}
+
+// ---- Referral requests (candidate side) ----
+
+export type RequestFormState = { errors: RequestFieldErrors; message: string | null };
+
+export async function createRequestAction(_previous: RequestFormState, formData: FormData): Promise<RequestFormState> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+
+  const parsed = parseRequestForm(formData);
+  if (!parsed.ok) return { errors: parsed.errors, message: "Please fix the highlighted fields." };
+
+  const created = await createRequest(supabase, parsed.data);
+  if (!created.ok) return { errors: {}, message: created.message };
+
+  redirect("/apps/dwaar/requests?sent=1");
+}
+
+export async function cancelRequestAction(formData: FormData): Promise<void> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+
+  const id = formData.get("requestId");
+  if (typeof id !== "string" || id.length === 0) redirect("/apps/dwaar/requests");
+  await cancelRequest(supabase, id);
+  redirect("/apps/dwaar/requests?cancelled=1");
 }

@@ -86,12 +86,15 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
           </dl>
         )}
 
-        <p className="mt-6 text-sm dw-muted">
-          Asking for and giving referrals is not open yet. Your profile is saved, and we will tell you when it opens.
-        </p>
+        {profile.is_candidate && (
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <Link href="/apps/dwaar/requests/new" className="btn-glow btn-lg text-center">Ask for a referral</Link>
+            <Link href="/apps/dwaar/requests" className="btn-ghost btn-lg text-center">My requests</Link>
+          </div>
+        )}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link href="/apps/dwaar/profile" className="btn-glow btn-lg text-center">Edit profile</Link>
+          <Link href="/apps/dwaar/profile" className="btn-ghost btn-lg text-center">Edit profile</Link>
           <SignOutButton />
         </div>
       </section>

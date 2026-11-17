@@ -209,6 +209,118 @@ export type Database = {
           },
         ]
       }
+      dwaar_provider_notifications: {
+        Row: {
+          id: number
+          provider_id: string
+          request_id: string
+          sent_at: string
+        }
+        Insert: {
+          id?: never
+          provider_id: string
+          request_id: string
+          sent_at?: string
+        }
+        Update: {
+          id?: never
+          provider_id?: string
+          request_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_provider_notifications_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_referral_requests: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          candidate_id: string
+          company_id: string
+          created_at: string
+          id: string
+          job_title: string
+          job_url: string
+          note: string | null
+          notified_at: string | null
+          status: Database["public"]["Enums"]["referral_status"]
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          candidate_id: string
+          company_id: string
+          created_at?: string
+          id?: string
+          job_title: string
+          job_url: string
+          note?: string | null
+          notified_at?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          candidate_id?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          job_title?: string
+          job_url?: string
+          note?: string | null
+          notified_at?: string | null
+          status?: Database["public"]["Enums"]["referral_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_referral_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_referral_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_request_dismissals: {
+        Row: {
+          provider_id: string
+          request_id: string
+        }
+        Insert: {
+          provider_id: string
+          request_id: string
+        }
+        Update: {
+          provider_id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_request_dismissals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dwaar_work_email_codes: {
         Row: {
           attempts: number
@@ -261,13 +373,75 @@ export type Database = {
       }
     }
     Functions: {
+      dwaar_cancel_request: { Args: { p_request_id: string }; Returns: boolean }
+      dwaar_claim_provider_notifications: {
+        Args: { p_request_id: string; p_secret: string }
+        Returns: {
+          out_company_name: string
+          out_job_title: string
+          out_name: string
+          out_work_email: string
+        }[]
+      }
       dwaar_confirm_work_email: { Args: { p_code: string }; Returns: boolean }
+      dwaar_create_request: {
+        Args: {
+          p_company_id: string
+          p_job_title: string
+          p_job_url: string
+          p_note?: string
+        }
+        Returns: string
+      }
       dwaar_issue_work_email_code: {
         Args: { p_secret: string }
         Returns: {
           out_code: string
           out_work_email: string
         }[]
+      }
+      dwaar_my_accepted_requests: {
+        Args: never
+        Returns: {
+          out_accepted_at: string
+          out_candidate_email: string
+          out_candidate_name: string
+          out_company_name: string
+          out_id: string
+          out_job_title: string
+          out_job_url: string
+        }[]
+      }
+      dwaar_my_requests: {
+        Args: never
+        Returns: {
+          out_accepted_at: string
+          out_accepted_by_name: string
+          out_company_id: string
+          out_company_name: string
+          out_created_at: string
+          out_id: string
+          out_job_title: string
+          out_job_url: string
+          out_note: string
+          out_status: string
+        }[]
+      }
+      dwaar_open_requests_for_provider: {
+        Args: never
+        Returns: {
+          out_candidate_headline: string
+          out_candidate_name: string
+          out_created_at: string
+          out_id: string
+          out_job_title: string
+          out_job_url: string
+          out_note: string
+        }[]
+      }
+      dwaar_respond_to_request: {
+        Args: { p_accept: boolean; p_request_id: string }
+        Returns: string
       }
       email_matches_company: {
         Args: { p_company_id: string; p_email: string }
@@ -285,6 +459,7 @@ export type Database = {
       }
     }
     Enums: {
+      referral_status: "open" | "accepted" | "cancelled"
       staff_role: "viewer" | "moderator" | "admin" | "super_admin"
     }
     CompositeTypes: {
@@ -413,6 +588,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      referral_status: ["open", "accepted", "cancelled"],
       staff_role: ["viewer", "moderator", "admin", "super_admin"],
     },
   },
