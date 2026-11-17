@@ -1359,3 +1359,111 @@ a:focus-visible > .logo-glow {
 @media (prefers-reduced-motion: no-preference) {
   .more-tools-link:hover { transform: translateY(-2px); }
 }
+
+/* ================= Dwaar: real-world "visitor pass" look =================
+   The page keeps the dark Vyuhika shell. Content sits on warm paper cards,
+   like passes and forms you get at a company reception. */
+.dw-paper {
+  position: relative;
+  color: #1d1a16;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 40%),
+    #f6efe1;
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 18px 40px -16px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+@media (min-width: 640px) {
+  .dw-paper { padding: 2rem; }
+}
+.dw-paper h2,
+.dw-paper h3 { color: #1d1a16; }
+.dw-paper .dw-muted { color: #5c5546; }
+.dw-paper .btn-glow { box-shadow: 0 8px 22px -8px rgba(34, 211, 238, 0.8); }
+.dw-paper .btn-ghost {
+  color: #1d1a16;
+  border-color: rgba(29, 26, 22, 0.35);
+  background: rgba(29, 26, 22, 0.04);
+}
+.dw-paper .btn-ghost:hover { border-color: #0e7490; background: rgba(14, 116, 144, 0.08); }
+.dw-paper a.dw-link { color: #0e7490; text-decoration: underline; text-underline-offset: 3px; }
+.dw-paper :focus-visible { outline-color: #0e7490; }
+
+.dw-pass {
+  position: relative;
+  color: #1d1a16;
+  background: #f6efe1;
+  border-radius: 12px;
+  padding: 1.5rem 1.25rem 1.1rem;
+  box-shadow: 0 16px 36px -14px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.dw-pass::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 8px;
+  background: repeating-linear-gradient(135deg, #0e7490 0 10px, #6d28d9 10px 20px);
+}
+.dw-pass-hole {
+  width: 44px;
+  height: 8px;
+  margin: 0 auto 0.9rem;
+  border-radius: 99px;
+  background: #050816;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.dw-pass-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #5c5546;
+  border-bottom: 1px dashed rgba(29, 26, 22, 0.3);
+  padding-bottom: 0.6rem;
+}
+.dw-pass-number { font-weight: 700; color: #1d1a16; letter-spacing: 0.08em; }
+.dw-pass-body { display: flex; gap: 0.9rem; align-items: center; padding: 1rem 0; }
+.dw-pass-title { font-weight: 700; font-size: 1.1rem; line-height: 1.25; overflow-wrap: anywhere; }
+.dw-pass-company { color: #3f392d; }
+.dw-pass-meta { color: #5c5546; font-size: 0.85rem; margin-top: 0.15rem; }
+.dw-pass-foot { border-top: 1px dashed rgba(29, 26, 22, 0.3); padding-top: 0.8rem; }
+
+.dw-monogram {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Rubber-stamp status. Colour is never the only signal: the words say it too. */
+.dw-stamp {
+  display: inline-block;
+  margin: 0.2rem 0 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transform: rotate(-3deg);
+  opacity: 0.92;
+}
+.dw-stamp-wait { color: #b45309; }
+.dw-stamp-ok { color: #15803d; }
+.dw-stamp-closed { color: #9f1239; }
+
+.dw-door-glow { transform-origin: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .dw-door-glow { animation: dw-glow 4s ease-in-out infinite; }
+  .dw-walker { animation: dw-walk 1.2s ease-out both; }
+}
+@keyframes dw-glow { 50% { opacity: 0.55; } }
+@keyframes dw-walk { from { transform: translateX(-40px); opacity: 0; } to { transform: none; opacity: 1; } }

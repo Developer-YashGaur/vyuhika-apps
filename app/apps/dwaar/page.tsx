@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import EntranceScene from "@/components/dwaar/art/EntranceScene";
 import DwaarHome from "@/components/dwaar/DwaarHome";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 
@@ -19,15 +20,18 @@ export default function DwaarPage({ searchParams }: { searchParams: Promise<{ er
           All apps
         </Link>
 
-        <header className="mt-8 mb-10 sm:mb-14">
-          <div className="flex flex-wrap items-center gap-4">
-            <h1 className="page-title font-display">Dwaar</h1>
-            <span className="badge badge-glow glow-cyan">Early access</span>
+        <header className="mt-8 mb-10 grid items-center gap-8 sm:mb-14 lg:grid-cols-[1.1fr_1fr]">
+          <div>
+            <div className="flex flex-wrap items-center gap-4">
+              <h1 className="page-title font-display">Dwaar</h1>
+              <span className="badge badge-glow glow-cyan">Early access</span>
+            </div>
+            <p className="measure mt-5 text-lg leading-relaxed text-mist">
+              Dwaar means &ldquo;door&rdquo;. Walk up to the reception of a company you want to join. Employees who work
+              there can see your request and, if they agree, give you a referral.
+            </p>
           </div>
-          <p className="measure mt-5 text-lg leading-relaxed text-mist">
-            Dwaar means &ldquo;door&rdquo;. It is a place where job seekers can ask employees for a referral, and
-            employees can help people get in.
-          </p>
+          <EntranceScene className="w-full max-w-md justify-self-center lg:max-w-none" />
         </header>
 
         <Suspense fallback={<p className="text-mist">Loading…</p>}>

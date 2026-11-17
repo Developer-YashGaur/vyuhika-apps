@@ -37,10 +37,10 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
     return (
       <>
         {notice}
-        <section className="glass-panel glow-cyan max-w-2xl">
+        <section className="dw-paper max-w-2xl">
           <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">Welcome. Let&apos;s set up your profile.</h2>
-          <p className="mt-3 leading-relaxed text-mist">
-            It takes about a minute. You are signed in as <span className="text-ink">{data.user.email}</span>.
+          <p className="mt-3 leading-relaxed dw-muted">
+            It takes about a minute. You are signed in as <span >{data.user.email}</span>.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link href="/apps/dwaar/profile" className="btn-glow btn-lg text-center">Create my profile</Link>
@@ -61,9 +61,9 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
   return (
     <>
       {notice}
-      <section className="glass-panel glow-cyan max-w-2xl">
+      <section className="dw-paper max-w-2xl">
         <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">{profile.display_name}</h2>
-        {profile.headline && <p className="mt-1 text-mist">{profile.headline}</p>}
+        {profile.headline && <p className="mt-1 dw-muted">{profile.headline}</p>}
 
         <div className="mt-5 flex flex-wrap gap-2">
           {profile.is_candidate && <span className="chip chip-cyan">Looking for referrals</span>}
@@ -73,20 +73,20 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
         {profile.is_provider && (
           <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-mist">Company</dt>
-              <dd className="text-ink">{companyName ?? "Not available"}</dd>
+              <dt className="dw-muted">Company</dt>
+              <dd>{companyName ?? "Not available"}</dd>
             </div>
             <div>
-              <dt className="text-mist">Work email</dt>
-              <dd className="break-all text-ink">
+              <dt className="dw-muted">Work email</dt>
+              <dd className="break-all">
                 {profile.provider_work_email}{" "}
-                <span className="text-mist">({profile.work_email_verified_at ? "confirmed" : "not yet confirmed"})</span>
+                <span className="dw-muted">({profile.work_email_verified_at ? "confirmed" : "not yet confirmed"})</span>
               </dd>
             </div>
           </dl>
         )}
 
-        <p className="mt-6 text-sm text-mist">
+        <p className="mt-6 text-sm dw-muted">
           Asking for and giving referrals is not open yet. Your profile is saved, and we will tell you when it opens.
         </p>
 
@@ -100,9 +100,9 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
         <WorkEmailConfirm email={profile.provider_work_email} available={workEmailConfirmationConfigured()} />
       )}
 
-      <details className="glass-panel mt-6 max-w-2xl">
+      <details className="dw-paper mt-6 max-w-2xl">
         <summary className="cursor-pointer font-medium">Delete my profile</summary>
-        <p className="mt-3 text-sm leading-relaxed text-mist">
+        <p className="mt-3 text-sm leading-relaxed dw-muted">
           This removes your Dwaar profile: your name, headline, roles, company and work email. Your Google sign-in stays,
           so you can come back later. To remove the sign-in account too, write to support@vyuhika.com.
         </p>
@@ -138,19 +138,19 @@ function Notice({ params }: { params: Params }) {
 
 function SignedOut({ disabled = false }: { disabled?: boolean }) {
   return (
-    <section className="glass-panel glow-cyan max-w-2xl">
-      <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">Get early access</h2>
-      <p className="mt-3 leading-relaxed text-mist">
+    <section className="dw-paper max-w-2xl">
+      <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">Sign in at reception</h2>
+      <p className="mt-3 leading-relaxed dw-muted">
         Sign in with Google to create your Dwaar profile. Choose whether you want referrals, want to refer people, or both.
         Asking for and giving referrals is not open yet.
       </p>
       <form action={signInWithGoogle} className="mt-6">
         <button type="submit" disabled={disabled} className="btn-glow btn-lg">Continue with Google</button>
       </form>
-      {disabled && <p className="mt-3 text-sm text-mist">Sign-in is not set up on this server yet.</p>}
-      <p className="mt-5 text-sm text-mist">
+      {disabled && <p className="mt-3 text-sm dw-muted">Sign-in is not set up on this server yet.</p>}
+      <p className="mt-5 text-sm dw-muted">
         We only use your Google name and email address to set up your profile. Read the{" "}
-        <Link href="/apps/dwaar/privacy" className="text-link">privacy notice</Link>.
+        <Link href="/apps/dwaar/privacy" className="dw-link">privacy notice</Link>.
       </p>
     </section>
   );
