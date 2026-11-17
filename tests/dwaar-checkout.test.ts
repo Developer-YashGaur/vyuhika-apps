@@ -15,7 +15,7 @@ describe("buildCheckoutOptions", () => {
     const onPaid = vi.fn();
     const onDismiss = vi.fn();
     const o = buildCheckoutOptions(input, { onPaid, onDismiss });
-    o.handler();
+    o.handler({});
     o.modal.ondismiss();
     expect(onPaid).toHaveBeenCalled();
     expect(onDismiss).toHaveBeenCalled();

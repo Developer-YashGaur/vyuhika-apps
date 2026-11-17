@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 // Talks to Razorpay from the server. The key secret is passed in by the caller (read from .env.local) and is
 // never logged, never returned and never sent to the browser. No SDK: one small request, so there is less to trust.
 
@@ -42,4 +44,13 @@ export async function createRazorpayOrder(
   } catch {
     throw new RazorpayError();
   }
+}
+
+// After checkout, Razorpay gives the browser an order id, a payment id and a signature. The signature is an HMAC of
+// "order_id|payment_id" made with the key secret, so only Razorpay (and we) can make a valid one. We recompute it and compare.
+export function verifyPaymentSignature(args: { orderId: string; paymentId: string; signature: string; keySecret: string }): boolean {
+  if (!/^order_[A-Za-z0-9]{1,40}$/.test(args.orderId) || !/^pay_[A-Za-z0-9]{1,40}$/.test(args.paymentId)) return false;
+  if (!/^[0-9a-f]{64}$/.test(args.signature)) return false;
+  const expected = createHmac("sha256", args.keySecret).update(`${args.orderId}|${args.paymentId}`).digest();
+  return timingSafeEqual(expected, Buffer.from(args.signature, "hex"));
 }

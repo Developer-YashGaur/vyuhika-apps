@@ -98,3 +98,40 @@ describe("boostMessage", () => {
     for (const kind of ["already", "no-resume", "unavailable", "failed"] as const) expect(boostMessage(kind)).not.toMatch(/razorpay|secret|key/i);
   });
 });
+
+import { createHmac } from "node:crypto";
+import { confirmBoostPayment } from "@/lib/dwaar/boost";
+import { verifyPaymentSignature } from "@/lib/dwaar/razorpay";
+
+const sign = (orderId: string, paymentId: string, secret = KEYS.keySecret) => createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex");
+
+describe("verifyPaymentSignature", () => {
+  const base = { orderId: "order_AAA111", paymentId: "pay_BBB222", keySecret: KEYS.keySecret };
+  it("accepts the signature made with our key secret", () => {
+    expect(verifyPaymentSignature({ ...base, signature: sign("order_AAA111", "pay_BBB222") })).toBe(true);
+  });
+  it("rejects a signature made with another secret, another payment, or in a bad shape", () => {
+    expect(verifyPaymentSignature({ ...base, signature: sign("order_AAA111", "pay_BBB222", "z".repeat(24)) })).toBe(false);
+    expect(verifyPaymentSignature({ ...base, signature: sign("order_AAA111", "pay_OTHER9") })).toBe(false);
+    expect(verifyPaymentSignature({ ...base, signature: "abc" })).toBe(false);
+    expect(verifyPaymentSignature({ ...base, orderId: "bad id", signature: sign("order_AAA111", "pay_BBB222") })).toBe(false);
+  });
+});
+
+describe("confirmBoostPayment", () => {
+  const receipt = { orderId: "order_AAA111", paymentId: "pay_BBB222", signature: sign("order_AAA111", "pay_BBB222") };
+  it("marks the order paid only after the signature checks out", async () => {
+    const { supabase, calls } = fakeDb({ attach: { data: true, error: null } });
+    expect(await confirmBoostPayment({ supabase, secret: SECRET, keys: KEYS }, receipt)).toEqual({ kind: "paid" });
+    expect(calls[0]).toContain("dwaar_mark_boost_paid");
+  });
+  it("does not touch the database when the signature is wrong", async () => {
+    const { supabase, calls } = fakeDb();
+    expect(await confirmBoostPayment({ supabase, secret: SECRET, keys: KEYS }, { ...receipt, signature: sign("order_AAA111", "pay_FAKE99") })).toEqual({ kind: "invalid" });
+    expect(calls).toHaveLength(0);
+  });
+  it("is unavailable without keys, and fails safely if the database refuses", async () => {
+    expect(await confirmBoostPayment({ supabase: fakeDb().supabase, secret: SECRET, keys: null }, receipt)).toEqual({ kind: "unavailable" });
+    expect(await confirmBoostPayment({ supabase: fakeDb({ attach: { data: false, error: null } }).supabase, secret: SECRET, keys: KEYS }, receipt)).toEqual({ kind: "failed" });
+  });
+});

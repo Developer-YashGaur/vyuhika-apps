@@ -9,7 +9,7 @@ import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-f
 import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
-import { boostMessage, startBoost } from "@/lib/dwaar/boost";
+import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
 import { razorpayKeys } from "@/lib/dwaar/razorpay";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
@@ -232,4 +232,27 @@ export async function startBoostAction(requestId: string): Promise<BoostActionSt
   const result = await startBoost({ supabase, secret: serverSecret(), keys }, requestId);
   if (result.kind !== "ready" || !keys) return { ok: false, message: boostMessage(result.kind === "ready" ? "failed" : result.kind) };
   return { ok: true, orderId: result.orderId, gatewayOrderId: result.gatewayOrderId, amountPaise: result.amountPaise, keyId: keys.keyId };
+}
+
+// Boost, step 2: the browser reports a finished checkout. We trust only the signed receipt, never the browser's word.
+export type BoostPaidState = { ok: true } | { ok: false; message: string };
+
+export async function confirmBoostPaymentAction(receipt: { orderId: string; paymentId: string; signature: string }): Promise<BoostPaidState> {
+  if (!supabaseConfigured()) return { ok: false, message: boostMessage("unavailable") };
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+
+  const result = await confirmBoostPayment(
+    { supabase, secret: serverSecret(), keys: razorpayKeys() },
+    { orderId: String(receipt?.orderId ?? ""), paymentId: String(receipt?.paymentId ?? ""), signature: String(receipt?.signature ?? "") },
+  );
+  if (result.kind === "paid") return { ok: true };
+  return {
+    ok: false,
+    message:
+      result.kind === "invalid"
+        ? "We could not verify this payment. If money was taken, write to support@vyuhika.com with your request details."
+        : "We could not confirm your payment yet. If money was taken, it is safe: write to support@vyuhika.com and we will fix it.",
+  };
 }

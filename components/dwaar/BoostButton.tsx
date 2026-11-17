@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { startBoostAction } from "@/app/apps/dwaar/actions";
+import { confirmBoostPaymentAction, startBoostAction } from "@/app/apps/dwaar/actions";
 import { buildCheckoutOptions, CHECKOUT_SCRIPT_URL } from "@/lib/dwaar/checkout";
 
 type RazorpayWindow = Window & { Razorpay?: new (options: unknown) => { open: () => void } };
@@ -46,9 +46,15 @@ export default function BoostButton({ requestId }: { requestId: string }) {
         return;
       }
       const options = buildCheckoutOptions(order, {
-        onPaid: () => {
+        onPaid: async (response) => {
           setPhase("confirming");
-          setMessage("Payment received. We are confirming it now. This page will update shortly.");
+          setMessage("Payment received. Confirming it now…");
+          const confirmed = await confirmBoostPaymentAction({
+            orderId: response.razorpay_order_id ?? "",
+            paymentId: response.razorpay_payment_id ?? "",
+            signature: response.razorpay_signature ?? "",
+          });
+          setMessage(confirmed.ok ? "Payment confirmed. Thank you!" : confirmed.message);
           router.refresh();
         },
         onDismiss: () => {

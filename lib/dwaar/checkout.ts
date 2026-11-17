@@ -3,7 +3,8 @@
 // happened is decided by the server (the webhook), never by this page.
 
 export type CheckoutInput = { keyId: string; gatewayOrderId: string; amountPaise: number };
-export type CheckoutCallbacks = { onPaid: () => void; onDismiss: () => void };
+export type PaymentResponse = { razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string };
+export type CheckoutCallbacks = { onPaid: (response: PaymentResponse) => void; onDismiss: () => void };
 
 export type CheckoutOptions = {
   key: string;
@@ -13,7 +14,7 @@ export type CheckoutOptions = {
   name: string;
   description: string;
   theme: { color: string };
-  handler: () => void;
+  handler: (response: PaymentResponse) => void;
   modal: { ondismiss: () => void };
 };
 

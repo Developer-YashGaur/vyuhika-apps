@@ -189,7 +189,15 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_boost_orders_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dwaar_profiles: {
         Row: {
@@ -472,6 +480,14 @@ export type Database = {
     }
     Functions: {
       dwaar_analyses_used_today: { Args: never; Returns: number }
+      dwaar_attach_gateway_order: {
+        Args: {
+          p_gateway_order_id: string
+          p_order_id: string
+          p_secret: string
+        }
+        Returns: boolean
+      }
       dwaar_cancel_request: { Args: { p_request_id: string }; Returns: boolean }
       dwaar_claim_provider_notifications: {
         Args: { p_request_id: string; p_secret: string }
@@ -496,19 +512,9 @@ export type Database = {
         }
         Returns: string
       }
-      dwaar_attach_gateway_order: {
-        Args: { p_order_id: string; p_gateway_order_id: string; p_secret: string }
+      dwaar_mark_boost_paid: {
+        Args: { p_gateway_order_id: string; p_gateway_payment_id: string; p_secret: string }
         Returns: boolean
-      }
-      dwaar_start_boost: {
-        Args: { p_request_id: string }
-        Returns: {
-          out_order_id: string
-          out_amount_paise: number
-          out_currency: string
-          out_status: string
-          out_gateway_order_id: string | null
-        }[]
       }
       dwaar_forget_my_requests: {
         Args: { p_request_id?: string }
@@ -520,6 +526,10 @@ export type Database = {
           out_code: string
           out_work_email: string
         }[]
+      }
+      dwaar_mark_resumes_swept: {
+        Args: { p_request_ids: string[]; p_secret: string }
+        Returns: number
       }
       dwaar_my_accepted_requests: {
         Args: never
@@ -569,6 +579,13 @@ export type Database = {
         Args: { p_accept: boolean; p_request_id: string }
         Returns: string
       }
+      dwaar_resumes_due_for_sweep: {
+        Args: { p_limit?: number; p_secret: string }
+        Returns: {
+          out_request_id: string
+          out_resume_path: string
+        }[]
+      }
       dwaar_save_analysis: {
         Args: {
           p_gaps: Json
@@ -581,6 +598,16 @@ export type Database = {
           p_summary: string
         }
         Returns: boolean
+      }
+      dwaar_start_boost: {
+        Args: { p_request_id: string }
+        Returns: {
+          out_amount_paise: number
+          out_currency: string
+          out_gateway_order_id: string
+          out_order_id: string
+          out_status: string
+        }[]
       }
       email_matches_company: {
         Args: { p_company_id: string; p_email: string }

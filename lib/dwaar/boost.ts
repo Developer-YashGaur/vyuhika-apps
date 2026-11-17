@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import { createRazorpayOrder, type RazorpayKeys } from "@/lib/dwaar/razorpay";
+import { createRazorpayOrder, verifyPaymentSignature, type RazorpayKeys } from "@/lib/dwaar/razorpay";
 
 // Starting a Boost: the database decides the price and whether this request can be boosted; we only create the
 // matching Razorpay order and link it. The browser later opens Razorpay checkout with the order id returned here.
@@ -73,4 +73,27 @@ export async function listPaidBoostRequestIds(supabase: Db): Promise<Set<string>
   const { data, error } = await supabase.from("dwaar_boost_orders").select("request_id").in("status", ["paid", "delivered"]);
   if (error) throw new Error("Could not load your Boost orders.");
   return new Set((data ?? []).map((row) => row.request_id));
+}
+
+export type PaymentReceipt = { orderId: string; paymentId: string; signature: string };
+export type ConfirmOutcome = { kind: "paid" } | { kind: "invalid" } | { kind: "unavailable" } | { kind: "failed" };
+
+// The payment is real only if the signature checks out. The database then marks the order paid for this signed-in person.
+export async function confirmBoostPayment({ supabase, secret, keys }: Deps, receipt: PaymentReceipt): Promise<ConfirmOutcome> {
+  if (!secret || !keys) return { kind: "unavailable" };
+  const valid = verifyPaymentSignature({ ...receipt, keySecret: keys.keySecret });
+  if (!valid) {
+    console.error("[dwaar] a payment receipt had a bad signature");
+    return { kind: "invalid" };
+  }
+  const marked = await supabase.rpc("dwaar_mark_boost_paid", {
+    p_gateway_order_id: receipt.orderId,
+    p_gateway_payment_id: receipt.paymentId,
+    p_secret: secret,
+  });
+  if (marked.error || marked.data !== true) {
+    console.error("[dwaar] marking a boost paid failed", { code: marked.error?.code });
+    return { kind: "failed" };
+  }
+  return { kind: "paid" };
 }
