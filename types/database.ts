@@ -228,6 +228,11 @@ export type Database = {
       }
     }
     Functions: {
+      dwaar_confirm_work_email: { Args: { p_code: string }; Returns: boolean }
+      dwaar_issue_work_email_code: {
+        Args: { p_secret: string }
+        Returns: { out_code: string; out_work_email: string }[]
+      }
       email_matches_company: {
         Args: { p_company_id: string; p_email: string }
         Returns: boolean

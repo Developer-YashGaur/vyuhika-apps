@@ -170,8 +170,8 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
               className="field-input mt-3"
             />
             <p id="workEmail-hint" className="mt-2 text-sm text-mist">
-              It must use your company&apos;s email domain. Personal addresses like Gmail do not work. In a later update we
-              will ask you to confirm it with a code. Until then it is shown as not yet confirmed.
+              It must use your company&apos;s email domain. Personal addresses like Gmail do not work. After you save, we
+              will email a code to this address so you can confirm it. If you change it later, you confirm again.
             </p>
             <FieldError id={errorId("workEmail")} message={errors.workEmail} />
           </div>

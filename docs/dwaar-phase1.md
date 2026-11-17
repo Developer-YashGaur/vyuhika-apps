@@ -25,5 +25,16 @@ and for providers a company plus a work email whose domain must match the compan
 3. Google sign-in is already enabled in Supabase (set up for the admin app).
 4. Staff must add companies and their email domains in the admin panel before providers can pick a company.
 
-## Not in Phase 1
-Emailed code to confirm a work email, referral requests, resumes, chat, payments, account deletion of the sign-in record itself.
+## Phase 2: confirming a work email with a code
+- The database makes and checks the code (`dwaar_issue_work_email_code`, `dwaar_confirm_work_email`, owned by vyuhika-platform).
+  Codes last 15 minutes, allow 5 tries, 60 seconds between sends and 5 sends per hour. Only a hash is stored.
+- `lib/dwaar/work-email.tsx` passes the code along: it asks the database for a code with `DWAAR_SERVER_SECRET`, then emails it with the existing
+  Resend setup (`components/emails/WorkEmailCodeEmail.tsx`). The address comes from the database, never from the browser.
+- `DWAAR_SERVER_SECRET` is a server-only value (no NEXT_PUBLIC_ prefix) of at least 32 characters. Its SHA-256 hash is stored in
+  `private.dwaar_config` (see vyuhika-platform docs/CHANGELOG.md for the one-time setup). Set it in `.env.local` and in Vercel.
+- The confirm panel (`components/dwaar/WorkEmailConfirm.tsx`) shows on the Dwaar page for providers whose email is not confirmed.
+  If the secret or email settings are missing, it says confirming is not switched on yet.
+- Several accounts may claim one email, but only the account that confirms the code holds it as confirmed.
+
+## Not built yet
+Referral requests, resumes, chat, payments, deleting the sign-in record itself.

@@ -40,7 +40,7 @@ export type DeliverResult =
   | { ok: false; reason: "not-configured" | "send-failed" };
 
 // The real sender, using Resend. Returns null if RESEND_API_KEY is missing.
-function createResendSender(): SendEmailFn | null {
+export function createResendSender(): SendEmailFn | null {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) return null;
   const resend = new Resend(apiKey);
