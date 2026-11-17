@@ -60,7 +60,7 @@ describe("format helpers", () => {
     expect(timeAgo("2026-11-17T01:00:00Z", now)).toBe("today");
     expect(timeAgo("2026-11-16T05:00:00Z", now)).toBe("yesterday");
     expect(timeAgo("2026-11-14T05:00:00Z", now)).toBe("3 days ago");
-    expect(timeAgo("2026-10-20T05:00:00Z", now)).toBe("3 weeks ago");
+    expect(timeAgo("2026-10-27T05:00:00Z", now)).toBe("3 weeks ago");
     expect(timeAgo("nonsense", now)).toBe("");
   });
 });
