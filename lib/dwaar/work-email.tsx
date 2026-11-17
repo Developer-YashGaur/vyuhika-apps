@@ -64,10 +64,17 @@ type RequestDeps = { secret: string; send: SendEmailFn; settings: EmailSettings 
 // email), never from the browser, so this cannot be used to send codes to other people's addresses.
 export async function requestWorkEmailCode(supabase: Db, deps: RequestDeps): Promise<Outcome> {
   const { data, error } = await supabase.rpc("dwaar_issue_work_email_code", { p_secret: deps.secret });
-  if (error) return { ok: false, message: friendlyCodeError(error.code) };
+  if (error) {
+    // Only the error code is logged (never the secret, the code or an email address), so a developer can see the real cause.
+    console.error("[dwaar] could not issue a work-email code", { code: error.code });
+    return { ok: false, message: friendlyCodeError(error.code) };
+  }
 
   const row = data?.[0];
-  if (!row) return { ok: false, message: GENERIC };
+  if (!row) {
+    console.error("[dwaar] the database returned no code row");
+    return { ok: false, message: GENERIC };
+  }
 
   const email = await buildWorkEmailCodeEmail(row.out_code, deps.settings.assetBaseUrl);
   const sent = await deps.send({ from: deps.settings.from, to: row.out_work_email, ...email });
@@ -79,7 +86,10 @@ export async function confirmWorkEmailCode(supabase: Db, rawCode: string): Promi
   if (!CODE_PATTERN.test(code)) return { ok: false, message: "The code has 6 digits. Please check it and try again." };
 
   const { data, error } = await supabase.rpc("dwaar_confirm_work_email", { p_code: code });
-  if (error) return { ok: false, message: GENERIC };
+  if (error) {
+    console.error("[dwaar] could not check a work-email code", { code: error.code });
+    return { ok: false, message: GENERIC };
+  }
   return data === true
     ? { ok: true }
     : { ok: false, message: "That code is not right, or it has expired. Check it, or ask for a new code." };
