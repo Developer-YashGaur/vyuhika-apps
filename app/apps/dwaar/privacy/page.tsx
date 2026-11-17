@@ -23,16 +23,16 @@ export default function DwaarPrivacyPage() {
           Draft for early access. It will be reviewed by a lawyer before Dwaar opens to everyone.
         </p>
 
-        <div className="measure mt-10 flex flex-col gap-8 leading-relaxed text-mist">
+        <div className="dw-paper mt-10 flex max-w-3xl flex-col gap-8 leading-relaxed dw-muted">
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">What Dwaar is</h2>
+            <h2 className="font-display text-xl font-medium">What Dwaar is</h2>
             <p className="mt-3">
               Dwaar is an early-access service from Vyuhika Apps. Today you can sign in and create a profile. Asking for
               and giving referrals is not open yet. Dwaar does not promise any job, interview or referral.
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">What we collect</h2>
+            <h2 className="font-display text-xl font-medium">What we collect</h2>
             <p className="mt-3">
               From your Google account: your name and email address. From you: your display name, an optional headline, whether you
               are looking for referrals or can refer people, and, if you can refer people, your company and work email. We
@@ -45,7 +45,7 @@ export default function DwaarPrivacyPage() {
             <p className="mt-3">We do not collect resumes, phone numbers or payment details in this version.</p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">Why we collect it</h2>
+            <h2 className="font-display text-xl font-medium">Why we collect it</h2>
             <p className="mt-3">
               To create your profile and, later, to connect people who want referrals with employees who can give them.
               We check that a work email belongs to the company you chose by comparing its domain with the company&apos;s
@@ -53,14 +53,14 @@ export default function DwaarPrivacyPage() {
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">Who can see it</h2>
+            <h2 className="font-display text-xl font-medium">Who can see it</h2>
             <p className="mt-3">
               Only you can see your profile in this version. Our database is set up so that one person cannot read
               another person&apos;s profile. Our hosting and database providers (Vercel and Supabase) process the data for us.
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">Your choices</h2>
+            <h2 className="font-display text-xl font-medium">Your choices</h2>
             <p className="mt-3">
               You can change your profile any time from the Dwaar page, and you can delete it there with one button. Deleting
               removes the profile details above. Your Google sign-in record stays so you can come back; to remove it too,
@@ -68,14 +68,14 @@ export default function DwaarPrivacyPage() {
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">Using Dwaar</h2>
+            <h2 className="font-display text-xl font-medium">Using Dwaar</h2>
             <p className="mt-3">
               Give only true information. Use your own work email, never someone else&apos;s. We may remove profiles that
               break these rules. Dwaar is provided as it is, and early-access features can change or stop.
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">Contact</h2>
+            <h2 className="font-display text-xl font-medium">Contact</h2>
             <p className="mt-3">Questions or requests about your data: support@vyuhika.com.</p>
           </section>
         </div>

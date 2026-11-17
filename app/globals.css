@@ -1499,3 +1499,26 @@ a:focus-visible > .logo-glow {
   padding-bottom: 0.5rem;
   display: block;
 }
+
+/* Form controls on paper cards. */
+.dw-paper .field-input {
+  color: #1d1a16;
+  background: #fffdf7;
+  border: 1px solid rgba(29, 26, 22, 0.35);
+}
+.dw-paper .field-input::placeholder { color: #8a8270; }
+.dw-paper .field-input:focus {
+  border-color: #0e7490;
+  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.25);
+}
+.dw-paper .pill-option {
+  color: #1d1a16;
+  background: #fffdf7;
+  border: 1px solid rgba(29, 26, 22, 0.3);
+}
+.dw-paper .pill-option:hover { border-color: #0e7490; }
+.dw-paper .pill-option:has(input:checked) {
+  border-color: #0e7490;
+  background: #e6f6f8;
+}
+.dw-paper strong { font-weight: 700; color: #1d1a16; }

@@ -40,15 +40,15 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
     [errors[name] ? errorId(name) : null, extra].filter(Boolean).join(" ") || undefined;
 
   return (
-    <form action={formAction} className="glass-panel glow-cyan flex max-w-2xl flex-col gap-7" noValidate>
+    <form action={formAction} className="dw-paper flex max-w-2xl flex-col gap-7" noValidate>
       {state.message && (
-        <p role="alert" className="rounded-xl border border-rose-300/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+        <p role="alert" className="rounded-xl border border-rose-700/40 bg-rose-100 px-4 py-3 text-sm text-rose-900">
           {state.message}
         </p>
       )}
 
-      <p className="text-sm text-mist">
-        Signed in as <span className="text-ink">{accountEmail}</span>
+      <p className="text-sm dw-muted">
+        Signed in as <strong>{accountEmail}</strong>
       </p>
 
       <div>
@@ -71,7 +71,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
 
       <div>
         <label htmlFor="headline" className="font-display text-lg font-medium tracking-[-0.03em]">
-          Headline <span className="text-sm font-normal text-mist">(optional)</span>
+          Headline <span className="text-sm font-normal dw-muted">(optional)</span>
         </label>
         <input
           id="headline"
@@ -89,46 +89,46 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
 
       <fieldset aria-describedby={describe("roles")}>
         <legend className="font-display text-lg font-medium tracking-[-0.03em]">What do you want to do?</legend>
-        <p className="mt-1 text-sm text-mist">You can choose both.</p>
+        <p className="mt-1 text-sm dw-muted">You can choose both.</p>
         <div className="mt-3 flex flex-col gap-3">
           <label className="pill-option">
             <span className="flex items-center gap-3">
               <input
                 type="checkbox"
                 name="isCandidate"
-                className="h-4 w-4 accent-cyan-400"
+                className="h-4 w-4 accent-cyan-700"
                 checked={values.isCandidate}
                 onChange={(e) => set("isCandidate", e.target.checked)}
               />
               <span className="font-medium">I am looking for referrals</span>
             </span>
-            <span className="pl-7 text-sm text-mist">Ask employees at a company to refer you for a job.</span>
+            <span className="pl-7 text-sm dw-muted">Ask employees at a company to refer you for a job.</span>
           </label>
           <label className="pill-option">
             <span className="flex items-center gap-3">
               <input
                 type="checkbox"
                 name="isProvider"
-                className="h-4 w-4 accent-cyan-400"
+                className="h-4 w-4 accent-cyan-700"
                 checked={values.isProvider}
                 onChange={(e) => set("isProvider", e.target.checked)}
               />
               <span className="font-medium">I can refer people</span>
             </span>
-            <span className="pl-7 text-sm text-mist">You work at a company and can refer candidates.</span>
+            <span className="pl-7 text-sm dw-muted">You work at a company and can refer candidates.</span>
           </label>
         </div>
         <FieldError id={errorId("roles")} message={errors.roles} />
       </fieldset>
 
       {values.isProvider && (
-        <div className="flex flex-col gap-5 rounded-2xl border border-white/10 p-5">
+        <div className="flex flex-col gap-5 rounded-2xl border border-dashed border-[#1d1a16]/30 p-5">
           <div>
             <label htmlFor="companyId" className="font-display text-lg font-medium tracking-[-0.03em]">
               Company you work at
             </label>
             {companies.length === 0 ? (
-              <p className="mt-3 text-sm text-mist">
+              <p className="mt-3 text-sm dw-muted">
                 No companies are listed yet. Please check back soon, or write to support@vyuhika.com.
               </p>
             ) : (
@@ -169,7 +169,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
               aria-describedby={describe("workEmail", "workEmail-hint")}
               className="field-input mt-3"
             />
-            <p id="workEmail-hint" className="mt-2 text-sm text-mist">
+            <p id="workEmail-hint" className="mt-2 text-sm dw-muted">
               It must use your company&apos;s email domain. Personal addresses like Gmail do not work. After you save, we
               will email a code to this address so you can confirm it. If you change it later, you confirm again.
             </p>
@@ -186,11 +186,11 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
               name="consent"
               aria-invalid={errors.consent ? true : undefined}
               aria-describedby={describe("consent")}
-              className="mt-1 h-4 w-4 accent-cyan-400"
+              className="mt-1 h-4 w-4 accent-cyan-700"
             />
             <span>
               I have read the{" "}
-              <Link href="/apps/dwaar/privacy" target="_blank" className="text-link">
+              <Link href="/apps/dwaar/privacy" target="_blank" className="dw-link">
                 terms and privacy notice
               </Link>{" "}
               and I agree to Dwaar saving the details above.
@@ -215,7 +215,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <p id={id} className="mt-2 text-sm text-rose-200">
+    <p id={id} className="mt-2 text-sm text-rose-800">
       {message}
     </p>
   );

@@ -13,9 +13,9 @@ export default function WorkEmailConfirm({ email, available }: { email: string; 
 
   if (!available) {
     return (
-      <section className="glass-panel mt-6 max-w-2xl">
+      <section className="dw-paper mt-6 max-w-2xl">
         <h3 className="font-display text-xl font-medium tracking-[-0.03em]">Confirm your work email</h3>
-        <p className="mt-2 text-sm text-mist">Confirming work emails is not switched on yet. We will tell you when it is.</p>
+        <p className="mt-2 text-sm dw-muted">Confirming work emails is not switched on yet. We will tell you when it is.</p>
       </section>
     );
   }
@@ -24,22 +24,22 @@ export default function WorkEmailConfirm({ email, available }: { email: string; 
   const sent = sendState.sent;
 
   return (
-    <section className="glass-panel glow-violet mt-6 max-w-2xl" aria-labelledby="confirm-heading">
+    <section className="dw-paper mt-6 max-w-2xl" aria-labelledby="confirm-heading">
       <h3 id="confirm-heading" className="font-display text-xl font-medium tracking-[-0.03em]">
         Confirm your work email
       </h3>
-      <p className="mt-2 text-sm leading-relaxed text-mist">
-        We will email a 6-digit code to <span className="break-all text-ink">{email}</span>. Typing it here shows that the
+      <p className="mt-2 text-sm leading-relaxed dw-muted">
+        We will email a 6-digit code to <strong className="break-all">{email}</strong>. Typing it here shows that the
         address is yours.
       </p>
 
       {error && (
-        <p role="alert" className="mt-4 rounded-xl border border-rose-300/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+        <p role="alert" className="mt-4 rounded-xl border border-rose-700/40 bg-rose-100 px-4 py-3 text-sm text-rose-900">
           {error}
         </p>
       )}
       {sent && !error && (
-        <p role="status" className="mt-4 rounded-xl border border-cyan-300/40 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-50">
+        <p role="status" className="mt-4 rounded-xl border border-cyan-700/40 bg-cyan-100 px-4 py-3 text-sm text-cyan-950">
           {sendState.message}
         </p>
       )}
