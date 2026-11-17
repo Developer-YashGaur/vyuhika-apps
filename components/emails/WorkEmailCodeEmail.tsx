@@ -60,7 +60,7 @@ export default function WorkEmailCodeEmail({ code, assetBaseUrl }: Props) {
       </Section>
 
       <Text style={{ margin: "22px 0 0", fontSize: "15px", lineHeight: "24px", color: colors.mist }}>
-        The code works for {CODE_MINUTES} minutes. Never share it with anyone. Dwaar will never ask you for it by message or phone.
+        {`The code works for ${CODE_MINUTES} minutes. Never share it with anyone. Dwaar will never ask you for it by message or phone.`}
       </Text>
     </EmailLayout>
   );
