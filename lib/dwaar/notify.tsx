@@ -7,15 +7,19 @@ import type { SendEmailFn } from "@/lib/feedback/deliver";
 import type { Database } from "@/types/database";
 
 // Tells confirmed employees at the company that a candidate is waiting.
-// The DATABASE decides who is emailed: it hands out at most 20 confirmed providers per request, never someone who
-// already got 3 emails in 24 hours, and only once per request. Here we only send what it hands back.
+// The DATABASE decides who is emailed: requests go out in waves of 5 opted-in, confirmed employees (best role match
+// first), never someone over their weekly limit or already emailed 3 times in 24 hours. The first wave is sent when the
+// request is created; the next wave is sent 24 hours later if nobody accepted. Here we only send what it hands back.
 // This never throws: a failed email must not undo the request.
 
 type Db = SupabaseClient<Database>;
 type Deps = { secret: string; send: SendEmailFn; settings: EmailSettings };
 
-export async function notifyProviders(supabase: Db, deps: Deps, requestId: string): Promise<{ sent: number; failed: number }> {
-  const { data, error } = await supabase.rpc("dwaar_claim_provider_notifications", { p_request_id: requestId, p_secret: deps.secret });
+export type Wave = "first" | "next";
+
+export async function notifyProviders(supabase: Db, deps: Deps, requestId: string, wave: Wave = "first"): Promise<{ sent: number; failed: number }> {
+  const name = wave === "first" ? "dwaar_claim_provider_notifications" : "dwaar_offer_next_wave";
+  const { data, error } = await supabase.rpc(name, { p_request_id: requestId, p_secret: deps.secret });
   if (error) {
     console.error("[dwaar] could not claim provider notifications", { code: error.code });
     return { sent: 0, failed: 0 };

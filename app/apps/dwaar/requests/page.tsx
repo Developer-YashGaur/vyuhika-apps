@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
+import { after, connection } from "next/server";
 import { Suspense } from "react";
 import { cancelRequestAction } from "@/app/apps/dwaar/actions";
 import BoostButton from "@/components/dwaar/BoostButton";
@@ -9,6 +9,10 @@ import RequestCard from "@/components/dwaar/RequestCard";
 import ScoreCard from "@/components/dwaar/ScoreCard";
 import { listMyBoosts, type MyBoost } from "@/lib/dwaar/boost";
 import { boostPaymentsEnabled } from "@/lib/dwaar/features";
+import { notifyProviders } from "@/lib/dwaar/notify";
+import { serverSecret } from "@/lib/dwaar/work-email";
+import { getEmailSettings } from "@/lib/email/settings";
+import { createResendSender } from "@/lib/feedback/deliver";
 import { statusStamp, timeAgo } from "@/lib/dwaar/format";
 import { passNumber } from "@/lib/dwaar/monogram";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
@@ -53,6 +57,17 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   if (!profile) redirect("/apps/dwaar/profile");
 
   const [requests, analyses, boosts] = await Promise.all([listMyRequests(supabase), listMyAnalyses(supabase), listMyBoosts(supabase)]);
+  // If a request has waited 24 hours with no answer, the database hands it to the next 5 employees. It decides when
+  // (this does nothing earlier), so asking on every visit is safe. It runs after the page is sent.
+  const secret = serverSecret();
+  const settings = getEmailSettings();
+  const send = createResendSender();
+  const waiting = requests.filter((r) => r.out_status === "open").map((r) => r.out_id);
+  if (secret && settings && send && waiting.length > 0) {
+    after(async () => {
+      for (const id of waiting) await notifyProviders(supabase, { secret, send, settings }, id, "next");
+    });
+  }
   const analysisById = new Map(analyses.map((a) => [a.requestId, a]));
   const boostOn = boostPaymentsEnabled();
   const checkNote: Record<string, string> = {

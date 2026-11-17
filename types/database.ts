@@ -567,6 +567,15 @@ export type Database = {
           out_work_email: string
         }[]
       }
+      dwaar_offer_next_wave: {
+        Args: { p_request_id: string; p_secret: string }
+        Returns: {
+          out_company_name: string
+          out_job_title: string
+          out_name: string
+          out_work_email: string
+        }[]
+      }
       dwaar_confirm_work_email: { Args: { p_code: string }; Returns: boolean }
       dwaar_create_request: {
         Args: {

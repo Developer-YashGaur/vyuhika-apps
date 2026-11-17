@@ -31,6 +31,13 @@ describe("notifyProviders", () => {
     expect(first.html).toContain("Backend Engineer");
     expect(first.html).toContain("https://apps.vyuhika.com/apps/dwaar/inbox");
   });
+  it("asks for the next wave with the other database call", async () => {
+    const { supabase, calls } = fakeDb({ data: rows, error: null });
+    const send = vi.fn(async (email: EmailMessage) => email.to.length > 0);
+    const out = await notifyProviders(supabase, { secret: "s", send, settings }, "req1", "next");
+    expect(out).toEqual({ sent: 2, failed: 0 });
+    expect(calls[0].name).toBe("dwaar_offer_next_wave");
+  });
   it("sends nothing when the database hands back nobody", async () => {
     const { supabase } = fakeDb({ data: [], error: null });
     const send = vi.fn(async (email: EmailMessage) => email.to.length > 0);
