@@ -13,7 +13,7 @@ export function newRequestText(jobTitle: string, company: string, assetBaseUrl: 
     "",
     `Role: ${jobTitle}`,
     "",
-    "Open your employee desk to see who is asking. You decide whether to accept. If you accept, the candidate's email is shared with you.",
+    "Open your employee desk to see who is asking. You decide whether to accept. If you accept, the candidate can send you one message inside Dwaar and you can reply there. Email addresses are never shared.",
     inboxUrl(assetBaseUrl),
     "",
     "You get this email because you are a confirmed referral provider at this company on Dwaar. We send at most 3 of these a day.",

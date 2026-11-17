@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { CONSENT_VERSION } from "@/lib/dwaar/consent";
@@ -13,6 +14,7 @@ import { PLAN_DESCRIPTION, confirmPlanPayment, planMessage, startPlan } from "@/
 import { spendCreditsOnBoost, spendMessage } from "@/lib/dwaar/credit-boost";
 import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
+import { sendStatusEmails } from "@/lib/dwaar/notify-status";
 import { ROLE_MESSAGES, findRoles, type RoleSuggestion } from "@/lib/dwaar/role-finder";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
@@ -226,7 +228,20 @@ export async function respondToRequestAction(formData: FormData): Promise<void> 
   if (typeof id !== "string" || id.length === 0 || (decision !== "accept" && decision !== "dismiss")) redirect("/apps/dwaar/inbox");
 
   const result = await respondToRequest(supabase, id, decision === "accept");
+  if (result.ok && decision === "accept") emailStatusChanges(supabase);
   redirect(result.ok ? `/apps/dwaar/inbox?answer=${result.answer}` : "/apps/dwaar/inbox?answer=error");
+}
+
+// After the response is sent, email whoever should hear about what just happened (accepted, new message, reply).
+// If email is not set up, nothing is sent and nothing breaks.
+function emailStatusChanges(supabase: Awaited<ReturnType<typeof createClient>>): void {
+  const secret = serverSecret();
+  const settings = getEmailSettings();
+  const send = createResendSender();
+  if (!secret || !settings || !send) return;
+  after(async () => {
+    await sendStatusEmails(supabase, { secret, send, settings });
+  });
 }
 
 // Boost, step 1: create the order. Returns what the browser needs to open Razorpay checkout.
@@ -308,6 +323,7 @@ export async function sendMessageAction(requestId: string, _previous: ChatFormSt
 
   const result = await sendMessage(supabase, requestId, formData.get("body"));
   if (!result.ok) return { message: result.message, sent: false };
+  emailStatusChanges(supabase);
   revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
   return { message: null, sent: true };
 }

@@ -103,7 +103,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
       <h2 className="dw-display text-xl">Waiting for you</h2>
       <p className="mt-2 max-w-2xl dw-muted">
         Candidates asking for a referral at {company}. You see their name, headline and the job. You do not see their resume.
-        Their email is shared with you only if you accept.
+        If you accept, they can send you one message in Dwaar. Email addresses are never shared.
       </p>
 
       {inbox.length === 0 ? (
