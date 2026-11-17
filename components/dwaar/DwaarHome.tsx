@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { deleteProfileAction, signInWithGoogle, signOut } from "@/app/apps/dwaar/actions";
 import { getMyProfile, listCompanyOptions } from "@/lib/dwaar/profile";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -16,6 +17,8 @@ const ERRORS: Record<string, string> = {
 };
 
 export default async function DwaarHome({ searchParams }: { searchParams: Promise<Params> }) {
+  // Sign-in checks read the clock (token expiry). Next.js only allows that at request time, not while pre-building the page.
+  await connection();
   const params = await searchParams;
   const notice = <Notice params={params} />;
 

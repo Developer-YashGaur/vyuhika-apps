@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
@@ -34,6 +35,7 @@ export default function DwaarProfilePage() {
 
 // Reads the signed-in person, so it sits inside <Suspense>. Signed-out visitors go back to the Dwaar front page.
 async function ProfileContent() {
+  await connection(); // sign-in checks read the clock, which Next.js only allows at request time
   if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
