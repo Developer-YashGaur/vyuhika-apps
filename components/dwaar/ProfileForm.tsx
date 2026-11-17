@@ -16,6 +16,8 @@ export type ProfileFormValues = {
   isProvider: boolean;
   companyId: string;
   workEmail: string;
+  acceptsRequests: boolean;
+  weeklyLimit: string;
 };
 
 type Props = {
@@ -174,6 +176,46 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
               will email a code to this address so you can confirm it. If you change it later, you confirm again.
             </p>
             <FieldError id={errorId("workEmail")} message={errors.workEmail} />
+          </div>
+
+          <div className="border-t border-[var(--dw-line)] pt-5">
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                name="acceptsRequests"
+                checked={values.acceptsRequests}
+                onChange={(e) => set("acceptsRequests", e.target.checked)}
+                className="mt-1 h-4 w-4"
+              />
+              <span>
+                <span className="dw-display text-lg font-medium">Send me referral requests</span>
+                <span className="mt-1 block text-sm dw-muted">
+                  Off by default. Switch it on to see requests for your company and get an email when someone asks. You can
+                  switch it off at any time. It works once your work email is confirmed.
+                </span>
+              </span>
+            </label>
+            {values.acceptsRequests && (
+              <div className="mt-4">
+                <label htmlFor="weeklyLimit" className="text-sm font-semibold">
+                  Most requests per week
+                </label>
+                <input
+                  id="weeklyLimit"
+                  name="weeklyLimit"
+                  type="number"
+                  inputMode="numeric"
+                  min={LIMITS.weeklyMin}
+                  max={LIMITS.weeklyMax}
+                  value={values.weeklyLimit}
+                  onChange={(e) => set("weeklyLimit", e.target.value)}
+                  aria-invalid={errors.weeklyLimit ? true : undefined}
+                  aria-describedby={describe("weeklyLimit")}
+                  className="dw-input mt-2 max-w-[8rem]"
+                />
+                <FieldError id={errorId("weeklyLimit")} message={errors.weeklyLimit} />
+              </div>
+            )}
           </div>
         </div>
       )}

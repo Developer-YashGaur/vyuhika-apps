@@ -1,7 +1,7 @@
 // Checks what a person typed into the Dwaar profile form. Pure code: no database, easy to test.
 // The database enforces the same rules again (it is the real gate); this gives friendly messages first.
 
-export type FieldName = "displayName" | "headline" | "roles" | "companyId" | "workEmail" | "consent";
+export type FieldName = "displayName" | "headline" | "roles" | "companyId" | "workEmail" | "weeklyLimit" | "consent";
 export type FieldErrors = Partial<Record<FieldName, string>>;
 
 export type ProfileInput = {
@@ -11,13 +11,15 @@ export type ProfileInput = {
   isProvider: boolean;
   companyId: string | null; // only set when isProvider
   workEmail: string | null; // only set when isProvider, always lowercase
+  acceptsRequests: boolean; // employee opted in to receive referral requests (never true for non-providers)
+  weeklyLimit: number; // most requests they want per week, 1 to 50
 };
 
 export type ParseResult = { ok: true; data: ProfileInput } | { ok: false; errors: FieldErrors };
 
 type FormLike = { get(name: string): FormDataEntryValue | null };
 
-export const LIMITS = { displayName: 80, headline: 120, email: 254 } as const;
+export const LIMITS = { displayName: 80, headline: 120, email: 254, weeklyMin: 1, weeklyMax: 50, weeklyDefault: 5 } as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -52,7 +54,17 @@ export function parseProfileForm(form: FormLike, options: { requireConsent: bool
 
   let companyId: string | null = null;
   let workEmail: string | null = null;
+  let acceptsRequests = false;
+  let weeklyLimit: number = LIMITS.weeklyDefault;
   if (isProvider) {
+    acceptsRequests = checked(form, "acceptsRequests");
+    const rawLimit = text(form, "weeklyLimit");
+    if (rawLimit) {
+      const n = Number(rawLimit);
+      if (!Number.isInteger(n) || n < LIMITS.weeklyMin || n > LIMITS.weeklyMax) {
+        errors.weeklyLimit = `Enter a whole number from ${LIMITS.weeklyMin} to ${LIMITS.weeklyMax}.`;
+      } else weeklyLimit = n;
+    }
     const company = text(form, "companyId");
     if (!UUID.test(company)) errors.companyId = "Choose the company you work at.";
     else companyId = company.toLowerCase();
@@ -70,6 +82,6 @@ export function parseProfileForm(form: FormLike, options: { requireConsent: bool
   if (Object.keys(errors).length > 0) return { ok: false, errors };
   return {
     ok: true,
-    data: { displayName, headline: headline || null, isCandidate, isProvider, companyId, workEmail },
+    data: { displayName, headline: headline || null, isCandidate, isProvider, companyId, workEmail, acceptsRequests, weeklyLimit },
   };
 }

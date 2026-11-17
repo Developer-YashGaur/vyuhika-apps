@@ -50,6 +50,8 @@ async function ProfileContent() {
         isProvider: profile?.is_provider ?? false,
         companyId: profile?.provider_company_id ?? "",
         workEmail: profile?.provider_work_email ?? "",
+        acceptsRequests: profile?.accepts_requests ?? false,
+        weeklyLimit: String(profile?.weekly_request_limit ?? 5),
       }}
     />
   );

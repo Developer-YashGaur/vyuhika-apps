@@ -149,51 +149,6 @@ export type Database = {
           },
         ]
       }
-      dwaar_boost_results: {
-        Row: {
-          candidate_id: string
-          changes: Json
-          created_at: string
-          improved_resume: string | null
-          linkedin_tips: Json
-          model: string | null
-          order_id: string
-          profile_tips: Json
-          request_id: string
-          status: string
-          summary: string | null
-          updated_at: string
-        }
-        Insert: {
-          candidate_id: string
-          changes?: Json
-          created_at?: string
-          improved_resume?: string | null
-          linkedin_tips?: Json
-          model?: string | null
-          order_id: string
-          profile_tips?: Json
-          request_id: string
-          status: string
-          summary?: string | null
-          updated_at?: string
-        }
-        Update: {
-          candidate_id?: string
-          changes?: Json
-          created_at?: string
-          improved_resume?: string | null
-          linkedin_tips?: Json
-          model?: string | null
-          order_id?: string
-          profile_tips?: Json
-          request_id?: string
-          status?: string
-          summary?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       dwaar_boost_orders: {
         Row: {
           amount_paise: number
@@ -247,8 +202,69 @@ export type Database = {
           },
         ]
       }
+      dwaar_boost_results: {
+        Row: {
+          candidate_id: string
+          changes: Json
+          created_at: string
+          improved_resume: string | null
+          linkedin_tips: Json
+          model: string | null
+          order_id: string
+          profile_tips: Json
+          request_id: string
+          status: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          changes?: Json
+          created_at?: string
+          improved_resume?: string | null
+          linkedin_tips?: Json
+          model?: string | null
+          order_id: string
+          profile_tips?: Json
+          request_id: string
+          status: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          changes?: Json
+          created_at?: string
+          improved_resume?: string | null
+          linkedin_tips?: Json
+          model?: string | null
+          order_id?: string
+          profile_tips?: Json
+          request_id?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_boost_results_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "dwaar_boost_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_boost_results_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dwaar_profiles: {
         Row: {
+          accepts_requests: boolean
           consent_accepted_at: string
           consent_version: string
           created_at: string
@@ -260,9 +276,11 @@ export type Database = {
           provider_work_email: string | null
           updated_at: string
           user_id: string
+          weekly_request_limit: number
           work_email_verified_at: string | null
         }
         Insert: {
+          accepts_requests?: boolean
           consent_accepted_at?: string
           consent_version: string
           created_at?: string
@@ -274,9 +292,11 @@ export type Database = {
           provider_work_email?: string | null
           updated_at?: string
           user_id: string
+          weekly_request_limit?: number
           work_email_verified_at?: string | null
         }
         Update: {
+          accepts_requests?: boolean
           consent_accepted_at?: string
           consent_version?: string
           created_at?: string
@@ -288,6 +308,7 @@ export type Database = {
           provider_work_email?: string | null
           updated_at?: string
           user_id?: string
+          weekly_request_limit?: number
           work_email_verified_at?: string | null
         }
         Relationships: [
@@ -560,27 +581,18 @@ export type Database = {
         }
         Returns: string
       }
-      dwaar_get_boost_input: {
-        Args: { p_order_id: string }
-        Returns: { out_request_id: string; out_job_title: string; out_company_name: string; out_job_description: string }[]
-      }
-      dwaar_save_boost_result: {
-        Args: {
-          p_order_id: string
-          p_secret: string
-          p_status: string
-          p_improved_resume: string
-          p_summary: string
-          p_changes: Json
-          p_profile_tips: Json
-          p_linkedin_tips: Json
-          p_model: string
-        }
-        Returns: boolean
-      }
       dwaar_forget_my_requests: {
         Args: { p_request_id?: string }
         Returns: number
+      }
+      dwaar_get_boost_input: {
+        Args: { p_order_id: string }
+        Returns: {
+          out_company_name: string
+          out_job_description: string
+          out_job_title: string
+          out_request_id: string
+        }[]
       }
       dwaar_issue_work_email_code: {
         Args: { p_secret: string }
@@ -665,6 +677,20 @@ export type Database = {
           p_secret: string
           p_status: string
           p_strengths: Json
+          p_summary: string
+        }
+        Returns: boolean
+      }
+      dwaar_save_boost_result: {
+        Args: {
+          p_changes: Json
+          p_improved_resume: string
+          p_linkedin_tips: Json
+          p_model: string
+          p_order_id: string
+          p_profile_tips: Json
+          p_secret: string
+          p_status: string
           p_summary: string
         }
         Returns: boolean

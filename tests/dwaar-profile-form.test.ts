@@ -14,7 +14,7 @@ describe("parseProfileForm", () => {
     const result = parseProfileForm(form({ displayName: "  Ravi Kumar ", isCandidate: "on", consent: "on" }), { requireConsent: true });
     expect(result).toEqual({
       ok: true,
-      data: { displayName: "Ravi Kumar", headline: null, isCandidate: true, isProvider: false, companyId: null, workEmail: null },
+      data: { displayName: "Ravi Kumar", headline: null, isCandidate: true, isProvider: false, companyId: null, workEmail: null, acceptsRequests: false, weeklyLimit: 5 },
     });
   });
 
@@ -64,5 +64,31 @@ describe("isValidEmail", () => {
   it("accepts normal addresses and rejects odd ones", () => {
     expect(isValidEmail("a@acme.com")).toBe(true);
     for (const bad of ["", "a", "a@b", "a@@acme.com", "a b@acme.com", "a@b@acme.com"]) expect(isValidEmail(bad), bad).toBe(false);
+  });
+});
+
+describe("employee opt-in", () => {
+  const base = { displayName: "Meera", isProvider: "on", companyId: "11111111-1111-4111-8111-111111111111", workEmail: "m@acme.com" };
+
+  it("is off by default and the limit is 5", () => {
+    const r = parseProfileForm(form(base), { requireConsent: false });
+    expect(r.ok && r.data.acceptsRequests).toBe(false);
+    expect(r.ok && r.data.weeklyLimit).toBe(5);
+  });
+
+  it("turns on only for employees", () => {
+    const on = parseProfileForm(form({ ...base, acceptsRequests: "on", weeklyLimit: "8" }), { requireConsent: false });
+    expect(on.ok && on.data.acceptsRequests).toBe(true);
+    expect(on.ok && on.data.weeklyLimit).toBe(8);
+    const notEmployee = parseProfileForm(form({ displayName: "Ravi", isCandidate: "on", acceptsRequests: "on" }), { requireConsent: false });
+    expect(notEmployee.ok && notEmployee.data.acceptsRequests).toBe(false);
+  });
+
+  it("refuses a limit outside 1 to 50", () => {
+    for (const bad of ["0", "51", "2.5", "abc"]) {
+      const r = parseProfileForm(form({ ...base, acceptsRequests: "on", weeklyLimit: bad }), { requireConsent: false });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(typeof r.errors.weeklyLimit).toBe("string");
+    }
   });
 });

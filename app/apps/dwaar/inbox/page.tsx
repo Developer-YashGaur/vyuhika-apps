@@ -57,6 +57,24 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
     );
   }
 
+  if (!profile.accepts_requests) {
+    return (
+      <>
+        <h1 className="dw-title dw-display mb-8">Employee desk</h1>
+        <section className="dw-card max-w-2xl">
+          <h2 className="dw-display text-xl">Referral requests are switched off</h2>
+          <p className="dw-muted mt-3 leading-relaxed">
+            You choose whether to receive requests. Switch it on in your profile and you will see candidates asking for a
+            referral at your company, and get an email when someone asks. You can also set how many you want each week.
+          </p>
+          <Link href="/apps/dwaar/profile" className="dw-btn dw-btn-primary dw-btn-lg mt-6 inline-flex">
+            Open my profile
+          </Link>
+        </section>
+      </>
+    );
+  }
+
   const [inbox, accepted, companies] = await Promise.all([listInbox(supabase), listAccepted(supabase), listCompanyOptions(supabase)]);
   const company = companies.find((c) => c.id === profile.provider_company_id)?.name ?? "your company";
   const note = params.answer === "error" ? "Something went wrong. Please try again." : ANSWER_NOTES[params.answer as Answer];

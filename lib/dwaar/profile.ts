@@ -64,6 +64,8 @@ export async function saveMyProfile(
     is_provider: input.isProvider,
     provider_company_id: input.isProvider ? input.companyId : null,
     provider_work_email: input.isProvider ? input.workEmail : null,
+    accepts_requests: input.isProvider && input.acceptsRequests,
+    weekly_request_limit: input.weeklyLimit,
   };
 
   const { error } = options.isNew
