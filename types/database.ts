@@ -209,6 +209,39 @@ export type Database = {
           },
         ]
       }
+      dwaar_work_email_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          expires_at: string
+          last_sent_at: string
+          sends_in_window: number
+          user_id: string
+          window_started_at: string
+          work_email: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          expires_at: string
+          last_sent_at?: string
+          sends_in_window?: number
+          user_id: string
+          window_started_at?: string
+          work_email: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          expires_at?: string
+          last_sent_at?: string
+          sends_in_window?: number
+          user_id?: string
+          window_started_at?: string
+          work_email?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       company_options: {
@@ -228,6 +261,14 @@ export type Database = {
       }
     }
     Functions: {
+      dwaar_confirm_work_email: { Args: { p_code: string }; Returns: boolean }
+      dwaar_issue_work_email_code: {
+        Args: { p_secret: string }
+        Returns: {
+          out_code: string
+          out_work_email: string
+        }[]
+      }
       email_matches_company: {
         Args: { p_company_id: string; p_email: string }
         Returns: boolean

@@ -38,6 +38,10 @@ export default function DwaarPrivacyPage() {
               are looking for referrals or can refer people, and, if you can refer people, your company and work email. We
               also record which version of this notice you accepted, and when.
             </p>
+            <p className="mt-3">
+              If you can refer people, we email a 6-digit code to your work email to check that the address is yours. We keep
+              only a scrambled copy of the code, for 15 minutes, together with how many codes you asked for, to prevent abuse.
+            </p>
             <p className="mt-3">We do not collect resumes, phone numbers or payment details in this version.</p>
           </section>
           <section>

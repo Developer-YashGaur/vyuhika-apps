@@ -7,7 +7,7 @@ import { dwaarMetadata } from "@/lib/dwaar/metadata";
 
 export const metadata = dwaarMetadata;
 
-export default function DwaarPage({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string; deleted?: string }> }) {
+export default function DwaarPage({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string; deleted?: string; confirmed?: string }> }) {
   return (
     <>
       <Navbar />

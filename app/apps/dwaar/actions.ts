@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { CONSENT_VERSION } from "@/lib/dwaar/consent";
 import { deleteMyProfile, getMyProfile, saveMyProfile } from "@/lib/dwaar/profile";
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
+import { confirmWorkEmailCode, requestWorkEmailCode, serverSecret } from "@/lib/dwaar/work-email";
+import { getEmailSettings } from "@/lib/email/settings";
+import { createResendSender } from "@/lib/feedback/deliver";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -68,4 +71,39 @@ export async function deleteProfileAction(): Promise<void> {
   if (!data.user) redirect("/apps/dwaar");
   const result = await deleteMyProfile(supabase, data.user.id);
   redirect(result.ok ? "/apps/dwaar?deleted=1" : "/apps/dwaar?error=delete");
+}
+
+// ---- Confirming a work email with a code ----
+
+export type WorkEmailState = { sent: boolean; message: string | null; error: string | null };
+
+// "Email me a code". The address is NOT taken from the form: the database knows the saved work email.
+export async function sendWorkEmailCodeAction(previous: WorkEmailState): Promise<WorkEmailState> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+
+  const secret = serverSecret();
+  const settings = getEmailSettings();
+  const send = createResendSender();
+  if (!secret || !settings || !send) {
+    return { ...previous, error: "Confirming work emails is not switched on yet." };
+  }
+
+  const result = await requestWorkEmailCode(supabase, { secret, send, settings });
+  if (!result.ok) return { ...previous, error: result.message };
+  return { sent: true, message: "We sent a code to your work email. It can take a minute to arrive.", error: null };
+}
+
+export async function confirmWorkEmailAction(previous: WorkEmailState, formData: FormData): Promise<WorkEmailState> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+
+  const typed = formData.get("code");
+  const result = await confirmWorkEmailCode(supabase, typeof typed === "string" ? typed : "");
+  if (!result.ok) return { ...previous, error: result.message };
+  redirect("/apps/dwaar?confirmed=1");
 }

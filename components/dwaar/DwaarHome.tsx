@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { deleteProfileAction, signInWithGoogle, signOut } from "@/app/apps/dwaar/actions";
+import WorkEmailConfirm from "@/components/dwaar/WorkEmailConfirm";
 import { getMyProfile, listCompanyOptions } from "@/lib/dwaar/profile";
+import { workEmailConfirmationConfigured } from "@/lib/dwaar/work-email";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 // What the Dwaar front page shows: sign in, finish your profile, or your profile.
 // It reads the signed-in person from cookies, so the page wraps it in <Suspense>.
 
-type Params = { error?: string; saved?: string; deleted?: string };
+type Params = { error?: string; saved?: string; deleted?: string; confirmed?: string };
 
 const ERRORS: Record<string, string> = {
   signin: "Sign-in did not finish. Please try again.",
@@ -94,6 +96,10 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
         </div>
       </section>
 
+      {profile.is_provider && profile.provider_work_email && !profile.work_email_verified_at && (
+        <WorkEmailConfirm email={profile.provider_work_email} available={workEmailConfirmationConfigured()} />
+      )}
+
       <details className="glass-panel mt-6 max-w-2xl">
         <summary className="cursor-pointer font-medium">Delete my profile</summary>
         <p className="mt-3 text-sm leading-relaxed text-mist">
@@ -110,7 +116,13 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
 
 function Notice({ params }: { params: Params }) {
   const error = params.error ? ERRORS[params.error] : null;
-  const info = params.saved ? "Your profile is saved." : params.deleted ? "Your profile was deleted." : null;
+  const info = params.saved
+    ? "Your profile is saved."
+    : params.deleted
+      ? "Your profile was deleted."
+      : params.confirmed
+        ? "Your work email is confirmed."
+        : null;
   if (!error && !info) return null;
   return (
     <p
