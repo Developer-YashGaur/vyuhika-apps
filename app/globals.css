@@ -1572,3 +1572,24 @@ a:focus-visible > .logo-glow {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* The visitor pass is a paper card too: same readable chips, buttons, links and muted text as .dw-paper. */
+.dw-pass .chip,
+.dw-ticket .chip {
+  color: #1d1a16;
+  background: #e8e0cc;
+  border: 1px solid rgba(29, 26, 22, 0.3);
+}
+.dw-pass .chip-cyan { color: #0b5566; background: #dff3f6; border-color: rgba(14, 116, 144, 0.5); }
+.dw-pass .chip-violet { color: #4c1d95; background: #ece6fb; border-color: rgba(109, 40, 217, 0.45); }
+.dw-pass .btn-ghost {
+  color: #1d1a16;
+  border-color: rgba(29, 26, 22, 0.35);
+  background: rgba(29, 26, 22, 0.04);
+  backdrop-filter: none;
+}
+.dw-pass .btn-ghost:hover { border-color: #0e7490; background: rgba(14, 116, 144, 0.08); }
+.dw-pass a.dw-link { color: #0e7490; text-decoration: underline; text-underline-offset: 3px; }
+.dw-pass .dw-muted { color: #5c5546; }
+.dw-pass strong { font-weight: 700; color: #1d1a16; }
+.dw-pass :focus-visible { outline-color: #0e7490; }
