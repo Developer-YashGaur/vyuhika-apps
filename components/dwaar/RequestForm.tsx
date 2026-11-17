@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { createRequestAction, type RequestFormState } from "@/app/apps/dwaar/actions";
+import MatchCheck from "@/components/dwaar/MatchCheck";
 import { JOB_DESCRIPTION_LIMITS, REQUEST_LIMITS, type RequestFieldName } from "@/lib/dwaar/request-form";
 import { RESUME_MAX_BYTES } from "@/lib/dwaar/resume-safety";
 import type { CompanyOption } from "@/lib/dwaar/profile";
 import { ResumeFileError, readResumeFile } from "@/lib/resume-file";
 
-// "Ask for a referral": company, job details, your resume, and a short note. Fill in the company and job,
-// then send. The resume is read inside your own browser first; the file is then stored privately.
+// "Ask for a referral": company, job details, your resume, and a short note. "Check my match" shows your score and
+// tips first. "Send request" works only when the score is high enough. The resume is read inside your own browser;
+// the file is stored privately only when the request is sent.
 
 const initialState: RequestFormState = { errors: {}, message: null };
 
@@ -18,6 +20,7 @@ type FileState = { status: "idle" | "reading" | "ok" | "error"; name: string; me
 export default function RequestForm({ companies }: { companies: CompanyOption[] }) {
   const [state, formAction, pending] = useActionState(createRequestAction, initialState);
   const [values, setValues] = useState({ companyId: "", jobTitle: "", jobUrl: "", jobId: "", jobDescription: "", note: "" });
+  const [consent, setConsent] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [resumeText, setResumeText] = useState("");
   const [fileState, setFileState] = useState<FileState>({ status: "idle", name: "", message: null });
@@ -196,6 +199,8 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
             <input
               type="checkbox"
               name="consent"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
               aria-invalid={errors.consent ? true : undefined}
               aria-describedby={describe("consent")}
               className="mt-1 h-4 w-4 "
@@ -237,15 +242,20 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
         </p>
       </fieldset>
 
+      {state.check && <MatchCheck check={state.check} />}
+
       <div className="flex flex-col gap-3 sm:flex-row">
-        <button type="submit" disabled={pending || fileState.status === "reading"} className="dw-btn dw-btn-primary dw-btn-lg">
-          {pending ? "Sending…" : "Send request"}
+        <button type="submit" name="intent" value="check" disabled={pending || fileState.status === "reading"} className="dw-btn dw-btn-quiet dw-btn-lg">
+          {pending ? "Working…" : "Check my match"}
+        </button>
+        <button type="submit" name="intent" value="send" disabled={pending || fileState.status === "reading"} className="dw-btn dw-btn-primary dw-btn-lg">
+          {pending ? "Working…" : "Send request"}
         </button>
         <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Cancel</Link>
       </div>
       {pending && (
         <p role="status" className="dw-muted -mt-3 text-sm">
-          Sending your request and checking your resume. This can take up to a minute. Please keep this page open.
+          Checking your resume against the job. This can take up to a minute. Please keep this page open.
         </p>
       )}
     </form>

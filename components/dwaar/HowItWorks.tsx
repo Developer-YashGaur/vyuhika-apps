@@ -8,12 +8,12 @@ const STEPS = [
   {
     no: "2",
     title: "Ask for a referral",
-    text: "Pick the company, add the job and your resume. You get a free resume match score, and Dwaar sends your request to employees there.",
+    text: "Pick the company, add the job and your resume. Dwaar checks how well your resume fits and gives free tips. With a match of 60 or more, your request goes to employees there.",
   },
   {
     no: "3",
     title: "An employee accepts",
-    text: "Someone who works there reads your headline and the job. If they agree, they refer you and get in touch.",
+    text: "Someone who works there reads your headline and the job. If they agree, you can send them a message inside Dwaar.",
   },
 ];
 

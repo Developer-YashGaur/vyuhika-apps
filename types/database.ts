@@ -549,6 +549,30 @@ export type Database = {
     }
     Functions: {
       dwaar_analyses_used_today: { Args: never; Returns: number }
+      dwaar_find_check: {
+        Args: { p_hash: string; p_secret: string }
+        Returns: {
+          out_gaps: Json
+          out_model: string
+          out_score: number
+          out_strengths: Json
+          out_summary: string
+          out_tips: Json
+        }[]
+      }
+      dwaar_record_check: {
+        Args: {
+          p_gaps: Json
+          p_hash: string
+          p_model: string
+          p_score: number
+          p_secret: string
+          p_strengths: Json
+          p_summary: string
+          p_tips: Json
+        }
+        Returns: boolean
+      }
       dwaar_attach_gateway_order: {
         Args: {
           p_gateway_order_id: string

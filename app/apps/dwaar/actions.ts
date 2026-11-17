@@ -17,7 +17,7 @@ import { boostPaymentsEnabled } from "@/lib/dwaar/features";
 import { razorpayKeys } from "@/lib/dwaar/razorpay";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
-import { scoreRequest } from "@/lib/dwaar/score-request";
+import { CHECK_MESSAGES, runCheck, saveCheckedScore, toView, type CheckView } from "@/lib/dwaar/match-check";
 import { createGeminiGenerate, getGeminiModel } from "@/lib/ai/gemini";
 import { confirmWorkEmailCode, requestWorkEmailCode, serverSecret } from "@/lib/dwaar/work-email";
 import { getEmailSettings } from "@/lib/email/settings";
@@ -127,7 +127,7 @@ export async function confirmWorkEmailAction(previous: WorkEmailState, formData:
 
 // ---- Referral requests (candidate side) ----
 
-export type RequestFormState = { errors: RequestFieldErrors; message: string | null };
+export type RequestFormState = { errors: RequestFieldErrors; message: string | null; check?: CheckView | null };
 
 const RESUME_BUCKET = "dwaar-resumes";
 const RESUME_TYPES = {
@@ -150,15 +150,27 @@ export async function createRequestAction(_previous: RequestFormState, formData:
   const kind = checkResumeUpload(bytes);
   if (!kind.ok) return { errors: { resume: UPLOAD_MESSAGES[kind.code] }, message: "Please fix the highlighted fields." };
 
-  // 2. Store it in the person's own private folder (the database rules allow nothing else).
+  // 2. Check the resume against the job FIRST. "Check my match" stops here and shows the score and tips.
+  //    "Send request" needs a score of at least MIN_SCORE: a lower score is not sent, and nothing is stored.
+  const secret = serverSecret();
+  const outcome = await runCheck(
+    { supabase, secret, generate: createGeminiGenerate(), model: getGeminiModel() },
+    { resumeText: input.resumeText, jobDescription: input.jobDescription },
+  );
+  if (outcome.kind !== "done") return { errors: {}, message: CHECK_MESSAGES[outcome.kind] };
+  const view = toView(outcome.result);
+  if (formData.get("intent") === "check") return { errors: {}, message: null, check: view };
+  if (!view.passed) return { errors: {}, message: CHECK_MESSAGES.below(view.score, view.minScore), check: view };
+
+  // 3. Store the resume in the person's own private folder (the database rules allow nothing else).
   const path = `${data.user.id}/${crypto.randomUUID()}.${kind.kind}`;
   const upload = await supabase.storage.from(RESUME_BUCKET).upload(path, bytes, { contentType: RESUME_TYPES[kind.kind], upsert: false });
   if (upload.error) {
     console.error("[dwaar] resume upload failed");
-    return { errors: {}, message: "We could not save your resume. Please try again." };
+    return { errors: {}, message: "We could not save your resume. Please try again.", check: view };
   }
 
-  // 3. Create the request. If that fails, remove the file again so nothing is left behind.
+  // 4. Create the request. If that fails, remove the file again so nothing is left behind.
   const created = await createRequest(supabase, {
     companyId: input.companyId,
     jobTitle: input.jobTitle,
@@ -171,22 +183,16 @@ export async function createRequestAction(_previous: RequestFormState, formData:
   });
   if (!created.ok) {
     await supabase.storage.from(RESUME_BUCKET).remove([path]);
-    return { errors: {}, message: created.message };
+    return { errors: {}, message: created.message, check: view };
   }
 
-  // 4. Tell the employees at that company. Never blocks or fails the request.
-  const secret = serverSecret();
+  // 5. Keep the score with the request, and tell the first wave of employees. Neither blocks or fails the request.
+  if (secret) await saveCheckedScore(supabase, secret, created.data, outcome.result);
   const settings = getEmailSettings();
   const send = createResendSender();
   if (secret && settings && send) await notifyProviders(supabase, { secret, send, settings }, created.data);
 
-  // 5. The free match score. It never blocks the request: if it fails, the request is already sent.
-  const outcome = await scoreRequest(
-    { supabase, secret, generate: createGeminiGenerate(), model: getGeminiModel() },
-    { requestId: created.data, resumeText: input.resumeText, jobDescription: input.jobDescription },
-  );
-
-  redirect(`/apps/dwaar/requests?sent=1&check=${outcome.kind}`);
+  redirect("/apps/dwaar/requests?sent=1&check=done");
 }
 
 export async function cancelRequestAction(formData: FormData): Promise<void> {
