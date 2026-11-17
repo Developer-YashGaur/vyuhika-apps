@@ -9,6 +9,8 @@ import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-f
 import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
+import { boostMessage, startBoost } from "@/lib/dwaar/boost";
+import { razorpayKeys } from "@/lib/dwaar/razorpay";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
 import { scoreRequest } from "@/lib/dwaar/score-request";
@@ -211,4 +213,23 @@ export async function respondToRequestAction(formData: FormData): Promise<void> 
 
   const result = await respondToRequest(supabase, id, decision === "accept");
   redirect(result.ok ? `/apps/dwaar/inbox?answer=${result.answer}` : "/apps/dwaar/inbox?answer=error");
+}
+
+// Boost, step 1: create the order. Returns what the browser needs to open Razorpay checkout.
+// keyId is the PUBLIC key id (checkout needs it); the key secret never leaves the server.
+export type BoostActionState =
+  | { ok: true; orderId: string; gatewayOrderId: string; amountPaise: number; keyId: string }
+  | { ok: false; message: string };
+
+export async function startBoostAction(requestId: string): Promise<BoostActionState> {
+  if (!supabaseConfigured()) return { ok: false, message: boostMessage("unavailable") };
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  if (typeof requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(requestId)) return { ok: false, message: boostMessage("failed") };
+
+  const keys = razorpayKeys();
+  const result = await startBoost({ supabase, secret: serverSecret(), keys }, requestId);
+  if (result.kind !== "ready" || !keys) return { ok: false, message: boostMessage(result.kind === "ready" ? "failed" : result.kind) };
+  return { ok: true, orderId: result.orderId, gatewayOrderId: result.gatewayOrderId, amountPaise: result.amountPaise, keyId: keys.keyId };
 }

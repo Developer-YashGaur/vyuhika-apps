@@ -454,6 +454,20 @@ export type Database = {
         }
         Returns: string
       }
+      dwaar_attach_gateway_order: {
+        Args: { p_order_id: string; p_gateway_order_id: string; p_secret: string }
+        Returns: boolean
+      }
+      dwaar_start_boost: {
+        Args: { p_request_id: string }
+        Returns: {
+          out_order_id: string
+          out_amount_paise: number
+          out_currency: string
+          out_status: string
+          out_gateway_order_id: string | null
+        }[]
+      }
       dwaar_forget_my_requests: {
         Args: { p_request_id?: string }
         Returns: number
