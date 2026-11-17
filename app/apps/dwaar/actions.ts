@@ -10,6 +10,7 @@ import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
+import { deliverBoost, deliverMessage } from "@/lib/dwaar/deliver-boost";
 import { razorpayKeys } from "@/lib/dwaar/razorpay";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
@@ -255,4 +256,27 @@ export async function confirmBoostPaymentAction(receipt: { orderId: string; paym
         ? "We could not verify this payment. If money was taken, write to support@vyuhika.com with your request details."
         : "We could not confirm your payment yet. If money was taken, it is safe: write to support@vyuhika.com and we will fix it.",
   };
+}
+
+// Boost, step 3: the person chooses their resume again (the browser reads it) and we write their Boost.
+export type BoostDeliverState = { message: string | null };
+
+export async function deliverBoostAction(_previous: BoostDeliverState, formData: FormData): Promise<BoostDeliverState> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+
+  const orderId = formData.get("orderId");
+  const resumeText = formData.get("resumeText");
+  if (typeof orderId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId) || typeof resumeText !== "string") {
+    return { message: deliverMessage("failed") };
+  }
+
+  const outcome = await deliverBoost(
+    { supabase, secret: serverSecret(), generate: createGeminiGenerate(), model: getGeminiModel() },
+    { orderId, resumeText },
+  );
+  if (outcome.kind === "delivered") redirect(`/apps/dwaar/requests/${outcome.requestId}/boost`);
+  return { message: deliverMessage(outcome.kind) };
 }

@@ -6,9 +6,10 @@ import { cancelRequestAction } from "@/app/apps/dwaar/actions";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import BoostButton from "@/components/dwaar/BoostButton";
+import BoostForm from "@/components/dwaar/BoostForm";
 import ScoreCard from "@/components/dwaar/ScoreCard";
 import VisitorPass from "@/components/dwaar/VisitorPass";
-import { listPaidBoostRequestIds } from "@/lib/dwaar/boost";
+import { listMyBoosts, type MyBoost } from "@/lib/dwaar/boost";
 import { statusStamp, timeAgo } from "@/lib/dwaar/format";
 import { passNumber } from "@/lib/dwaar/monogram";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
@@ -57,7 +58,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   const profile = await getMyProfile(supabase, data.user.id);
   if (!profile) redirect("/apps/dwaar/profile");
 
-  const [requests, analyses, paidBoosts] = await Promise.all([listMyRequests(supabase), listMyAnalyses(supabase), listPaidBoostRequestIds(supabase)]);
+  const [requests, analyses, boosts] = await Promise.all([listMyRequests(supabase), listMyAnalyses(supabase), listMyBoosts(supabase)]);
   const analysisById = new Map(analyses.map((a) => [a.requestId, a]));
   const checkNote: Record<string, string> = {
     done: " Your resume match score is ready on the pass below.",
@@ -93,7 +94,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
         <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {requests.map((r) => (
             <li key={r.out_id}>
-              <RequestPass request={r} analysis={analysisById.get(r.out_id)} boosted={paidBoosts.has(r.out_id)} />
+              <RequestPass request={r} analysis={analysisById.get(r.out_id)} boost={boosts.get(r.out_id)} />
             </li>
           ))}
         </ul>
@@ -102,7 +103,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   );
 }
 
-function RequestPass({ request: r, analysis, boosted }: { request: MyRequest; analysis?: Analysis; boosted: boolean }) {
+function RequestPass({ request: r, analysis, boost }: { request: MyRequest; analysis?: Analysis; boost?: MyBoost }) {
   const stamp = statusStamp(r.out_status);
   return (
     <VisitorPass
@@ -120,10 +121,15 @@ function RequestPass({ request: r, analysis, boosted }: { request: MyRequest; an
           <strong>{r.out_accepted_by_name}</strong> accepted your request. They have your email and may write to you.
         </p>
       )}
-      {boosted ? (
+      {boost?.status === "delivered" ? (
         <p className="mb-3 text-sm">
-          <strong>Boost paid.</strong> Thank you. We are preparing your Boost.
+          <strong>Your Boost is ready.</strong>{" "}
+          <Link href={`/apps/dwaar/requests/${r.out_id}/boost`} className="dw-link">
+            Open it
+          </Link>
         </p>
+      ) : boost?.status === "paid" ? (
+        <BoostForm orderId={boost.orderId} />
       ) : (
         r.out_has_resume && <BoostButton requestId={r.out_id} />
       )}

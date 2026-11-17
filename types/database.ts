@@ -149,12 +149,58 @@ export type Database = {
           },
         ]
       }
+      dwaar_boost_results: {
+        Row: {
+          candidate_id: string
+          changes: Json
+          created_at: string
+          improved_resume: string | null
+          linkedin_tips: Json
+          model: string | null
+          order_id: string
+          profile_tips: Json
+          request_id: string
+          status: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          candidate_id: string
+          changes?: Json
+          created_at?: string
+          improved_resume?: string | null
+          linkedin_tips?: Json
+          model?: string | null
+          order_id: string
+          profile_tips?: Json
+          request_id: string
+          status: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          candidate_id?: string
+          changes?: Json
+          created_at?: string
+          improved_resume?: string | null
+          linkedin_tips?: Json
+          model?: string | null
+          order_id?: string
+          profile_tips?: Json
+          request_id?: string
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dwaar_boost_orders: {
         Row: {
           amount_paise: number
           candidate_id: string
           created_at: string
           currency: string
+          delivery_attempts: number
           gateway_order_id: string | null
           gateway_payment_id: string | null
           id: string
@@ -168,6 +214,7 @@ export type Database = {
           candidate_id: string
           created_at?: string
           currency?: string
+          delivery_attempts?: number
           gateway_order_id?: string | null
           gateway_payment_id?: string | null
           id?: string
@@ -181,6 +228,7 @@ export type Database = {
           candidate_id?: string
           created_at?: string
           currency?: string
+          delivery_attempts?: number
           gateway_order_id?: string | null
           gateway_payment_id?: string | null
           id?: string
@@ -512,8 +560,22 @@ export type Database = {
         }
         Returns: string
       }
-      dwaar_mark_boost_paid: {
-        Args: { p_gateway_order_id: string; p_gateway_payment_id: string; p_secret: string }
+      dwaar_get_boost_input: {
+        Args: { p_order_id: string }
+        Returns: { out_request_id: string; out_job_title: string; out_company_name: string; out_job_description: string }[]
+      }
+      dwaar_save_boost_result: {
+        Args: {
+          p_order_id: string
+          p_secret: string
+          p_status: string
+          p_improved_resume: string
+          p_summary: string
+          p_changes: Json
+          p_profile_tips: Json
+          p_linkedin_tips: Json
+          p_model: string
+        }
         Returns: boolean
       }
       dwaar_forget_my_requests: {
@@ -526,6 +588,14 @@ export type Database = {
           out_code: string
           out_work_email: string
         }[]
+      }
+      dwaar_mark_boost_paid: {
+        Args: {
+          p_gateway_order_id: string
+          p_gateway_payment_id: string
+          p_secret: string
+        }
+        Returns: boolean
       }
       dwaar_mark_resumes_swept: {
         Args: { p_request_ids: string[]; p_secret: string }

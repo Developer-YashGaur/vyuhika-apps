@@ -68,11 +68,13 @@ export function boostMessage(kind: Exclude<BoostStart["kind"], "ready">): string
   }
 }
 
-// Which of my requests already have a paid Boost. RLS makes this return only my own orders.
-export async function listPaidBoostRequestIds(supabase: Db): Promise<Set<string>> {
-  const { data, error } = await supabase.from("dwaar_boost_orders").select("request_id").in("status", ["paid", "delivered"]);
+// My paid Boosts by request: waiting for the resume ("paid") or finished ("delivered"). RLS returns only my own orders.
+export type MyBoost = { orderId: string; status: "paid" | "delivered" };
+
+export async function listMyBoosts(supabase: Db): Promise<Map<string, MyBoost>> {
+  const { data, error } = await supabase.from("dwaar_boost_orders").select("id, request_id, status").in("status", ["paid", "delivered"]);
   if (error) throw new Error("Could not load your Boost orders.");
-  return new Set((data ?? []).map((row) => row.request_id));
+  return new Map((data ?? []).map((row) => [row.request_id, { orderId: row.id, status: row.status === "delivered" ? "delivered" : "paid" } as MyBoost]));
 }
 
 export type PaymentReceipt = { orderId: string; paymentId: string; signature: string };
