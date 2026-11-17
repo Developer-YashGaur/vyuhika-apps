@@ -70,7 +70,7 @@ describe("isValidJobUrl", () => {
 
 describe("friendlyRequestError", () => {
   it("explains each Dwaar error code", () => {
-    for (const code of ["DW010", "DW011", "DW012", "DW013", "DW014", "DW015", "DW016", "42501"]) {
+    for (const code of ["DW010", "DW011", "DW012", "DW013", "DW014", "DW015", "DW016", "DW033", "42501"]) {
       expect(friendlyRequestError(code)).not.toMatch(/Something went wrong/);
     }
     expect(friendlyRequestError("???")).toMatch(/Something went wrong/);

@@ -25,6 +25,8 @@ export function friendlyRequestError(code: string | undefined): string {
       return "You work at this company, so you cannot ask for a referral here. Choose another company.";
     case "DW015":
       return "You have used today's 5 resume checks. Please try again tomorrow.";
+    case "DW033":
+      return "Please check your resume match first. A request needs a match score of 60 or more.";
     case "DW014":
       return "Please check the job title and link, then try again.";
     case "42501":
