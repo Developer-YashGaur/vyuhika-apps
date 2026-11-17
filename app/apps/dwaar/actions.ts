@@ -9,6 +9,7 @@ import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
 import { sendMessage } from "@/lib/dwaar/chat";
 import { redeemInvite } from "@/lib/dwaar/invites";
+import { PLAN_DESCRIPTION, confirmPlanPayment, planMessage, startPlan } from "@/lib/dwaar/plan";
 import { spendCreditsOnBoost, spendMessage } from "@/lib/dwaar/credit-boost";
 import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
@@ -16,7 +17,7 @@ import { ROLE_MESSAGES, findRoles, type RoleSuggestion } from "@/lib/dwaar/role-
 import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
 import { deliverBoost, deliverMessage } from "@/lib/dwaar/deliver-boost";
-import { boostPaymentsEnabled, inviteRewardsEnabled } from "@/lib/dwaar/features";
+import { boostPaymentsEnabled, inviteRewardsEnabled, planPaymentsEnabled } from "@/lib/dwaar/features";
 import { razorpayKeys } from "@/lib/dwaar/razorpay";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
@@ -309,6 +310,49 @@ export async function sendMessageAction(requestId: string, _previous: ChatFormSt
   if (!result.ok) return { message: result.message, sent: false };
   revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
   return { message: null, sent: true };
+}
+
+// ---- Plus pass ----
+// Step 1: create the order. Returns what the browser needs to open Razorpay checkout (public values only).
+export type PlanActionState =
+  | { ok: true; passId: string; gatewayOrderId: string; amountPaise: number; keyId: string; description: string }
+  | { ok: false; message: string };
+
+export async function startPlanAction(): Promise<PlanActionState> {
+  if (!supabaseConfigured()) return { ok: false, message: planMessage("unavailable") };
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  if (!planPaymentsEnabled()) return { ok: false, message: planMessage("unavailable") }; // the Plus pass is switched off for now
+
+  const keys = razorpayKeys();
+  const result = await startPlan({ supabase, secret: serverSecret(), keys });
+  if (result.kind !== "ready" || !keys) return { ok: false, message: planMessage(result.kind === "ready" ? "failed" : result.kind) };
+  return { ok: true, passId: result.passId, gatewayOrderId: result.gatewayOrderId, amountPaise: result.amountPaise, keyId: keys.keyId, description: PLAN_DESCRIPTION };
+}
+
+// Step 2: the browser reports a finished checkout. We trust only the signed receipt, never the browser's word.
+export async function confirmPlanPaymentAction(receipt: { orderId: string; paymentId: string; signature: string }): Promise<BoostPaidState> {
+  if (!supabaseConfigured()) return { ok: false, message: planMessage("unavailable") };
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+
+  const result = await confirmPlanPayment(
+    { supabase, secret: serverSecret(), keys: razorpayKeys() },
+    { orderId: String(receipt?.orderId ?? ""), paymentId: String(receipt?.paymentId ?? ""), signature: String(receipt?.signature ?? "") },
+  );
+  if (result.kind === "paid") {
+    revalidatePath("/apps/dwaar/plus");
+    return { ok: true };
+  }
+  return {
+    ok: false,
+    message:
+      result.kind === "invalid"
+        ? "We could not verify this payment. If money was taken, write to support@vyuhika.com."
+        : "We could not confirm your payment yet. If money was taken, it is safe: write to support@vyuhika.com and we will fix it.",
+  };
 }
 
 // ---- Boost paid with credits ----

@@ -18,14 +18,18 @@ export type CheckoutOptions = {
   modal: { ondismiss: () => void };
 };
 
-export function buildCheckoutOptions(input: CheckoutInput, callbacks: CheckoutCallbacks): CheckoutOptions {
+export function buildCheckoutOptions(
+  input: CheckoutInput,
+  callbacks: CheckoutCallbacks,
+  description = "Boost: a better resume, profile and LinkedIn tips",
+): CheckoutOptions {
   return {
     key: input.keyId,
     order_id: input.gatewayOrderId,
     amount: input.amountPaise,
     currency: "INR",
     name: "Dwaar by Vyuhika",
-    description: "Boost: a better resume, profile and LinkedIn tips",
+    description,
     theme: { color: "#22d3ee" },
     handler: callbacks.onPaid,
     modal: { ondismiss: callbacks.onDismiss },

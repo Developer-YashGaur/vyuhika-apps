@@ -75,7 +75,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   const credits = inviteRewardsEnabled() ? await getCreditBalance(supabase) : 0;
   const checkNote: Record<string, string> = {
     done: " Your resume match score is on the card below.",
-    limit: " You have used today's 5 resume checks, so there is no score this time.",
+    limit: " You have used all of today's resume checks, so there is no score this time.",
     failed: " We could not check your resume right now.",
   };
   const info = params.sent

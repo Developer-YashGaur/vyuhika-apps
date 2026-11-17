@@ -3,13 +3,14 @@ import { CHECK_MESSAGES, MIN_SCORE, fingerprint, runCheck, saveCheckedScore, toT
 import { toStringList } from "@/lib/dwaar/requests";
 
 // A fake database client: only rpc() is used. `used` is how many checks today's count says were used.
-function fakeDb(opts: { used?: number; found?: unknown[]; recordError?: { code: string } | null } = {}) {
+function fakeDb(opts: { used?: number; found?: unknown[]; recordError?: { code: string } | null; planChecks?: number } = {}) {
   const calls: { name: string; args: Record<string, unknown> }[] = [];
   const supabase = {
     rpc: async (name: string, args: Record<string, unknown> = {}) => {
       calls.push({ name, args });
       if (name === "dwaar_find_check") return { data: opts.found ?? [], error: null };
       if (name === "dwaar_analyses_used_today") return { data: opts.used ?? 0, error: null };
+      if (name === "dwaar_my_plan") return { data: [{ out_active: opts.planChecks !== undefined, out_ends_at: null, out_daily_checks: opts.planChecks ?? 5 }], error: null };
       if (name === "dwaar_record_check") return { data: opts.recordError ? null : true, error: opts.recordError ?? null };
       return { data: true, error: null };
     },
@@ -66,6 +67,14 @@ describe("runCheck", () => {
     expect((await runCheck({ supabase, secret: null, generate: async () => answer(), model: "m" }, args)).kind).toBe("unavailable");
     expect((await runCheck({ supabase, secret: "s", generate: null, model: "m" }, args)).kind).toBe("unavailable");
     expect(calls).toHaveLength(0);
+  });
+
+  it("lets a Plus pass go past 5 checks, up to its own limit", async () => {
+    const generate = vi.fn(async () => answer());
+    const six = fakeDb({ used: 6, planChecks: 20 });
+    expect((await runCheck({ supabase: six.supabase, secret: "s", generate, model: "m" }, args)).kind).toBe("done");
+    const full = fakeDb({ used: 20, planChecks: 20 });
+    expect((await runCheck({ supabase: full.supabase, secret: "s", generate, model: "m" }, args)).kind).toBe("limit");
   });
 
   it("stops before the AI when today's 5 checks are used", async () => {

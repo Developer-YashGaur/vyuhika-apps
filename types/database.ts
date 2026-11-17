@@ -677,6 +677,16 @@ export type Database = {
       }
       dwaar_send_message: { Args: { p_body: string; p_request_id: string }; Returns: string }
       dwaar_credit_balance: { Args: never; Returns: number }
+      dwaar_my_plan: {
+        Args: never
+        Returns: { out_active: boolean; out_daily_checks: number; out_ends_at: string | null }[]
+      }
+      dwaar_start_plan: {
+        Args: never
+        Returns: { out_amount_paise: number; out_currency: string; out_gateway_order_id: string | null; out_pass_id: string }[]
+      }
+      dwaar_attach_plan_order: { Args: { p_gateway_order_id: string; p_pass_id: string; p_secret: string }; Returns: boolean }
+      dwaar_mark_plan_paid: { Args: { p_gateway_order_id: string; p_gateway_payment_id: string; p_secret: string }; Returns: boolean }
       dwaar_spend_credits_on_boost: { Args: { p_request_id: string }; Returns: string }
       dwaar_my_invite_code: { Args: never; Returns: string }
       dwaar_use_invite: { Args: { p_code: string }; Returns: string }

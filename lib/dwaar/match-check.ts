@@ -87,7 +87,10 @@ export async function runCheck({ supabase, secret, generate, model }: Deps, args
 
   const used = await supabase.rpc("dwaar_analyses_used_today");
   if (used.error || typeof used.data !== "number") return { kind: "failed" };
-  if (used.data >= DAILY_LIMIT) return { kind: "limit" };
+  const plan = await supabase.rpc("dwaar_my_plan"); // a Plus pass raises the limit; any problem means the normal limit
+  const planned = Array.isArray(plan.data) ? plan.data[0]?.out_daily_checks : undefined;
+  const limit = typeof planned === "number" && planned > DAILY_LIMIT ? planned : DAILY_LIMIT;
+  if (used.data >= limit) return { kind: "limit" };
 
   try {
     const raw = await analyzeMatch(resume.text, job.text, generate);
@@ -140,7 +143,7 @@ export async function saveCheckedScore(supabase: Db, secret: string, requestId: 
 }
 
 export const CHECK_MESSAGES = {
-  limit: "You have used today's 5 resume checks. Please try again tomorrow.",
+  limit: "You have used all of today's resume checks. Please try again tomorrow.",
   failed: "We could not check your resume right now. Please try again in a moment.",
   unavailable: "Resume checking is not available right now. Please try again later.",
   below: (score: number, min: number) =>

@@ -57,7 +57,7 @@ export default function DwaarPrivacyPage() {
             <p className="mt-3">
               We keep the result: a score from 0 to 100, one short sentence, and lists of skills that matched or are missing.
               We do not keep the extracted resume text. The score is an estimate made by an AI. It can be wrong, and it does not
-              predict what a recruiter or an employee will decide. You can have 5 resume checks in any 24 hours.
+              predict what a recruiter or an employee will decide. You can have 5 resume checks in any 24 hours (more while you have a Plus pass).
             </p>
             <p className="mt-3">
               The check runs before a request is sent, and a request needs a match score of at least 60. A check keeps its

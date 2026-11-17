@@ -11,3 +11,8 @@ export function boostPaymentsEnabled(env: Record<string, string | undefined> = p
 export function inviteRewardsEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DWAAR_INVITES_ENABLED?.trim().toLowerCase() === "true";
 }
+
+// The paid Plus pass is OFF until you switch it on (after the lawyer is happy). Turn on with DWAAR_PLAN_ENABLED=true.
+export function planPaymentsEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DWAAR_PLAN_ENABLED?.trim().toLowerCase() === "true";
+}

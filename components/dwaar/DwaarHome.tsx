@@ -3,7 +3,7 @@ import { connection } from "next/server";
 import { deleteProfileAction, signInWithGoogle, signOut } from "@/app/apps/dwaar/actions";
 import InviteCard from "@/components/dwaar/InviteCard";
 import WorkEmailConfirm from "@/components/dwaar/WorkEmailConfirm";
-import { inviteRewardsEnabled } from "@/lib/dwaar/features";
+import { inviteRewardsEnabled, planPaymentsEnabled } from "@/lib/dwaar/features";
 import { getInviteSummary } from "@/lib/dwaar/invites";
 import { getMyProfile, listCompanyOptions } from "@/lib/dwaar/profile";
 import { workEmailConfirmationConfigured } from "@/lib/dwaar/work-email";
@@ -104,6 +104,7 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
             <Link href="/apps/dwaar/requests/new" className="dw-btn dw-btn-primary dw-btn-lg text-center">Ask for a referral</Link>
             <Link href="/apps/dwaar/find" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Find jobs for my resume</Link>
             <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet dw-btn-lg text-center">My requests</Link>
+            {planPaymentsEnabled() && <Link href="/apps/dwaar/plus" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Dwaar Plus</Link>}
           </>
         )}
 
