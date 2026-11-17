@@ -677,6 +677,8 @@ export type Database = {
       }
       dwaar_send_message: { Args: { p_body: string; p_request_id: string }; Returns: string }
       dwaar_credit_balance: { Args: never; Returns: number }
+      dwaar_opening_searches_used_today: { Args: never; Returns: number }
+      dwaar_record_opening_search: { Args: { p_secret: string }; Returns: boolean }
       dwaar_claim_email_events: {
         Args: { p_secret: string }
         Returns: {

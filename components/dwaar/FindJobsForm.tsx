@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import { findRolesAction, type FindRolesState } from "@/app/apps/dwaar/actions";
+import { useActionState, useState, useTransition } from "react";
+import { findOpeningsAction, findRolesAction, type FindOpeningsState, type FindRolesState } from "@/app/apps/dwaar/actions";
+import { savePrefill } from "@/lib/dwaar/prefill";
 import { RESUME_MAX_BYTES } from "@/lib/dwaar/resume-safety";
 import { ResumeFileError, readResumeFile } from "@/lib/resume-file";
 
@@ -21,6 +22,30 @@ export default function FindJobsForm({ companies }: { companies: CompanyChoice[]
   const [consent, setConsent] = useState(false);
   const [fileState, setFileState] = useState<FileState>({ status: "idle", name: "", message: null });
   const [picked, setPicked] = useState<string | null>(null);
+  const [openings, setOpenings] = useState<Record<string, FindOpeningsState>>({});
+  const [searching, setSearching] = useState<string | null>(null);
+  const [, startSearch] = useTransition();
+
+  // Search the web for real openings at one company. Uses the chosen job, or all the suggested jobs.
+  function searchOpenings(companyId: string) {
+    const titles = picked ? [picked] : state.roles.map((r) => r.title);
+    setSearching(companyId);
+    startSearch(async () => {
+      try {
+        const result = await findOpeningsAction(companyId, titles);
+        setOpenings((o) => ({ ...o, [companyId]: result }));
+      } catch {
+        setOpenings((o) => ({ ...o, [companyId]: { message: "We could not search for openings right now. Please try again in a moment.", openings: [] } }));
+      } finally {
+        setSearching(null);
+      }
+    });
+  }
+
+  const openingHref = (companyId: string, o: { title: string; url: string }) => {
+    const query = new URLSearchParams({ company: companyId, title: o.title, url: o.url });
+    return `/apps/dwaar/requests/new?${query.toString()}`;
+  };
 
   async function onFileChosen(chosen: File | undefined) {
     setResumeText("");
@@ -135,16 +160,61 @@ export default function FindJobsForm({ companies }: { companies: CompanyChoice[]
         ) : (
           <ul className="dw-grid mt-6">
             {companies.map((c) => (
-              <li key={c.id} className="dw-card flex items-center justify-between gap-4">
-                <div>
-                  <p className="dw-display text-lg">{c.name}</p>
-                  <p className="dw-muted text-sm">
-                    {c.referrers === 0
-                      ? "No employee is accepting requests yet. Your request waits until one joins."
-                      : `${c.referrers} ${c.referrers === 1 ? "employee" : "employees"} accepting requests`}
-                  </p>
+              <li key={c.id} className="dw-card flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="dw-display text-lg">{c.name}</p>
+                    <p className="dw-muted text-sm">
+                      {c.referrers === 0
+                        ? "No employee is accepting requests yet. Your request waits until one joins."
+                        : `${c.referrers} ${c.referrers === 1 ? "employee" : "employees"} accepting requests`}
+                    </p>
+                  </div>
+                  <Link href={askHref(c.id)} className="dw-btn dw-btn-primary dw-btn-sm">Ask here</Link>
                 </div>
-                <Link href={askHref(c.id)} className="dw-btn dw-btn-primary dw-btn-sm">Ask here</Link>
+                {state.roles.length > 0 && (
+                  <div className="flex flex-col gap-3">
+                    <button
+                      type="button"
+                      onClick={() => searchOpenings(c.id)}
+                      disabled={searching !== null}
+                      className="dw-btn dw-btn-quiet dw-btn-sm self-start"
+                    >
+                      {searching === c.id ? "Searching the web…" : openings[c.id] ? "Search again" : "Find openings"}
+                    </button>
+                    {searching === c.id && (
+                      <p role="status" className="dw-muted text-sm">This can take up to a minute. Please keep this page open.</p>
+                    )}
+                    {openings[c.id]?.message && (
+                      <p role="status" className="dw-muted text-sm">{openings[c.id].message}</p>
+                    )}
+                    {(openings[c.id]?.openings.length ?? 0) > 0 && (
+                      <>
+                        <p className="dw-muted text-xs">Found on the web. Please check the posting before you apply; jobs can close at any time.</p>
+                        <ul className="flex flex-col gap-3">
+                          {openings[c.id].openings.map((o) => (
+                            <li key={o.url} className="dw-card-inner flex flex-col gap-2">
+                              <p className="font-medium">{o.title}</p>
+                              {o.location && <p className="dw-muted text-sm">{o.location}</p>}
+                              <div className="flex flex-wrap items-center gap-3">
+                                <a href={o.url} target="_blank" rel="noopener noreferrer" className="dw-link text-sm">
+                                  View posting<span className="sr-only"> (opens in a new tab)</span>
+                                </a>
+                                <Link
+                                  href={openingHref(c.id, o)}
+                                  onClick={() => savePrefill(o.url, o.description)}
+                                  className="dw-btn dw-btn-primary dw-btn-sm"
+                                >
+                                  Ask for a referral
+                                </Link>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>

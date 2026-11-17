@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { createRequestAction, type RequestFormState } from "@/app/apps/dwaar/actions";
 import MatchCheck from "@/components/dwaar/MatchCheck";
+import { readPrefill } from "@/lib/dwaar/prefill";
 import { JOB_DESCRIPTION_LIMITS, REQUEST_LIMITS, type RequestFieldName } from "@/lib/dwaar/request-form";
 import { RESUME_MAX_BYTES } from "@/lib/dwaar/resume-safety";
 import type { CompanyOption } from "@/lib/dwaar/profile";
@@ -17,13 +18,19 @@ const initialState: RequestFormState = { errors: {}, message: null };
 
 type FileState = { status: "idle" | "reading" | "ok" | "error"; name: string; message: string | null };
 
-export default function RequestForm({ companies, initial }: { companies: CompanyOption[]; initial?: { companyId: string; jobTitle: string } }) {
+export default function RequestForm({ companies, initial }: { companies: CompanyOption[]; initial?: { companyId: string; jobTitle: string; jobUrl?: string } }) {
   const [state, formAction, pending] = useActionState(createRequestAction, initialState);
-  const [values, setValues] = useState({ companyId: initial?.companyId ?? "", jobTitle: initial?.jobTitle ?? "", jobUrl: "", jobId: "", jobDescription: "", note: "" });
+  const [values, setValues] = useState({ companyId: initial?.companyId ?? "", jobTitle: initial?.jobTitle ?? "", jobUrl: initial?.jobUrl ?? "", jobId: "", jobDescription: "", note: "" });
   const [consent, setConsent] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [resumeText, setResumeText] = useState("");
   const [fileState, setFileState] = useState<FileState>({ status: "idle", name: "", message: null });
+  // From "Find openings": the description of the chosen opening was saved in this browser tab; fill it in once.
+  useEffect(() => {
+    const description = readPrefill(initial?.jobUrl);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sessionStorage exists only in the browser, so this cannot be the first render
+    if (description) setValues((v) => (v.jobDescription ? v : { ...v, jobDescription: description }));
+  }, [initial?.jobUrl]);
   const set = (key: keyof typeof values, value: string) => setValues((v) => ({ ...v, [key]: value }));
 
   const { errors } = state;

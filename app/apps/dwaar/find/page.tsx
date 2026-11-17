@@ -9,6 +9,8 @@ import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = dwaarMetadata;
+// Searching the web and checking links can take close to a minute.
+export const maxDuration = 60;
 
 export default function FindJobsPage() {
   return (

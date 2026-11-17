@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import RequestForm from "@/components/dwaar/RequestForm";
+import { isValidJobUrl } from "@/lib/dwaar/request-form";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { getMyProfile, listCompanyOptions } from "@/lib/dwaar/profile";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -10,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata = dwaarMetadata;
 
-type Params = { company?: string; title?: string };
+type Params = { company?: string; title?: string; url?: string };
 
 export default function NewRequestPage({ searchParams }: { searchParams: Promise<Params> }) {
   return (
@@ -50,5 +51,6 @@ async function NewRequestContent({ searchParams }: { searchParams: Promise<Param
   // From "Find jobs": a company and a job title can arrive in the link. Only a listed company and a short plain title are used.
   const companyId = companies.some((c) => c.id === params.company) ? (params.company as string) : "";
   const jobTitle = typeof params.title === "string" ? params.title.trim().slice(0, 120) : "";
-  return <RequestForm companies={companies} initial={{ companyId, jobTitle }} />;
+  const jobUrl = typeof params.url === "string" && isValidJobUrl(params.url) ? params.url : "";
+  return <RequestForm companies={companies} initial={{ companyId, jobTitle, jobUrl }} />;
 }

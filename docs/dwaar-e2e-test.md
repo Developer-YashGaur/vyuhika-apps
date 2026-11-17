@@ -4,7 +4,7 @@ Do this once on your own computer before launch. You use two real Google account
 
 ## 0. Get ready
 
-1. Run `supabase db push --remote` (applies migrations 11 to 29). Then run `supabase gen types typescript --remote > types/database.ts`.
+1. Run `supabase db push --remote` (applies migrations 11 to 31). Then run `supabase gen types typescript --remote > types/database.ts`.
 2. In `.env.local` make sure these are set: the Supabase URL and anon key, `DWAAR_SERVER_SECRET` (the same secret whose SHA-256 is in `private.dwaar_config`), `GEMINI_API_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, and the two Razorpay **test** keys (`rzp_test_...`).
 3. For the money and invite steps (sections 5 to 7) also set `DWAAR_INVITES_ENABLED=true` and `DWAAR_PLAN_ENABLED=true`. In the Supabase SQL editor run `update private.dwaar_config set value = 'true' where key = 'invite_rewards_enabled';`. Leave `DWAAR_BOOST_ENABLED` unset for now (section 6 turns it on).
 4. Account A must be a real employee. Make sure A's company exists in the admin panel with its email domain (for example Accenture with `accenture.com`), and that you can open A's work inbox at that domain. (Free mail such as Gmail cannot be a company domain.)

@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { CONSENT_VERSION } from "@/lib/dwaar/consent";
-import { deleteMyProfile, getMyProfile, saveMyProfile } from "@/lib/dwaar/profile";
+import { deleteMyProfile, getMyProfile, listCompanyOptions, saveMyProfile } from "@/lib/dwaar/profile";
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
 import { sendMessage } from "@/lib/dwaar/chat";
@@ -24,7 +24,8 @@ import { razorpayKeys } from "@/lib/dwaar/razorpay";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
 import { CHECK_MESSAGES, runCheck, saveCheckedScore, toView, type CheckView } from "@/lib/dwaar/match-check";
-import { createGeminiGenerate, getGeminiModel } from "@/lib/ai/gemini";
+import { createGeminiGenerate, createGeminiSearch, getGeminiModel } from "@/lib/ai/gemini";
+import { OPENINGS_MESSAGES, findOpenings, type Opening } from "@/lib/dwaar/openings";
 import { confirmWorkEmailCode, requestWorkEmailCode, serverSecret } from "@/lib/dwaar/work-email";
 import { getEmailSettings } from "@/lib/email/settings";
 import { createResendSender } from "@/lib/feedback/deliver";
@@ -429,3 +430,29 @@ export async function findRolesAction(_previous: FindRolesState, formData: FormD
   return { message: null, roles: outcome.roles };
 }
 
+
+// ---- Find openings: real job postings found online for one company ----
+
+export type FindOpeningsState = { message: string | null; openings: Opening[] };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function findOpeningsAction(companyId: string, roleTitles: string[]): Promise<FindOpeningsState> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+
+  const profile = await getMyProfile(supabase, data.user.id);
+  if (!profile || !profile.is_candidate) return { message: OPENINGS_MESSAGES.failed, openings: [] };
+  if (typeof companyId !== "string" || !UUID.test(companyId)) return { message: OPENINGS_MESSAGES.failed, openings: [] };
+
+  // The company name comes from our own list, never from the browser. A person cannot ask at their own company.
+  const company = (await listCompanyOptions(supabase)).find((c) => c.id === companyId);
+  const own = profile.is_provider ? profile.provider_company_id : null;
+  if (!company || company.id === own) return { message: OPENINGS_MESSAGES.failed, openings: [] };
+
+  const outcome = await findOpenings({ supabase, secret: serverSecret(), search: createGeminiSearch(), generate: createGeminiGenerate() }, company.name, roleTitles);
+  if (outcome.kind !== "done") return { message: OPENINGS_MESSAGES[outcome.kind === "none" ? "none" : outcome.kind], openings: [] };
+  return { message: null, openings: outcome.openings };
+}

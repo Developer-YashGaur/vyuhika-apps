@@ -473,3 +473,11 @@ textarea.dw-input { min-height: 120px; resize: vertical; }
   .dw-st-conf-c { animation: dw-k-conf-c 14s ease-in infinite; }
   .dw-st-steam { animation: dw-k-steam 2.4s ease-in-out infinite; }
 }
+
+/* A smaller panel inside a card (for example one job opening in a company card). */
+.dw-card-inner {
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+}
