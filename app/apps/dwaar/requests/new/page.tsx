@@ -46,6 +46,8 @@ async function NewRequestContent() {
   if (!profile) redirect("/apps/dwaar/profile");
   if (!profile.is_candidate) redirect("/apps/dwaar/profile");
 
-  const companies = await listCompanyOptions(supabase);
-  return <RequestForm companies={companies} />;
+  // People who work at a company cannot ask for a referral there, so it is left out of the list.
+  const all = await listCompanyOptions(supabase);
+  const own = profile.is_provider ? profile.provider_company_id : null;
+  return <RequestForm companies={all.filter((c) => c.id !== own)} />;
 }

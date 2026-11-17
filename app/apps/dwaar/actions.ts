@@ -7,6 +7,7 @@ import { deleteMyProfile, getMyProfile, saveMyProfile } from "@/lib/dwaar/profil
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
 import { respondToRequest } from "@/lib/dwaar/inbox";
+import { notifyProviders } from "@/lib/dwaar/notify";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
 import { scoreRequest } from "@/lib/dwaar/score-request";
@@ -163,9 +164,15 @@ export async function createRequestAction(_previous: RequestFormState, formData:
     return { errors: {}, message: created.message };
   }
 
-  // 4. The free match score. It never blocks the request: if it fails, the request is already sent.
+  // 4. Tell the employees at that company. Never blocks or fails the request.
+  const secret = serverSecret();
+  const settings = getEmailSettings();
+  const send = createResendSender();
+  if (secret && settings && send) await notifyProviders(supabase, { secret, send, settings }, created.data);
+
+  // 5. The free match score. It never blocks the request: if it fails, the request is already sent.
   const outcome = await scoreRequest(
-    { supabase, secret: serverSecret(), generate: createGeminiGenerate(), model: getGeminiModel() },
+    { supabase, secret, generate: createGeminiGenerate(), model: getGeminiModel() },
     { requestId: created.data, resumeText: input.resumeText, jobDescription: input.jobDescription },
   );
 

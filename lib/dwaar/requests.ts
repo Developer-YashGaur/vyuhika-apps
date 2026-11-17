@@ -21,6 +21,8 @@ export function friendlyRequestError(code: string | undefined): string {
       return "Turn on \"I am looking for referrals\" in your profile first.";
     case "DW013":
       return "That company is not available right now. Please choose another.";
+    case "DW016":
+      return "You work at this company, so you cannot ask for a referral here. Choose another company.";
     case "DW015":
       return "You have used today's 5 resume checks. Please try again tomorrow.";
     case "DW014":
