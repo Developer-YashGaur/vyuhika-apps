@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import EntranceScene from "@/components/dwaar/art/EntranceScene";
 import DwaarHome from "@/components/dwaar/DwaarHome";
+import HowItWorks from "@/components/dwaar/HowItWorks";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 
 export const metadata = dwaarMetadata;
@@ -20,7 +21,7 @@ export default function DwaarPage({ searchParams }: { searchParams: Promise<{ er
           All apps
         </Link>
 
-        <header className="mt-8 mb-10 grid items-center gap-8 sm:mb-14 lg:grid-cols-[1.1fr_1fr]">
+        <header className="mt-8 mb-10 grid items-center gap-8 sm:mb-14 lg:grid-cols-[1fr_1.15fr]">
           <div>
             <div className="flex flex-wrap items-center gap-4">
               <h1 className="page-title font-display">Dwaar</h1>
@@ -31,12 +32,14 @@ export default function DwaarPage({ searchParams }: { searchParams: Promise<{ er
               there can see your request and, if they agree, give you a referral.
             </p>
           </div>
-          <EntranceScene className="w-full max-w-md justify-self-center lg:max-w-none" />
+          <EntranceScene className="w-full max-w-xl justify-self-center lg:max-w-none" />
         </header>
 
         <Suspense fallback={<p className="text-mist">Loading…</p>}>
           <DwaarHome searchParams={searchParams} />
         </Suspense>
+
+        <HowItWorks />
       </main>
       <Footer />
     </>

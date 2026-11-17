@@ -1467,3 +1467,35 @@ a:focus-visible > .logo-glow {
 }
 @keyframes dw-glow { 50% { opacity: 0.55; } }
 @keyframes dw-walk { from { transform: translateX(-40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.dw-ticket {
+  position: relative;
+  color: #1d1a16;
+  background: #f6efe1;
+  border-radius: 12px;
+  padding: 1.4rem 1.25rem 1.5rem;
+  box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+.dw-ticket::before,
+.dw-ticket::after {
+  content: "";
+  position: absolute;
+  top: 2.6rem;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #050816;
+}
+.dw-ticket::before { left: -9px; }
+.dw-ticket::after { right: -9px; }
+.dw-ticket h3 { color: #1d1a16; }
+.dw-ticket .dw-muted { color: #5c5546; }
+.dw-ticket-no {
+  font-family: var(--font-unbounded), system-ui, sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  color: #0e7490;
+  border-bottom: 1px dashed rgba(29, 26, 22, 0.3);
+  padding-bottom: 0.5rem;
+  display: block;
+}

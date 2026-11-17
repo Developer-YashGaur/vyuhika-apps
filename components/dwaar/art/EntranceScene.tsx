@@ -1,79 +1,98 @@
-// Original drawing: someone arriving at a company entrance with a visitor pass on a lanyard.
-// Made in code (no photos, no real logos). Decorative, so it is hidden from screen readers.
+// Original drawing: a visitor arriving at a company building at dusk, pass on a lanyard,
+// reception lit up behind a glass door. Made in code (no photos, no real logos). Decorative.
 export default function EntranceScene({ className = "" }: { className?: string }) {
-  const lit = [
-    [120, 62], [160, 62], [200, 62], [240, 62], [280, 62], [320, 62], [350, 62],
-    [120, 96], [160, 96], [240, 96], [320, 96], [350, 96],
-    [120, 130], [160, 130], [200, 130], [300, 130], [330, 130],
-  ];
-  const dark = [[200, 96], [280, 96], [240, 130], [350, 130], [280, 130], [320, 130]];
+  const floors = [58, 100, 142];
+  const cols = [150, 196, 242, 288, 334, 380, 426, 472];
+  const litSet = new Set(["0-1", "0-4", "0-6", "1-0", "1-2", "1-3", "1-5", "1-7", "2-1", "2-2", "2-6", "2-7", "0-2", "1-4"]);
   return (
-    <svg viewBox="0 0 480 300" className={className} aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 640 380" className={className} aria-hidden="true" focusable="false">
       <defs>
         <linearGradient id="dw-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#0a1030" />
-          <stop offset="1" stopColor="#050816" />
+          <stop offset="0" stopColor="#0b1033" />
+          <stop offset="0.65" stopColor="#2a1a5e" />
+          <stop offset="1" stopColor="#7c3aed" stopOpacity="0.75" />
         </linearGradient>
-        <linearGradient id="dw-glass" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#67e8f9" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#8b5cf6" stopOpacity="0.35" />
+        <linearGradient id="dw-wall" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#141c45" />
+          <stop offset="1" stopColor="#0c1233" />
         </linearGradient>
-        <radialGradient id="dw-spill" cx="0.5" cy="0" r="0.8">
-          <stop offset="0" stopColor="#22d3ee" stopOpacity="0.35" />
-          <stop offset="1" stopColor="#22d3ee" stopOpacity="0" />
+        <linearGradient id="dw-glass" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fde68a" stopOpacity="0.95" />
+          <stop offset="1" stopColor="#f59e0b" stopOpacity="0.55" />
+        </linearGradient>
+        <radialGradient id="dw-spill" cx="0.5" cy="0" r="0.9">
+          <stop offset="0" stopColor="#fcd34d" stopOpacity="0.5" />
+          <stop offset="1" stopColor="#fcd34d" stopOpacity="0" />
         </radialGradient>
       </defs>
 
-      <rect width="480" height="300" rx="20" fill="url(#dw-sky)" />
-      {/* stars */}
-      {[[40, 30], [90, 18], [420, 36], [455, 70], [30, 90], [400, 14]].map(([x, y]) => (
-        <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" fill="#eef2fb" opacity="0.6" />
+      <rect width="640" height="380" rx="24" fill="url(#dw-sky)" />
+      <circle cx="560" cy="64" r="26" fill="#fef3c7" opacity="0.9" />
+      <circle cx="570" cy="58" r="24" fill="#2a1a5e" opacity="0.9" />
+      {[[40, 30], [110, 70], [220, 24], [380, 40], [520, 22], [610, 110], [60, 130], [300, 14]].map(([x, y]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r="1.4" fill="#eef2fb" opacity="0.7" />
       ))}
 
-      {/* building */}
-      <rect x="100" y="40" width="280" height="212" rx="6" fill="#0f1633" stroke="#ffffff" strokeOpacity="0.1" />
-      <rect x="100" y="40" width="280" height="10" rx="4" fill="#1a2250" />
-      {lit.map(([x, y]) => (
-        <rect key={`l${x}-${y}`} x={x} y={y} width="26" height="20" rx="3" fill="#fcd34d" opacity="0.78" />
+      {/* far skyline */}
+      <path d="M0 270V210h34v-26h28v40h26v-60h30v70h40v-34h26v60h40V200h24v70zM520 270v-50h30v-36h26v44h34v-30h30v72z" fill="#171d4d" opacity="0.8" />
+
+      {/* main building */}
+      <rect x="120" y="36" width="400" height="260" rx="8" fill="url(#dw-wall)" stroke="#ffffff" strokeOpacity="0.12" />
+      <rect x="120" y="36" width="400" height="12" rx="5" fill="#222b66" />
+      {floors.map((y, r) =>
+        cols.map((x, c) => (
+          <rect
+            key={`${r}-${c}`}
+            x={x}
+            y={y}
+            width="30"
+            height="24"
+            rx="3"
+            fill={litSet.has(`${r}-${c}`) ? "#fcd34d" : "#1c2658"}
+            opacity={litSet.has(`${r}-${c}`) ? 0.82 : 1}
+          />
+        ))
+      )}
+
+      {/* entrance */}
+      <rect x="244" y="172" width="152" height="10" rx="4" fill="#2b3678" />
+      <rect x="262" y="190" width="116" height="26" rx="6" fill="#0b1230" stroke="#fcd34d" strokeOpacity="0.8" />
+      <path d="M296 203h48M320 196v14" stroke="#fcd34d" strokeWidth="2.4" strokeLinecap="round" opacity="0.9" />
+      <ellipse cx="320" cy="300" rx="120" ry="30" fill="url(#dw-spill)" className="dw-door-glow" />
+      <rect x="256" y="222" width="128" height="74" rx="4" fill="url(#dw-glass)" stroke="#fde68a" strokeOpacity="0.9" />
+      <path d="M320 222v74" stroke="#92400e" strokeOpacity="0.6" strokeWidth="2" />
+      <rect x="310" y="248" width="3.5" height="18" rx="1.7" fill="#fff7ed" />
+      <rect x="326.5" y="248" width="3.5" height="18" rx="1.7" fill="#fff7ed" />
+      {/* reception desk + receptionist through the glass */}
+      <rect x="268" y="268" width="62" height="28" rx="3" fill="#3b1d0a" opacity="0.8" />
+      <circle cx="286" cy="254" r="7" fill="#3b1d0a" opacity="0.8" />
+      <rect x="279" y="260" width="14" height="12" rx="4" fill="#3b1d0a" opacity="0.8" />
+
+      {/* ground and path to the door */}
+      <rect y="296" width="640" height="84" fill="#080d24" />
+      <path d="M0 296h640" stroke="#ffffff" strokeOpacity="0.14" />
+      <path d="M262 296h116l52 84H210z" fill="#111a44" />
+      <path d="M300 296l-22 84M340 296l22 84" stroke="#ffffff" strokeOpacity="0.08" />
+
+      {/* planters */}
+      {[168, 452].map((x) => (
+        <g key={x}>
+          <rect x={x} y="274" width="26" height="22" rx="4" fill="#222b66" />
+          <path d={`M${x + 13} 274c-14-14-12-32-3-38 3 14 9 20 3 38zm0 0c14-12 14-30 5-38-4 13-9 20-5 38z`} fill="#34d399" opacity="0.85" />
+        </g>
       ))}
-      {dark.map(([x, y]) => (
-        <rect key={`d${x}-${y}`} x={x} y={y} width="26" height="20" rx="3" fill="#1d2754" />
-      ))}
 
-      {/* canopy, name plate and door */}
-      <rect x="196" y="150" width="88" height="8" rx="3" fill="#252f69" />
-      <rect x="208" y="122" width="64" height="22" rx="5" fill="#0b1230" stroke="#22d3ee" strokeOpacity="0.7" />
-      <path d="M232 133h16M240 127v12" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" opacity="0.9" />
-      <ellipse cx="240" cy="252" rx="70" ry="22" fill="url(#dw-spill)" className="dw-door-glow" />
-      <rect x="208" y="160" width="64" height="92" rx="4" fill="url(#dw-glass)" stroke="#67e8f9" strokeOpacity="0.8" />
-      <path d="M240 160v92" stroke="#67e8f9" strokeOpacity="0.7" />
-      <rect x="232" y="204" width="3" height="16" rx="1.5" fill="#eef2fb" />
-      <rect x="245" y="204" width="3" height="16" rx="1.5" fill="#eef2fb" />
-      {/* reception desk seen through the glass */}
-      <rect x="216" y="226" width="48" height="20" rx="2" fill="#0b1230" opacity="0.85" />
-      <circle cx="228" cy="214" r="5" fill="#0b1230" opacity="0.85" />
-      <rect x="223" y="219" width="10" height="9" rx="3" fill="#0b1230" opacity="0.85" />
-
-      {/* ground */}
-      <rect y="252" width="480" height="48" fill="#080d24" />
-      <path d="M0 252h480" stroke="#ffffff" strokeOpacity="0.1" />
-      <path d="M200 252h80l30 48H170z" fill="#0d1430" opacity="0.9" />
-
-      {/* plants */}
-      <rect x="150" y="236" width="18" height="16" rx="3" fill="#1d2754" />
-      <path d="M159 236c-10-10-8-22-2-26 2 10 6 14 2 26zm0 0c10-9 10-21 4-26-3 9-6 14-4 26z" fill="#34d399" opacity="0.8" />
-      <rect x="312" y="236" width="18" height="16" rx="3" fill="#1d2754" />
-      <path d="M321 236c-10-10-8-22-2-26 2 10 6 14 2 26zm0 0c10-9 10-21 4-26-3 9-6 14-4 26z" fill="#34d399" opacity="0.8" />
-
-      {/* visitor walking to the door */}
+      {/* visitor */}
       <g className="dw-walker">
-        <circle cx="96" cy="196" r="10" fill="#cbd5f5" />
-        <path d="M82 252v-34c0-8 6-14 14-14s14 6 14 14v34z" fill="#8b5cf6" />
-        <path d="M89 252v18M103 252v18" stroke="#cbd5f5" strokeWidth="5" strokeLinecap="round" />
-        {/* lanyard and pass */}
-        <path d="M90 206l6 14 6-14" fill="none" stroke="#22d3ee" strokeWidth="1.6" />
-        <rect x="90" y="220" width="12" height="16" rx="2" fill="#f6efe1" />
-        <path d="M92 225h8M92 229h6" stroke="#9a8f78" strokeWidth="1" />
+        <circle cx="196" cy="268" r="13" fill="#e2c9a8" />
+        <path d="M184 262c2-12 22-12 24 0-6-4-18-4-24 0z" fill="#1f1b2e" />
+        <path d="M176 340v-46c0-11 9-19 20-19s20 8 20 19v46z" fill="#8b5cf6" />
+        <path d="M184 340v26M208 340v26" stroke="#1f1b2e" strokeWidth="7" strokeLinecap="round" />
+        <path d="M186 281l10 22 10-22" fill="none" stroke="#22d3ee" strokeWidth="2" />
+        <rect x="188" y="302" width="16" height="22" rx="2.5" fill="#f6efe1" />
+        <rect x="188" y="302" width="16" height="4" rx="1" fill="#0e7490" />
+        <path d="M191 311h10M191 316h7" stroke="#9a8f78" strokeWidth="1.2" />
+        <rect x="150" y="312" width="22" height="30" rx="4" fill="#0e7490" />
       </g>
     </svg>
   );
