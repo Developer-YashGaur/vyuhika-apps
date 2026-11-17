@@ -81,6 +81,8 @@ export async function saveProfileAction(_previous: ProfileFormState, formData: F
   });
   if (!saved.ok) return { errors: {}, message: saved.message };
 
+  // Drop any remembered copy of the Dwaar pages, so the edit page and the home page show what was just saved.
+  revalidatePath("/apps/dwaar", "layout");
   redirect("/apps/dwaar?saved=1");
 }
 

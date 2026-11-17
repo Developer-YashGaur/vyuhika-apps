@@ -76,6 +76,12 @@ describe("employee opt-in", () => {
     expect(r.ok && r.data.weeklyLimit).toBe(5);
   });
 
+  it("keeps the saved limit when the opt-in is switched off (the form sends it as a hidden field)", () => {
+    const r = parseProfileForm(form({ ...base, weeklyLimit: "12" }), { requireConsent: false });
+    expect(r.ok && r.data.acceptsRequests).toBe(false);
+    expect(r.ok && r.data.weeklyLimit).toBe(12);
+  });
+
   it("turns on only for employees", () => {
     const on = parseProfileForm(form({ ...base, acceptsRequests: "on", weeklyLimit: "8" }), { requireConsent: false });
     expect(on.ok && on.data.acceptsRequests).toBe(true);

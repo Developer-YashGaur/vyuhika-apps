@@ -195,6 +195,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
                 </span>
               </span>
             </label>
+            {!values.acceptsRequests && <input type="hidden" name="weeklyLimit" value={values.weeklyLimit} />}
             {values.acceptsRequests && (
               <div className="mt-4">
                 <label htmlFor="weeklyLimit" className="text-sm font-semibold">
