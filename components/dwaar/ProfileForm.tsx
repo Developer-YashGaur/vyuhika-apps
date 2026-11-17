@@ -147,7 +147,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
               inputMode="url"
               value={values.linkedinUrl}
               onChange={(e) => set("linkedinUrl", e.target.value)}
-              placeholder="https://www.linkedin.com/in/your-name"
+              placeholder="Paste your LinkedIn profile link"
               maxLength={300}
               autoComplete="url"
               aria-invalid={errors.linkedinUrl ? true : undefined}

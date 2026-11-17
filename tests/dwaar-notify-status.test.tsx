@@ -78,9 +78,11 @@ describe("sendStatusEmails", () => {
     const send = vi.fn(async (email: EmailMessage) => email.to.length > 0);
     expect(await sendStatusEmails(supabase, { secret: "s", send, settings })).toEqual({ sent: 2, failed: 0 });
     expect(calls[0]).toEqual({ name: "dwaar_claim_email_events", args: { p_secret: "s" } });
-    expect(send.mock.calls.map((c) => c[0].to)).toEqual(["cand@example.com", "e@acme.com"]);
-    expect(send.mock.calls[0][0].from).toBe(settings.from);
-    expect(send.mock.calls[0][0].html).toContain("Your request was accepted");
+    // The emails are built at the same time, so which one is handed over first can vary.
+    expect(send.mock.calls.map((c) => c[0].to).sort()).toEqual(["cand@example.com", "e@acme.com"]);
+    const accepted = send.mock.calls.map((c) => c[0]).find((m) => m.to === "cand@example.com");
+    expect(accepted?.from).toBe(settings.from);
+    expect(accepted?.html).toContain("Your request was accepted");
   });
   it("counts failures and does not throw", async () => {
     const { supabase } = fakeDb({ data: [row("reply", "cand@example.com")], error: null });

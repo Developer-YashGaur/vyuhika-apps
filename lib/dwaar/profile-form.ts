@@ -69,7 +69,7 @@ export function parseProfileForm(form: FormLike, options: { requireConsent: bool
     if (!rawLinkedin) errors.linkedinUrl = "Please add your LinkedIn profile link.";
     else {
       linkedinUrl = normalizeLinkedin(rawLinkedin);
-      if (!linkedinUrl) errors.linkedinUrl = "Use your LinkedIn profile link, like linkedin.com/in/your-name.";
+      if (!linkedinUrl) errors.linkedinUrl = "Use the link to your own LinkedIn profile (it has /in/ and your name in it).";
     }
 
     const rawPhone = text(form, "phone");
