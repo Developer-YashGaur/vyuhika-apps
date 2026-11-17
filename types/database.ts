@@ -246,10 +246,14 @@ export type Database = {
           company_id: string
           created_at: string
           id: string
+          job_description: string | null
+          job_id: string | null
           job_title: string
           job_url: string
           note: string | null
           notified_at: string | null
+          resume_consent_at: string | null
+          resume_path: string | null
           status: Database["public"]["Enums"]["referral_status"]
           updated_at: string
         }
@@ -260,10 +264,14 @@ export type Database = {
           company_id: string
           created_at?: string
           id?: string
+          job_description?: string | null
+          job_id?: string | null
           job_title: string
           job_url: string
           note?: string | null
           notified_at?: string | null
+          resume_consent_at?: string | null
+          resume_path?: string | null
           status?: Database["public"]["Enums"]["referral_status"]
           updated_at?: string
         }
@@ -274,10 +282,14 @@ export type Database = {
           company_id?: string
           created_at?: string
           id?: string
+          job_description?: string | null
+          job_id?: string | null
           job_title?: string
           job_url?: string
           note?: string | null
           notified_at?: string | null
+          resume_consent_at?: string | null
+          resume_path?: string | null
           status?: Database["public"]["Enums"]["referral_status"]
           updated_at?: string
         }
@@ -316,6 +328,50 @@ export type Database = {
             foreignKeyName: "dwaar_request_dismissals_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_resume_analyses: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          gaps: Json
+          model: string | null
+          request_id: string
+          score: number | null
+          status: string
+          strengths: Json
+          summary: string | null
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          gaps?: Json
+          model?: string | null
+          request_id: string
+          score?: number | null
+          status: string
+          strengths?: Json
+          summary?: string | null
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          gaps?: Json
+          model?: string | null
+          request_id?: string
+          score?: number | null
+          status?: string
+          strengths?: Json
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_resume_analyses_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
             referencedRelation: "dwaar_referral_requests"
             referencedColumns: ["id"]
           },
@@ -373,6 +429,7 @@ export type Database = {
       }
     }
     Functions: {
+      dwaar_analyses_used_today: { Args: never; Returns: number }
       dwaar_cancel_request: { Args: { p_request_id: string }; Returns: boolean }
       dwaar_claim_provider_notifications: {
         Args: { p_request_id: string; p_secret: string }
@@ -387,9 +444,13 @@ export type Database = {
       dwaar_create_request: {
         Args: {
           p_company_id: string
+          p_job_description?: string
+          p_job_id?: string
           p_job_title: string
           p_job_url: string
           p_note?: string
+          p_resume_consent?: boolean
+          p_resume_path?: string
         }
         Returns: string
       }
@@ -417,13 +478,17 @@ export type Database = {
         Returns: {
           out_accepted_at: string
           out_accepted_by_name: string
+          out_analysis_status: string
           out_company_id: string
           out_company_name: string
           out_created_at: string
+          out_has_resume: boolean
           out_id: string
+          out_job_id: string
           out_job_title: string
           out_job_url: string
           out_note: string
+          out_score: number
           out_status: string
         }[]
       }
@@ -434,6 +499,7 @@ export type Database = {
           out_candidate_name: string
           out_created_at: string
           out_id: string
+          out_job_id: string
           out_job_title: string
           out_job_url: string
           out_note: string
@@ -442,6 +508,19 @@ export type Database = {
       dwaar_respond_to_request: {
         Args: { p_accept: boolean; p_request_id: string }
         Returns: string
+      }
+      dwaar_save_analysis: {
+        Args: {
+          p_gaps: Json
+          p_model: string
+          p_request_id: string
+          p_score: number
+          p_secret: string
+          p_status: string
+          p_strengths: Json
+          p_summary: string
+        }
+        Returns: boolean
       }
       email_matches_company: {
         Args: { p_company_id: string; p_email: string }

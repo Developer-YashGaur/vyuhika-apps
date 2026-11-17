@@ -7,6 +7,9 @@ import { deleteMyProfile, getMyProfile, saveMyProfile } from "@/lib/dwaar/profil
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
+import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
+import { scoreRequest } from "@/lib/dwaar/score-request";
+import { createGeminiGenerate, getGeminiModel } from "@/lib/ai/gemini";
 import { confirmWorkEmailCode, requestWorkEmailCode, serverSecret } from "@/lib/dwaar/work-email";
 import { getEmailSettings } from "@/lib/email/settings";
 import { createResendSender } from "@/lib/feedback/deliver";
@@ -114,6 +117,12 @@ export async function confirmWorkEmailAction(previous: WorkEmailState, formData:
 
 export type RequestFormState = { errors: RequestFieldErrors; message: string | null };
 
+const RESUME_BUCKET = "dwaar-resumes";
+const RESUME_TYPES = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+} as const;
+
 export async function createRequestAction(_previous: RequestFormState, formData: FormData): Promise<RequestFormState> {
   if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
   const supabase = await createClient();
@@ -122,11 +131,44 @@ export async function createRequestAction(_previous: RequestFormState, formData:
 
   const parsed = parseRequestForm(formData);
   if (!parsed.ok) return { errors: parsed.errors, message: "Please fix the highlighted fields." };
+  const input = parsed.data;
 
-  const created = await createRequest(supabase, parsed.data);
-  if (!created.ok) return { errors: {}, message: created.message };
+  // 1. Look at the file's real type (its first bytes), not its name. The server never opens or runs the file.
+  const bytes = new Uint8Array(await input.resumeFile.arrayBuffer());
+  const kind = checkResumeUpload(bytes);
+  if (!kind.ok) return { errors: { resume: UPLOAD_MESSAGES[kind.code] }, message: "Please fix the highlighted fields." };
 
-  redirect("/apps/dwaar/requests?sent=1");
+  // 2. Store it in the person's own private folder (the database rules allow nothing else).
+  const path = `${data.user.id}/${crypto.randomUUID()}.${kind.kind}`;
+  const upload = await supabase.storage.from(RESUME_BUCKET).upload(path, bytes, { contentType: RESUME_TYPES[kind.kind], upsert: false });
+  if (upload.error) {
+    console.error("[dwaar] resume upload failed");
+    return { errors: {}, message: "We could not save your resume. Please try again." };
+  }
+
+  // 3. Create the request. If that fails, remove the file again so nothing is left behind.
+  const created = await createRequest(supabase, {
+    companyId: input.companyId,
+    jobTitle: input.jobTitle,
+    jobUrl: input.jobUrl,
+    note: input.note,
+    jobId: input.jobId,
+    jobDescription: input.jobDescription,
+    resumePath: path,
+    consent: true,
+  });
+  if (!created.ok) {
+    await supabase.storage.from(RESUME_BUCKET).remove([path]);
+    return { errors: {}, message: created.message };
+  }
+
+  // 4. The free match score. It never blocks the request: if it fails, the request is already sent.
+  const outcome = await scoreRequest(
+    { supabase, secret: serverSecret(), generate: createGeminiGenerate(), model: getGeminiModel() },
+    { requestId: created.data, resumeText: input.resumeText, jobDescription: input.jobDescription },
+  );
+
+  redirect(`/apps/dwaar/requests?sent=1&check=${outcome.kind}`);
 }
 
 export async function cancelRequestAction(formData: FormData): Promise<void> {

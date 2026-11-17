@@ -5,18 +5,19 @@ import { Suspense } from "react";
 import { cancelRequestAction } from "@/app/apps/dwaar/actions";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import ScoreCard from "@/components/dwaar/ScoreCard";
 import VisitorPass from "@/components/dwaar/VisitorPass";
 import { statusStamp, timeAgo } from "@/lib/dwaar/format";
 import { passNumber } from "@/lib/dwaar/monogram";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { getMyProfile } from "@/lib/dwaar/profile";
-import { listMyRequests, type MyRequest } from "@/lib/dwaar/requests";
+import { listMyAnalyses, listMyRequests, type Analysis, type MyRequest } from "@/lib/dwaar/requests";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = dwaarMetadata;
 
-type Params = { sent?: string; cancelled?: string };
+type Params = { sent?: string; cancelled?: string; check?: string };
 
 export default function MyRequestsPage({ searchParams }: { searchParams: Promise<Params> }) {
   return (
@@ -54,9 +55,15 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   const profile = await getMyProfile(supabase, data.user.id);
   if (!profile) redirect("/apps/dwaar/profile");
 
-  const requests = await listMyRequests(supabase);
+  const [requests, analyses] = await Promise.all([listMyRequests(supabase), listMyAnalyses(supabase)]);
+  const analysisById = new Map(analyses.map((a) => [a.requestId, a]));
+  const checkNote: Record<string, string> = {
+    done: " Your resume match score is ready on the pass below.",
+    limit: " You have used today's 5 resume checks, so there is no score this time.",
+    failed: " We could not check your resume right now.",
+  };
   const info = params.sent
-    ? "Your request is at reception. Employees at that company can now see it."
+    ? `Your request is at reception. Employees at that company can now see it.${checkNote[params.check ?? ""] ?? ""}`
     : params.cancelled
       ? "Your request was cancelled."
       : null;
@@ -84,7 +91,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
         <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {requests.map((r) => (
             <li key={r.out_id}>
-              <RequestPass request={r} />
+              <RequestPass request={r} analysis={analysisById.get(r.out_id)} />
             </li>
           ))}
         </ul>
@@ -93,7 +100,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   );
 }
 
-function RequestPass({ request: r }: { request: MyRequest }) {
+function RequestPass({ request: r, analysis }: { request: MyRequest; analysis?: Analysis }) {
   const stamp = statusStamp(r.out_status);
   return (
     <VisitorPass
@@ -104,6 +111,7 @@ function RequestPass({ request: r }: { request: MyRequest }) {
       stamp={stamp.label}
       stampTone={stamp.tone}
     >
+      {analysis && <div className="mb-3"><ScoreCard analysis={analysis} /></div>}
       {r.out_note && <p className="dw-muted mb-3 text-sm italic">&ldquo;{r.out_note}&rdquo;</p>}
       {r.out_status === "accepted" && (
         <p className="mb-3 text-sm">
