@@ -95,6 +95,7 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
         {profile.is_candidate && (
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link href="/apps/dwaar/requests/new" className="dw-btn dw-btn-primary dw-btn-lg text-center">Ask for a referral</Link>
+            <Link href="/apps/dwaar/find" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Find jobs for my resume</Link>
             <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet dw-btn-lg text-center">My requests</Link>
           </div>
         )}

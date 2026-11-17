@@ -17,9 +17,9 @@ const initialState: RequestFormState = { errors: {}, message: null };
 
 type FileState = { status: "idle" | "reading" | "ok" | "error"; name: string; message: string | null };
 
-export default function RequestForm({ companies }: { companies: CompanyOption[] }) {
+export default function RequestForm({ companies, initial }: { companies: CompanyOption[]; initial?: { companyId: string; jobTitle: string } }) {
   const [state, formAction, pending] = useActionState(createRequestAction, initialState);
-  const [values, setValues] = useState({ companyId: "", jobTitle: "", jobUrl: "", jobId: "", jobDescription: "", note: "" });
+  const [values, setValues] = useState({ companyId: initial?.companyId ?? "", jobTitle: initial?.jobTitle ?? "", jobUrl: "", jobId: "", jobDescription: "", note: "" });
   const [consent, setConsent] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [resumeText, setResumeText] = useState("");

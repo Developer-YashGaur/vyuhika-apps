@@ -10,7 +10,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export const metadata = dwaarMetadata;
 
-export default function NewRequestPage() {
+type Params = { company?: string; title?: string };
+
+export default function NewRequestPage({ searchParams }: { searchParams: Promise<Params> }) {
   return (
     <div className="dw-wrap dw-page">
         <Link href="/apps/dwaar/requests" className="dw-back">
@@ -24,14 +26,15 @@ export default function NewRequestPage() {
           Pick the company and the job, add your resume, and send your request. Employees at the company will see it, and one of them may accept.
         </p>
         <Suspense fallback={<p className="dw-muted">Loading…</p>}>
-          <NewRequestContent />
+          <NewRequestContent searchParams={searchParams} />
         </Suspense>
       </div>
   );
 }
 
-async function NewRequestContent() {
+async function NewRequestContent({ searchParams }: { searchParams: Promise<Params> }) {
   await connection();
+  const params = await searchParams;
   if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
@@ -43,5 +46,9 @@ async function NewRequestContent() {
   // People who work at a company cannot ask for a referral there, so it is left out of the list.
   const all = await listCompanyOptions(supabase);
   const own = profile.is_provider ? profile.provider_company_id : null;
-  return <RequestForm companies={all.filter((c) => c.id !== own)} />;
+  const companies = all.filter((c) => c.id !== own);
+  // From "Find jobs": a company and a job title can arrive in the link. Only a listed company and a short plain title are used.
+  const companyId = companies.some((c) => c.id === params.company) ? (params.company as string) : "";
+  const jobTitle = typeof params.title === "string" ? params.title.trim().slice(0, 120) : "";
+  return <RequestForm companies={companies} initial={{ companyId, jobTitle }} />;
 }

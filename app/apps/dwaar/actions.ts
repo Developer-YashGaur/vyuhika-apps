@@ -10,6 +10,7 @@ import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-f
 import { sendMessage } from "@/lib/dwaar/chat";
 import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
+import { ROLE_MESSAGES, findRoles, type RoleSuggestion } from "@/lib/dwaar/role-finder";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
 import { deliverBoost, deliverMessage } from "@/lib/dwaar/deliver-boost";
@@ -307,3 +308,26 @@ export async function sendMessageAction(requestId: string, _previous: ChatFormSt
   revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
   return { message: null, sent: true };
 }
+
+// ---- Find jobs for my resume ----
+
+export type FindRolesState = { message: string | null; roles: RoleSuggestion[] };
+
+export async function findRolesAction(_previous: FindRolesState, formData: FormData): Promise<FindRolesState> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+
+  if (formData.get("consent") !== "on") return { message: "Please agree to the resume check first.", roles: [] };
+  const text = formData.get("resumeText");
+  const resumeText = typeof text === "string" ? text.trim() : "";
+  if (resumeText.length < 200 || resumeText.length > 15000) {
+    return { message: "We could not read enough text in that file. Please choose a text-based PDF or Word (.docx) resume.", roles: [] };
+  }
+
+  const outcome = await findRoles({ supabase, secret: serverSecret(), generate: createGeminiGenerate() }, resumeText);
+  if (outcome.kind !== "done") return { message: ROLE_MESSAGES[outcome.kind], roles: [] };
+  return { message: null, roles: outcome.roles };
+}
+

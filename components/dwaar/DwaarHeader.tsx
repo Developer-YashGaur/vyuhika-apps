@@ -3,6 +3,7 @@ import DwaarMark from "@/components/dwaar/DwaarMark";
 
 const LINKS = [
   { href: "/apps/dwaar#how", label: "How it works" },
+  { href: "/apps/dwaar/find", label: "Find jobs" },
   { href: "/apps/dwaar/requests", label: "My requests" },
   { href: "/apps/dwaar/inbox", label: "Employee desk" },
   { href: "/apps/dwaar/profile", label: "Profile" },

@@ -60,6 +60,14 @@ export default function DwaarPrivacyPage() {
               predict what a recruiter or an employee will decide. You can have 5 resume checks in any 24 hours.
             </p>
             <p className="mt-3">
+              The check runs before a request is sent, and a request needs a match score of at least 60. A check keeps its
+              result (summary, matched and missing skills, and tips) for 2 hours, so that checking and sending use one AI call.
+              After that, only the date and score stay, to count your daily limit. With &ldquo;Find jobs for my resume&rdquo;, the
+              text of your resume (without email addresses and phone numbers) is sent to the same AI service to suggest job titles.
+              We do not store the resume or the suggestions for this. You can do 5 such searches in any 24 hours. The list of
+              companies shows only how many employees accept requests, never who they are.
+            </p>
+            <p className="mt-3">
               When you cancel a request, we delete its resume file and clear its job description and score. When you delete your
               Dwaar profile, we cancel your open requests and do the same for all your requests. A request that closed (accepted or cancelled) loses its resume file, job description and score 90 days later. A request that is still open after 180 days is cancelled and loses them too. This clean-up runs once a day.</p>
           </section>
