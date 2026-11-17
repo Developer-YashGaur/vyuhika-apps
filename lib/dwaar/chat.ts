@@ -16,7 +16,7 @@ export type SendStatus = "sent" | "not_allowed" | "not_yet" | "limit";
 export const CHAT_MESSAGES = {
   empty: "Please write a message first.",
   tooLong: `Please keep it under ${MESSAGE_MAX} characters.`,
-  contact: "Please do not share emails or phone numbers here. Dwaar keeps contact details private.",
+  contact: "Please do not type emails or phone numbers here. Use the phone and email buttons under the chat instead.",
   not_allowed: "You cannot write in this chat.",
   not_yet: "Please wait for the candidate to write first.",
   limit: "You have used all the messages you can send in this chat.",

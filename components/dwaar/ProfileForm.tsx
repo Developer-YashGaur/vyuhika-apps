@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { saveProfileAction, type ProfileFormState } from "@/app/apps/dwaar/actions";
+import { DETAIL_LIMITS } from "@/lib/dwaar/profile-details";
 import { LIMITS, type FieldName } from "@/lib/dwaar/profile-form";
 import type { CompanyOption } from "@/lib/dwaar/profile";
 
@@ -18,6 +19,10 @@ export type ProfileFormValues = {
   workEmail: string;
   acceptsRequests: boolean;
   weeklyLimit: string;
+  linkedinUrl: string;
+  phone: string;
+  otherLinks: string; // one link per line
+  skills: string; // separated by commas
 };
 
 type Props = {
@@ -122,6 +127,93 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
         </div>
         <FieldError id={errorId("roles")} message={errors.roles} />
       </fieldset>
+
+      {values.isCandidate && (
+        <div className="flex flex-col gap-5 dw-panel dw-span">
+          <div>
+            <p className="dw-display text-lg font-medium">Details companies ask for</p>
+            <p className="mt-1 text-sm dw-muted">
+              Employees see your LinkedIn link, other links and skills with your request. Your phone number stays private. An employee can
+              only get it if they ask in the chat and you choose to share it.
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="linkedinUrl" className="text-sm font-semibold">LinkedIn profile link</label>
+            <input
+              id="linkedinUrl"
+              name="linkedinUrl"
+              type="url"
+              inputMode="url"
+              value={values.linkedinUrl}
+              onChange={(e) => set("linkedinUrl", e.target.value)}
+              placeholder="https://www.linkedin.com/in/your-name"
+              maxLength={300}
+              autoComplete="url"
+              aria-invalid={errors.linkedinUrl ? true : undefined}
+              aria-describedby={describe("linkedinUrl")}
+              className="dw-input mt-2"
+            />
+            <FieldError id={errorId("linkedinUrl")} message={errors.linkedinUrl} />
+          </div>
+
+          <div>
+            <label htmlFor="phone" className="text-sm font-semibold">Phone number</label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              value={values.phone}
+              onChange={(e) => set("phone", e.target.value)}
+              placeholder="+91 98765 43210"
+              maxLength={24}
+              autoComplete="tel"
+              aria-invalid={errors.phone ? true : undefined}
+              aria-describedby={describe("phone", "phone-hint")}
+              className="dw-input mt-2"
+            />
+            <p id="phone-hint" className="mt-2 text-sm dw-muted">Include the country code. A 10-digit Indian mobile number gets +91 automatically.</p>
+            <FieldError id={errorId("phone")} message={errors.phone} />
+          </div>
+
+          <div>
+            <label htmlFor="skills" className="text-sm font-semibold">Skills</label>
+            <input
+              id="skills"
+              name="skills"
+              value={values.skills}
+              onChange={(e) => set("skills", e.target.value)}
+              placeholder="Python, SQL, React"
+              maxLength={DETAIL_LIMITS.maxSkills * (DETAIL_LIMITS.skillLength + 2)}
+              aria-invalid={errors.skills ? true : undefined}
+              aria-describedby={describe("skills", "skills-hint")}
+              className="dw-input mt-2"
+            />
+            <p id="skills-hint" className="mt-2 text-sm dw-muted">Separate with commas. Up to {DETAIL_LIMITS.maxSkills} skills.</p>
+            <FieldError id={errorId("skills")} message={errors.skills} />
+          </div>
+
+          <div>
+            <label htmlFor="otherLinks" className="text-sm font-semibold">
+              Other links <span className="font-normal dw-muted">(optional)</span>
+            </label>
+            <textarea
+              id="otherLinks"
+              name="otherLinks"
+              rows={3}
+              value={values.otherLinks}
+              onChange={(e) => set("otherLinks", e.target.value)}
+              placeholder={"https://github.com/your-name\nhttps://your-portfolio.example"}
+              aria-invalid={errors.otherLinks ? true : undefined}
+              aria-describedby={describe("otherLinks", "otherLinks-hint")}
+              className="dw-input mt-2"
+            />
+            <p id="otherLinks-hint" className="mt-2 text-sm dw-muted">GitHub, portfolio or website. One link per line, up to {DETAIL_LIMITS.maxLinks}.</p>
+            <FieldError id={errorId("otherLinks")} message={errors.otherLinks} />
+          </div>
+        </div>
+      )}
 
       {values.isProvider && (
         <div className="flex flex-col gap-5 dw-panel">

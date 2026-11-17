@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { respondToRequestAction } from "@/app/apps/dwaar/actions";
+import CandidateDetails from "@/components/dwaar/CandidateDetails";
 import CompanyMonogram from "@/components/dwaar/CompanyMonogram";
 import RequestCard from "@/components/dwaar/RequestCard";
 import { timeAgo } from "@/lib/dwaar/format";
+import { getCandidateExtras } from "@/lib/dwaar/candidate-extras";
 import { ANSWER_NOTES, listAccepted, listInbox, type Answer } from "@/lib/dwaar/inbox";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { passNumber } from "@/lib/dwaar/monogram";
@@ -76,6 +78,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
   }
 
   const [inbox, accepted, companies] = await Promise.all([listInbox(supabase), listAccepted(supabase), listCompanyOptions(supabase)]);
+  const extras = await getCandidateExtras(supabase, [...inbox.map((r) => r.out_id), ...accepted.map((r) => r.out_id)]);
   const company = companies.find((c) => c.id === profile.provider_company_id)?.name ?? "your company";
   const note = params.answer === "error" ? "Something went wrong. Please try again." : ANSWER_NOTES[params.answer as Answer];
 
@@ -102,7 +105,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
 
       <h2 className="dw-display text-xl">Waiting for you</h2>
       <p className="mt-2 max-w-2xl dw-muted">
-        Candidates asking for a referral at {company}. You see their name, headline and the job. You do not see their resume.
+        Candidates asking for a referral at {company}. You see their name, headline, LinkedIn, skills and the job. You do not see their resume. After you accept, you can ask in the chat for their phone number or email.
         If you accept, they can send you one message in Dwaar. Email addresses are never shared.
       </p>
 
@@ -123,6 +126,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
                 status="Waiting for you"
                 tone="wait"
               >
+                <CandidateDetails extras={extras.get(r.out_id)} />
                 {r.out_note && <p className="dw-muted mb-3 text-sm italic">&ldquo;{r.out_note}&rdquo;</p>}
                 <a href={r.out_job_url} target="_blank" rel="noopener noreferrer" className="dw-link mb-3 inline-block text-sm">
                   View the job posting
@@ -159,6 +163,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
                   status="Accepted"
                   tone="ok"
                 >
+                  <CandidateDetails extras={extras.get(r.out_id)} />
                   <p className="mb-3 text-sm">
                     {!r.out_candidate_messaged
                       ? "Waiting for the candidate's message."

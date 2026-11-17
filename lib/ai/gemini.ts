@@ -70,7 +70,8 @@ export function createGeminiSearch(): SearchFn | null {
   if (!apiKey) return null;
 
   const ai = new GoogleGenAI({ apiKey });
-  const model = getGeminiModel();
+  // Web search can need a stronger model than the cheap default. Set GEMINI_SEARCH_MODEL in .env.local to change it.
+  const model = process.env.GEMINI_SEARCH_MODEL?.trim() || getGeminiModel();
 
   return async ({ prompt, signal }) => {
     const response = await ai.models.generateContent({

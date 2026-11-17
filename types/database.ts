@@ -272,8 +272,12 @@ export type Database = {
           headline: string | null
           is_candidate: boolean
           is_provider: boolean
+          linkedin_url: string | null
+          other_links: string[]
+          phone: string | null
           provider_company_id: string | null
           provider_work_email: string | null
+          skills: string[]
           updated_at: string
           user_id: string
           weekly_request_limit: number
@@ -288,8 +292,12 @@ export type Database = {
           headline?: string | null
           is_candidate?: boolean
           is_provider?: boolean
+          linkedin_url?: string | null
+          other_links?: string[]
+          phone?: string | null
           provider_company_id?: string | null
           provider_work_email?: string | null
+          skills?: string[]
           updated_at?: string
           user_id: string
           weekly_request_limit?: number
@@ -304,8 +312,12 @@ export type Database = {
           headline?: string | null
           is_candidate?: boolean
           is_provider?: boolean
+          linkedin_url?: string | null
+          other_links?: string[]
+          phone?: string | null
           provider_company_id?: string | null
           provider_work_email?: string | null
+          skills?: string[]
           updated_at?: string
           user_id?: string
           weekly_request_limit?: number
@@ -677,6 +689,17 @@ export type Database = {
       }
       dwaar_send_message: { Args: { p_body: string; p_request_id: string }; Returns: string }
       dwaar_credit_balance: { Args: never; Returns: number }
+      dwaar_ask_contact: { Args: { p_kind: string; p_request_id: string }; Returns: string }
+      dwaar_answer_contact: { Args: { p_kind: string; p_request_id: string; p_share: boolean }; Returns: string }
+      dwaar_contact_state: {
+        Args: { p_request_id: string }
+        Returns: { out_is_candidate: boolean; out_kind: string; out_status: string; out_value: string }[]
+      }
+      dwaar_candidate_extras: {
+        Args: { p_request_ids: string[] }
+        Returns: { out_linkedin_url: string; out_other_links: string[]; out_request_id: string; out_skills: string[] }[]
+      }
+      dwaar_flag_message: { Args: { p_reason: string; p_request_id: string; p_secret: string }; Returns: boolean }
       dwaar_opening_searches_used_today: { Args: never; Returns: number }
       dwaar_record_opening_search: { Args: { p_secret: string }; Returns: boolean }
       dwaar_claim_email_events: {

@@ -13,7 +13,7 @@ import type { Database } from "@/types/database";
 type Db = SupabaseClient<Database>;
 type Deps = { secret: string; send: SendEmailFn; settings: EmailSettings };
 
-const KINDS: StatusKind[] = ["accepted", "message", "reply"];
+const KINDS: StatusKind[] = ["accepted", "message", "reply", "contact_asked", "contact_answered"];
 
 export async function sendStatusEmails(supabase: Db, deps: Deps): Promise<{ sent: number; failed: number }> {
   const { data, error } = await supabase.rpc("dwaar_claim_email_events", { p_secret: deps.secret });

@@ -32,8 +32,9 @@ export default function DwaarPrivacyPage() {
             <h2 className="dw-display text-xl font-medium">What we collect</h2>
             <p className="mt-3">
               From your Google account: your name and email address. From you: your display name, an optional headline, whether you
-              are looking for referrals or can refer people, and, if you can refer people, your company and work email. We
-              also record which version of this notice you accepted, and when.
+              are looking for referrals or can refer people, and, if you can refer people, your company and work email. If you
+              are looking for referrals we also ask for your LinkedIn profile link, your phone number, your skills and, if you
+              wish, up to 3 other links (for example GitHub or a portfolio). We also record which version of this notice you accepted, and when.
             </p>
             <p className="mt-3">
               When you ask for a referral: the company, the job title, an optional job ID, the job link, the job description,
@@ -44,7 +45,7 @@ export default function DwaarPrivacyPage() {
               If you can refer people, we email a 6-digit code to your work email to check that the address is yours. We keep
               only a scrambled copy of the code, for 15 minutes, together with how many codes you asked for, to prevent abuse.
             </p>
-            <p className="mt-3">We do not collect phone numbers or payment details in this version.</p>
+            <p className="mt-3">We do not collect payment card details. Payments are handled by Razorpay.</p>
           </section>
           <section>
             <h2 className="dw-display text-xl font-medium">Your resume and the match score</h2>
@@ -84,10 +85,13 @@ export default function DwaarPrivacyPage() {
             <p className="mt-3">
               Your request is shown to a few employees at a time (5 at first, and 5 more after 24 hours if nobody has accepted),
               only those who work at the company you asked, confirmed their work email and chose to receive requests. They can
-              see your name, your headline, the job title, the job ID, the job link and your note. They cannot see your resume,
-              the job description or your score. Your email address is never shown to them. After one employee accepts, you can
+              see your name, your headline, your LinkedIn link, your other links, your skills, the job title, the job ID, the job link
+              and your note. They cannot see your resume, the job description or your score. Your phone number and email address are
+              hidden from them. After an employee accepts, they can ask you in the chat for your phone number or email. Nothing is
+              shown unless you choose Share for that question, and you can decline. After one employee accepts, you can
               send that person one message inside Dwaar and they can reply. Emails and phone numbers are not allowed in
-              messages. Messages are deleted when the request is deleted.
+              messages; use the phone and email buttons in the chat. After each message, an AI service reads it to check that it
+              is about the referral. A message that is not may be flagged so our staff can review it. Messages are deleted when the request is deleted.
               People cannot ask for a referral at the company they work at, and employees never see their own requests.
             </p>
             <p className="mt-3">

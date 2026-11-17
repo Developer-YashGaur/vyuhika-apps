@@ -2,7 +2,7 @@
 // and the HTML versions always say the same thing. These emails never carry message text, resumes, scores or anybody's
 // email address: they say what happened and link to the sign-in protected page.
 
-export type StatusKind = "accepted" | "message" | "reply";
+export type StatusKind = "accepted" | "message" | "reply" | "contact_asked" | "contact_answered";
 
 export type StatusData = { kind: StatusKind; requestId: string; toName: string; otherName: string; company: string; jobTitle: string };
 
@@ -44,7 +44,7 @@ export function statusEmailContent(data: StatusData, assetBaseUrl: string): Stat
       heading: "Your request was accepted",
       intro: `${other} works at ${data.company} and accepted your referral request. You can now send them one message.`,
       buttonLabel: "Open the chat",
-      note: "Dwaar keeps email addresses and phone numbers private, so please keep the conversation inside the chat.",
+      note: "Phone numbers and emails stay private. After you write, the employee can ask for them in the chat, and you choose whether to share.",
       footer: "You get this email because you asked for a referral on Dwaar.",
     };
   } else if (data.kind === "message") {
@@ -55,6 +55,26 @@ export function statusEmailContent(data: StatusData, assetBaseUrl: string): Stat
       intro: `${other}, whose referral request you accepted, wrote to you. Sign in to read it.`,
       buttonLabel: "Read the message",
       note: "You can reply up to 3 times. Email addresses and phone numbers are never shared.",
+      footer: `You get this email because you accepted a referral request at ${data.company} on Dwaar.`,
+    };
+  } else if (data.kind === "contact_asked") {
+    body = {
+      subject: `${other} asked for your contact details on Dwaar`,
+      preview: `${other} asked a question about ${data.jobTitle}`,
+      heading: "A contact request is waiting",
+      intro: `${other} at ${data.company} asked for your phone number or email in the chat. You choose whether to share.`,
+      buttonLabel: "Open the chat",
+      note: "Your phone number and email stay private unless you choose Share. You can decline.",
+      footer: "You get this email because you asked for a referral on Dwaar.",
+    };
+  } else if (data.kind === "contact_answered") {
+    body = {
+      subject: `${other} answered your contact request on Dwaar`,
+      preview: `${other} answered your question about ${data.jobTitle}`,
+      heading: "Your contact request was answered",
+      intro: `${other} answered the contact request you sent in the chat. Sign in to see the answer.`,
+      buttonLabel: "Open the chat",
+      note: "Phone numbers and email addresses stay private. They are shown only inside Dwaar, never in an email.",
       footer: `You get this email because you accepted a referral request at ${data.company} on Dwaar.`,
     };
   } else {

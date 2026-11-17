@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { LIMITS, isValidEmail, parseProfileForm } from "@/lib/dwaar/profile-form";
 
 const COMPANY = "11111111-2222-3333-4444-555555555555";
+const DETAILS = { linkedinUrl: "https://www.linkedin.com/in/ravi-kumar", phone: "+91 98765 43210", skills: "Python, SQL" };
 
 function form(fields: Record<string, string>): FormData {
   const data = new FormData();
@@ -11,10 +12,11 @@ function form(fields: Record<string, string>): FormData {
 
 describe("parseProfileForm", () => {
   it("accepts a candidate", () => {
-    const result = parseProfileForm(form({ displayName: "  Ravi Kumar ", isCandidate: "on", consent: "on" }), { requireConsent: true });
+    const result = parseProfileForm(form({ displayName: "  Ravi Kumar ", isCandidate: "on", ...DETAILS, consent: "on" }), { requireConsent: true });
     expect(result).toEqual({
       ok: true,
-      data: { displayName: "Ravi Kumar", headline: null, isCandidate: true, isProvider: false, companyId: null, workEmail: null, acceptsRequests: false, weeklyLimit: 5 },
+      data: { displayName: "Ravi Kumar", headline: null, isCandidate: true, isProvider: false, companyId: null, workEmail: null, acceptsRequests: false, weeklyLimit: 5,
+        linkedinUrl: "https://www.linkedin.com/in/ravi-kumar", phone: "+919876543210", otherLinks: [], skills: ["Python", "SQL"] },
     });
   });
 
@@ -28,7 +30,7 @@ describe("parseProfileForm", () => {
 
   it("ignores company and email when the person is not a provider", () => {
     const result = parseProfileForm(
-      form({ displayName: "Ravi", isCandidate: "on", companyId: COMPANY, workEmail: "ravi@acme.com" }),
+      form({ displayName: "Ravi", isCandidate: "on", ...DETAILS, companyId: COMPANY, workEmail: "ravi@acme.com" }),
       { requireConsent: false },
     );
     expect(result.ok && result.data).toMatchObject({ companyId: null, workEmail: null });
@@ -41,7 +43,7 @@ describe("parseProfileForm", () => {
   });
 
   it("does not ask for consent again when editing", () => {
-    expect(parseProfileForm(form({ displayName: "Ravi", isCandidate: "on" }), { requireConsent: false }).ok).toBe(true);
+    expect(parseProfileForm(form({ displayName: "Ravi", isCandidate: "on", ...DETAILS }), { requireConsent: false }).ok).toBe(true);
   });
 
   it("a provider needs a company from the list and a valid work email", () => {
@@ -52,7 +54,7 @@ describe("parseProfileForm", () => {
 
   it("enforces length limits", () => {
     const result = parseProfileForm(
-      form({ displayName: "a".repeat(LIMITS.displayName + 1), headline: "b".repeat(LIMITS.headline + 1), isCandidate: "on" }),
+      form({ displayName: "a".repeat(LIMITS.displayName + 1), headline: "b".repeat(LIMITS.headline + 1), isCandidate: "on", ...DETAILS }),
       { requireConsent: false },
     );
     expect(result.ok).toBe(false);
@@ -86,7 +88,7 @@ describe("employee opt-in", () => {
     const on = parseProfileForm(form({ ...base, acceptsRequests: "on", weeklyLimit: "8" }), { requireConsent: false });
     expect(on.ok && on.data.acceptsRequests).toBe(true);
     expect(on.ok && on.data.weeklyLimit).toBe(8);
-    const notEmployee = parseProfileForm(form({ displayName: "Ravi", isCandidate: "on", acceptsRequests: "on" }), { requireConsent: false });
+    const notEmployee = parseProfileForm(form({ displayName: "Ravi", isCandidate: "on", ...DETAILS, acceptsRequests: "on" }), { requireConsent: false });
     expect(notEmployee.ok && notEmployee.data.acceptsRequests).toBe(false);
   });
 
@@ -96,5 +98,38 @@ describe("employee opt-in", () => {
       expect(r.ok).toBe(false);
       if (!r.ok) expect(typeof r.errors.weeklyLimit).toBe("string");
     }
+  });
+});
+
+describe("candidate details", () => {
+  const base = { displayName: "Ravi", isCandidate: "on" };
+
+  it("a candidate must give LinkedIn, a phone number and at least one skill", () => {
+    const r = parseProfileForm(form(base), { requireConsent: false });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(Object.keys(r.errors).sort()).toEqual(["linkedinUrl", "phone", "skills"]);
+  });
+
+  it("cleans the details into the shape the database accepts", () => {
+    const r = parseProfileForm(
+      form({ ...base, linkedinUrl: "linkedin.com/in/ravi?utm=1", phone: "98765 43210", skills: "Python, python, SQL", otherLinks: "github.com/ravi\nhttps://ravi.dev" }),
+      { requireConsent: false },
+    );
+    expect(r.ok && r.data.linkedinUrl).toBe("https://linkedin.com/in/ravi");
+    expect(r.ok && r.data.phone).toBe("+919876543210");
+    expect(r.ok && r.data.skills).toEqual(["Python", "SQL"]);
+    expect(r.ok && r.data.otherLinks).toEqual(["https://github.com/ravi", "https://ravi.dev/"]);
+  });
+
+  it("refuses a LinkedIn link that is not a LinkedIn profile, and bad links", () => {
+    const r = parseProfileForm(form({ ...base, ...DETAILS, linkedinUrl: "https://evil.example/in/ravi", otherLinks: "http://a.example" }), { requireConsent: false });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(Object.keys(r.errors).sort()).toEqual(["linkedinUrl", "otherLinks"]);
+  });
+
+  it("a person who only offers referrals does not need them", () => {
+    const r = parseProfileForm(form({ displayName: "Meera", isProvider: "on", companyId: COMPANY, workEmail: "m@acme.com" }), { requireConsent: false });
+    expect(r.ok && r.data.phone).toBe(null);
+    expect(r.ok && r.data.skills).toEqual([]);
   });
 });

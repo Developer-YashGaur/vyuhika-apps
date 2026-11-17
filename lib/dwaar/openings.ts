@@ -134,14 +134,18 @@ export async function findOpenings({ supabase, secret, search, generate, fetchFn
   if (roles.length === 0 || !oneLine(company, 100)) return { kind: "failed" };
 
   const used = await supabase.rpc("dwaar_opening_searches_used_today");
-  if (used.error || typeof used.data !== "number") return { kind: "failed" };
+  if (used.error || typeof used.data !== "number") {
+    // Most often: the database migration for opening searches (31) has not been pushed yet.
+    console.error("[dwaar] opening search limit check failed:", used.error?.code, used.error?.message);
+    return { kind: "failed" };
+  }
   if (used.data >= OPENINGS_DAILY_LIMIT) return { kind: "limit" };
 
   let text: string;
   try {
     ({ text } = await search({ prompt: buildSearchPrompt(company, roles), signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS) }));
   } catch (error) {
-    console.error("[dwaar] the opening search failed:", (error as Error)?.name);
+    console.error("[dwaar] the opening search failed:", (error as Error)?.name, String((error as Error)?.message).slice(0, 300));
     return { kind: "failed" };
   }
 
@@ -166,7 +170,7 @@ export async function findOpenings({ supabase, secret, search, generate, fetchFn
     const openings = candidates.filter((_, i) => opened[i]).slice(0, MAX_OPENINGS);
     return openings.length > 0 ? { kind: "done", openings } : { kind: "none" };
   } catch (error) {
-    console.error("[dwaar] listing the openings failed:", (error as Error)?.name);
+    console.error("[dwaar] listing the openings failed:", (error as Error)?.name, String((error as Error)?.message).slice(0, 300));
     return { kind: "failed" };
   }
 }

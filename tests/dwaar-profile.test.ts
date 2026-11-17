@@ -32,7 +32,7 @@ function fakeDb(result: { data?: unknown; error?: { code?: string; message?: str
   return { db, calls };
 }
 
-const input = { displayName: "Meera", headline: null, isCandidate: true, isProvider: true, companyId: "c1", workEmail: "meera@acme.com", acceptsRequests: true, weeklyLimit: 3 };
+const input = { displayName: "Meera", headline: null, isCandidate: true, isProvider: true, companyId: "c1", workEmail: "meera@acme.com", acceptsRequests: true, weeklyLimit: 3, linkedinUrl: null, phone: null, otherLinks: [] as string[], skills: [] as string[] };
 
 describe("friendlyDbError", () => {
   it("explains the work-email rule", () => {

@@ -4,7 +4,7 @@ Do this once on your own computer before launch. You use two real Google account
 
 ## 0. Get ready
 
-1. Run `supabase db push --remote` (applies migrations 11 to 31). Then run `supabase gen types typescript --remote > types/database.ts`.
+1. Run `supabase db push --remote` (applies migrations 11 to 34). Then run `supabase gen types typescript --remote > types/database.ts`.
 2. In `.env.local` make sure these are set: the Supabase URL and anon key, `DWAAR_SERVER_SECRET` (the same secret whose SHA-256 is in `private.dwaar_config`), `GEMINI_API_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, and the two Razorpay **test** keys (`rzp_test_...`).
 3. For the money and invite steps (sections 5 to 7) also set `DWAAR_INVITES_ENABLED=true` and `DWAAR_PLAN_ENABLED=true`. In the Supabase SQL editor run `update private.dwaar_config set value = 'true' where key = 'invite_rewards_enabled';`. Leave `DWAAR_BOOST_ENABLED` unset for now (section 6 turns it on).
 4. Account A must be a real employee. Make sure A's company exists in the admin panel with its email domain (for example Accenture with `accenture.com`), and that you can open A's work inbox at that domain. (Free mail such as Gmail cannot be a company domain.)
@@ -57,6 +57,15 @@ Do this once on your own computer before launch. You use two real Google account
 - [ ] On the home page B clicks **Dwaar Plus**. The page shows ₹199 for 30 days.
 - [ ] Pay with a Razorpay test card. The page says the pass is active until a date, and the credits go up by 5.
 - [ ] B can now run more than 5 resume checks in a day (up to 20).
+
+## 7b. Profile details and contact requests
+
+- [ ] Account B opens **Edit profile**. With "looking for referrals" ticked, LinkedIn link, phone number and skills are required; saving without them shows messages. Fill them in and save.
+- [ ] Before they are filled, **Ask for a referral** sends B to the profile page with a note.
+- [ ] Account A (employee) sees B's LinkedIn link, links and skills on the request card, and NOT the phone number.
+- [ ] After A accepts, the chat page of both shows the notice "This chat is checked by AI".
+- [ ] A clicks **Ask for phone number**. B gets an email and sees Share / Decline in the chat. After B clicks **Share**, A sees the number in the chat. After **Decline**, A sees "chose not to share" and cannot ask again.
+- [ ] A and B cannot type an email or phone number in a message (it is refused).
 
 ## 8. Clean up
 

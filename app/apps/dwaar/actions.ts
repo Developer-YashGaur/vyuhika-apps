@@ -6,9 +6,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { CONSENT_VERSION } from "@/lib/dwaar/consent";
 import { deleteMyProfile, getMyProfile, listCompanyOptions, saveMyProfile } from "@/lib/dwaar/profile";
+import { candidateDetailsComplete } from "@/lib/dwaar/profile-details";
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
-import { sendMessage } from "@/lib/dwaar/chat";
+import { getChat, sendMessage } from "@/lib/dwaar/chat";
+import { monitorMessage } from "@/lib/dwaar/chat-monitor";
+import { answerContact, askContact } from "@/lib/dwaar/contact";
 import { redeemInvite } from "@/lib/dwaar/invites";
 import { PLAN_DESCRIPTION, confirmPlanPayment, planMessage, startPlan } from "@/lib/dwaar/plan";
 import { spendCreditsOnBoost, spendMessage } from "@/lib/dwaar/credit-boost";
@@ -149,6 +152,12 @@ export async function createRequestAction(_previous: RequestFormState, formData:
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/apps/dwaar");
+
+  // Companies ask for LinkedIn, a phone number and skills. The page checks this too; this is the real gate.
+  const me = await getMyProfile(supabase, data.user.id);
+  if (me && me.is_candidate && !candidateDetailsComplete(me)) {
+    return { errors: {}, message: "Please add your LinkedIn link, phone number and skills in your profile first." };
+  }
 
   const parsed = parseRequestForm(formData);
   if (!parsed.ok) return { errors: parsed.errors, message: "Please fix the highlighted fields." };
@@ -324,9 +333,14 @@ export async function sendMessageAction(requestId: string, _previous: ChatFormSt
   if (!data.user) redirect("/apps/dwaar");
   if (typeof requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(requestId)) return { message: "Something went wrong. Please try again in a moment.", sent: false };
 
-  const result = await sendMessage(supabase, requestId, formData.get("body"));
+  const body = formData.get("body");
+  const result = await sendMessage(supabase, requestId, body);
   if (!result.ok) return { message: result.message, sent: false };
   emailStatusChanges(supabase);
+  // After the reply is sent, an AI checks that the message is about the referral. It never delays or blocks anyone.
+  const secret = serverSecret();
+  const generate = createGeminiGenerate();
+  if (typeof body === "string") after(async () => { await monitorMessage({ supabase, secret, generate }, requestId, body); });
   revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
   return { message: null, sent: true };
 }
@@ -455,4 +469,42 @@ export async function findOpeningsAction(companyId: string, roleTitles: string[]
   const outcome = await findOpenings({ supabase, secret: serverSecret(), search: createGeminiSearch(), generate: createGeminiGenerate() }, company.name, roleTitles);
   if (outcome.kind !== "done") return { message: OPENINGS_MESSAGES[outcome.kind === "none" ? "none" : outcome.kind], openings: [] };
   return { message: null, openings: outcome.openings };
+}
+
+// ---- Contact requests in the chat ----
+
+export type ContactActionState = { ok: boolean; message: string };
+
+const REQUEST_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const CONTACT_FAILED: ContactActionState = { ok: false, message: "Something went wrong. Please try again in a moment." };
+
+// The employee asks for the candidate's phone number or email.
+export async function askContactAction(requestId: string, kind: string): Promise<ContactActionState> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  if (typeof requestId !== "string" || !REQUEST_ID.test(requestId)) return CONTACT_FAILED;
+
+  // The other person's name comes from the database, never from the browser.
+  const chat = await getChat(supabase, requestId);
+  if (!chat || chat.info.out_is_candidate) return CONTACT_FAILED;
+  const result = await askContact(supabase, requestId, kind, chat.info.out_other_name);
+  if (result.ok) emailStatusChanges(supabase);
+  revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
+  return result;
+}
+
+// The candidate shares or declines.
+export async function answerContactAction(requestId: string, kind: string, share: boolean): Promise<ContactActionState> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  if (typeof requestId !== "string" || !REQUEST_ID.test(requestId) || typeof share !== "boolean") return CONTACT_FAILED;
+
+  const result = await answerContact(supabase, requestId, kind, share);
+  if (result.ok) emailStatusChanges(supabase);
+  revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
+  return result;
 }

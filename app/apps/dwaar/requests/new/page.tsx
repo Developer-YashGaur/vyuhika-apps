@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import RequestForm from "@/components/dwaar/RequestForm";
 import { isValidJobUrl } from "@/lib/dwaar/request-form";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
+import { candidateDetailsComplete } from "@/lib/dwaar/profile-details";
 import { getMyProfile, listCompanyOptions } from "@/lib/dwaar/profile";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -43,6 +44,8 @@ async function NewRequestContent({ searchParams }: { searchParams: Promise<Param
   const profile = await getMyProfile(supabase, data.user.id);
   if (!profile) redirect("/apps/dwaar/profile");
   if (!profile.is_candidate) redirect("/apps/dwaar/profile");
+  // Companies ask for LinkedIn, a phone number and skills, so these come first.
+  if (!candidateDetailsComplete(profile)) redirect("/apps/dwaar/profile?need=details");
 
   // People who work at a company cannot ask for a referral there, so it is left out of the list.
   const all = await listCompanyOptions(supabase);

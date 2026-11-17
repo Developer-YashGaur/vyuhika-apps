@@ -31,6 +31,12 @@ describe("statusEmailContent", () => {
     expect(statusEmailContent({ ...base, kind: "message" }, settings.assetBaseUrl).subject).toBe("Ravi Kumar sent you a message on Dwaar");
     expect(statusEmailContent({ ...base, kind: "reply" }, settings.assetBaseUrl).subject).toBe("Ravi Kumar replied to you on Dwaar");
   });
+  it("words the contact request emails for the right person", () => {
+    const asked = statusEmailContent({ ...base, kind: "contact_asked" }, settings.assetBaseUrl);
+    expect(asked.subject).toBe("Ravi Kumar asked for your contact details on Dwaar");
+    expect(asked.text).not.toMatch(/\+\d|@/);
+    expect(statusEmailContent({ ...base, kind: "contact_answered" }, settings.assetBaseUrl).subject).toBe("Ravi Kumar answered your contact request on Dwaar");
+  });
   it("keeps names to one short plain line (no header tricks)", () => {
     expect(cleanName("Ravi\r\nBcc: x@y.com <b>")).not.toMatch(/[\r\n<>]/);
     expect(cleanName("x".repeat(200)).length).toBe(60);
@@ -40,7 +46,7 @@ describe("statusEmailContent", () => {
     expect(chatUrl("https://apps.vyuhika.com/", REQ)).toBe(`https://apps.vyuhika.com/apps/dwaar/requests/${REQ}/chat`);
   });
   it("never promises that email addresses are shared", () => {
-    for (const kind of ["accepted", "message", "reply"] as const) {
+    for (const kind of ["accepted", "message", "reply", "contact_asked", "contact_answered"] as const) {
       const c = statusEmailContent({ ...base, kind }, settings.assetBaseUrl);
       expect(c.text).not.toMatch(/email is shared|share your email/i);
       expect(c.note).toMatch(/never shared|private/i);
