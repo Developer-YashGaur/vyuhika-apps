@@ -1,7 +1,7 @@
 // The words in the "a candidate is waiting" email. Kept apart from the template so the plain-text version and
 // the HTML version always say the same thing. It names only the role and the company: no candidate details.
 
-export const NEW_REQUEST_SUBJECT = "Someone is waiting at your reception on Dwaar";
+export const NEW_REQUEST_SUBJECT = "Someone is asking for a referral at your company on Dwaar";
 
 export function inboxUrl(assetBaseUrl: string): string {
   return `${assetBaseUrl.replace(/\/+$/, "")}/apps/dwaar/inbox`;
@@ -13,7 +13,7 @@ export function newRequestText(jobTitle: string, company: string, assetBaseUrl: 
     "",
     `Role: ${jobTitle}`,
     "",
-    "Open your reception desk to see who is asking. You decide whether to accept. If you accept, the candidate's email is shared with you.",
+    "Open your employee desk to see who is asking. You decide whether to accept. If you accept, the candidate's email is shared with you.",
     inboxUrl(assetBaseUrl),
     "",
     "You get this email because you are a confirmed referral provider at this company on Dwaar. We send at most 3 of these a day.",

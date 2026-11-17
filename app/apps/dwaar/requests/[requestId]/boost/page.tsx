@@ -2,8 +2,6 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
 import CopyButton from "@/components/dwaar/CopyButton";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { toStringList } from "@/lib/dwaar/requests";
@@ -16,22 +14,18 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function BoostResultPage({ params }: { params: Promise<{ requestId: string }> }) {
   return (
-    <>
-      <Navbar />
-      <main id="top" className="gutter pt-28 pb-28 sm:pt-32">
-        <Link href="/apps/dwaar/requests" className="back-link">
+    <div className="dw-wrap dw-page">
+        <Link href="/apps/dwaar/requests" className="dw-back">
           <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
             <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           My requests
         </Link>
-        <h1 className="page-title font-display mt-8 mb-10">Your Boost</h1>
-        <Suspense fallback={<p className="text-mist">Loading…</p>}>
+        <h1 className="dw-title dw-display mt-8 mb-10">Your Boost</h1>
+        <Suspense fallback={<p className="dw-muted">Loading…</p>}>
           <BoostResult params={params} />
         </Suspense>
-      </main>
-      <Footer />
-    </>
+      </div>
   );
 }
 
@@ -59,7 +53,7 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
 
   return (
     <div className="grid max-w-3xl gap-6">
-      <section className="dw-paper">
+      <section className="dw-card">
         <p className="text-lg leading-relaxed">{result.summary}</p>
         <p className="dw-muted mt-3 text-sm leading-relaxed">
           This was written by an AI from your own resume. Read every line and keep only what is true. Replace each
@@ -67,9 +61,9 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
         </p>
       </section>
 
-      <section className="dw-paper">
+      <section className="dw-card">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-xl font-medium">Your improved resume</h2>
+          <h2 className="dw-display text-xl font-medium">Your improved resume</h2>
           <CopyButton text={result.improved_resume} label="Copy resume" />
         </div>
         <pre className="mt-4 whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">{result.improved_resume}</pre>
@@ -89,8 +83,8 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
 function TipList({ title, items }: { title: string; items: string[] }) {
   if (items.length === 0) return null;
   return (
-    <section className="dw-paper">
-      <h2 className="font-display text-xl font-medium">{title}</h2>
+    <section className="dw-card">
+      <h2 className="dw-display text-xl font-medium">{title}</h2>
       <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-relaxed">
         {items.map((item, i) => (
           <li key={i}>{item}</li>

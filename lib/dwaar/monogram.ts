@@ -19,7 +19,7 @@ export function monogramFor(name: string): Monogram {
   return { letters: letters.toUpperCase(), hue: hash };
 }
 
-// Visitor pass number, like "#0412", made from the request id so it stays the same.
+// Request reference number, like "#0412", made from the request id so it stays the same.
 export function passNumber(id: string): string {
   const hex = id.replace(/[^0-9a-f]/gi, "").slice(0, 6);
   const n = hex ? parseInt(hex, 16) % 10000 : 0;

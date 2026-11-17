@@ -1,6 +1,4 @@
 import Link from "next/link";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
 import { dwaarPrivacyMetadata } from "@/lib/dwaar/metadata";
 
 export const metadata = dwaarPrivacyMetadata;
@@ -9,23 +7,21 @@ export const metadata = dwaarPrivacyMetadata;
 // India's Digital Personal Data Protection Act, 2023 before Dwaar opens to the public. Keep every sentence true to the code.
 export default function DwaarPrivacyPage() {
   return (
-    <>
-      <Navbar />
-      <main id="top" className="gutter pt-28 pb-28 sm:pt-32">
-        <Link href="/apps/dwaar" className="back-link">
+    <div className="dw-wrap dw-page">
+        <Link href="/apps/dwaar" className="dw-back">
           <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
             <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Dwaar
         </Link>
-        <h1 className="page-title font-display mt-8">Terms and privacy notice</h1>
-        <p role="note" className="measure mt-5 rounded-xl border border-amber-300/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-50">
+        <h1 className="dw-title dw-display mt-8">Terms and privacy notice</h1>
+        <p role="note" className="dw-alert dw-alert-warn mt-5">
           Draft for early access. It will be reviewed by a lawyer before Dwaar opens to everyone.
         </p>
 
-        <div className="dw-paper mt-10 flex max-w-3xl flex-col gap-8 leading-relaxed dw-muted">
+        <div className="dw-card mt-10 flex max-w-3xl flex-col gap-8 leading-relaxed dw-muted">
           <section>
-            <h2 className="font-display text-xl font-medium">What Dwaar is</h2>
+            <h2 className="dw-display text-xl font-medium">What Dwaar is</h2>
             <p className="mt-3">
               Dwaar is an early-access service from Vyuhika Apps. Candidates ask employees of a company for a referral for a
               job, and employees who work at that company can accept. Dwaar does not promise any job, interview or referral,
@@ -33,7 +29,7 @@ export default function DwaarPrivacyPage() {
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium">What we collect</h2>
+            <h2 className="dw-display text-xl font-medium">What we collect</h2>
             <p className="mt-3">
               From your Google account: your name and email address. From you: your display name, an optional headline, whether you
               are looking for referrals or can refer people, and, if you can refer people, your company and work email. We
@@ -51,7 +47,7 @@ export default function DwaarPrivacyPage() {
             <p className="mt-3">We do not collect phone numbers or payment details in this version.</p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium">Your resume and the match score</h2>
+            <h2 className="dw-display text-xl font-medium">Your resume and the match score</h2>
             <p className="mt-3">
               Your resume file is stored privately, in a folder only your account can open. Your browser reads the text out of
               the file. Our server checks that the file really is a PDF or Word file and never opens it. To give you the free match
@@ -68,7 +64,7 @@ export default function DwaarPrivacyPage() {
               Dwaar profile, we cancel your open requests and do the same for all your requests. A request that closed (accepted or cancelled) loses its resume file, job description and score 90 days later. A request that is still open after 180 days is cancelled and loses them too. This clean-up runs once a day.</p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium">Why we collect it</h2>
+            <h2 className="dw-display text-xl font-medium">Why we collect it</h2>
             <p className="mt-3">
               To create your profile, to connect people who want referrals with employees who can give them, and to give
               you the match score. We check that a work email belongs to the company you chose by comparing its domain with the
@@ -76,7 +72,7 @@ export default function DwaarPrivacyPage() {
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium">Who can see it</h2>
+            <h2 className="dw-display text-xl font-medium">Who can see it</h2>
             <p className="mt-3">
               Employees who work at the company you asked, and who confirmed their work email, can see your name, your headline,
               the job title, the job ID, the job link and your note. They cannot see your resume, the job description or your
@@ -84,7 +80,7 @@ export default function DwaarPrivacyPage() {
               People cannot ask for a referral at the company they work at, and employees never see their own requests.
             </p>
             <p className="mt-3">
-              Confirmed employees at that company get an email saying that someone is waiting at their reception, with the job
+              Confirmed employees at that company get an email saying that someone is asking for a referral, with the job
               title and the company, and at most 3 such emails a day. Your name is not in that email.
             </p>
             <p className="mt-3">
@@ -93,14 +89,14 @@ export default function DwaarPrivacyPage() {
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium">How long requests last</h2>
+            <h2 className="dw-display text-xl font-medium">How long requests last</h2>
             <p className="mt-3">
               An open request closes by itself after 30 days. You can have up to 5 open requests, and you can cancel one at any
               time.
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium">Your choices</h2>
+            <h2 className="dw-display text-xl font-medium">Your choices</h2>
             <p className="mt-3">
               You can change your profile any time from the Dwaar page, and you can delete it there with one button. Deleting
               removes the profile details above. Your Google sign-in record stays so you can come back; to remove it too, or to
@@ -108,7 +104,7 @@ export default function DwaarPrivacyPage() {
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium">Using Dwaar</h2>
+            <h2 className="dw-display text-xl font-medium">Using Dwaar</h2>
             <p className="mt-3">
               Give only true information, and attach only your own resume. Use your own work email, never someone else&apos;s.
               Do not put instructions meant for an AI into your resume or job description. Resumes that try to manipulate the
@@ -117,12 +113,10 @@ export default function DwaarPrivacyPage() {
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium">Contact</h2>
+            <h2 className="dw-display text-xl font-medium">Contact</h2>
             <p className="mt-3">Questions or requests about your data: support@vyuhika.com.</p>
           </section>
         </div>
-      </main>
-      <Footer />
-    </>
+      </div>
   );
 }

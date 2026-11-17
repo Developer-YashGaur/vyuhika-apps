@@ -1,41 +1,46 @@
-// "How a visit works": three small paper tickets, like steps of a real office visit.
+// "How it works": three plain steps.
 const STEPS = [
   {
-    no: "01",
-    title: "Arrive",
-    text: "Sign in with Google and make your profile. Say if you want a referral, want to give one, or both.",
+    no: "1",
+    title: "Create your profile",
+    text: "Sign in with Google. Say whether you want a referral, want to give one, or both.",
   },
   {
-    no: "02",
-    title: "Ask at reception",
-    text: "Pick the company, paste the job link and write a short note. Your request waits at that company's desk.",
+    no: "2",
+    title: "Ask for a referral",
+    text: "Pick the company, add the job and your resume. You get a free resume match score, and Dwaar sends your request to employees there.",
   },
   {
-    no: "03",
-    title: "Meet",
-    text: "An employee who works there reads it. If they accept, they get your email and can refer you.",
+    no: "3",
+    title: "An employee accepts",
+    text: "Someone who works there reads your headline and the job. If they agree, they refer you and get in touch.",
   },
 ];
 
 export default function HowItWorks() {
   return (
-    <section aria-labelledby="dw-how" className="mt-16 sm:mt-24">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">How a visit works</p>
-      <h2 id="dw-how" className="font-display mt-3 max-w-xl text-2xl font-medium tracking-[-0.03em] sm:text-3xl">
-        Like walking into an office, without the lift ride.
+    <section id="how" aria-labelledby="dw-how" className="mt-20 scroll-mt-24">
+      <p className="dw-eyebrow">How it works</p>
+      <h2 id="dw-how" className="dw-h2 dw-display mt-2 max-w-xl">
+        Three steps to a warm introduction
       </h2>
-      <ol className="mt-8 grid gap-5 md:grid-cols-3">
+      <ol className="dw-steps">
         {STEPS.map((s) => (
-          <li key={s.no} className="dw-ticket">
-            <span className="dw-ticket-no">{s.no}</span>
-            <h3 className="mt-3 text-lg font-bold">{s.title}</h3>
-            <p className="dw-muted mt-2 leading-relaxed">{s.text}</p>
+          <li key={s.no} className="dw-stepcard">
+            <span className="dw-stepno" aria-hidden="true">
+              {s.no}
+            </span>
+            <h3 className="dw-display mt-4 text-lg">
+              <span className="sr-only">Step {s.no}: </span>
+              {s.title}
+            </h3>
+            <p className="dw-muted mt-2">{s.text}</p>
           </li>
         ))}
       </ol>
-      <p className="mt-6 max-w-2xl text-sm leading-relaxed text-mist">
-        Your email stays private until an employee accepts your request. You can cancel a request at any time, and
-        requests close by themselves after 30 days.
+      <p className="dw-muted mt-6 max-w-2xl text-sm">
+        Employees never see your resume or your score. Your email stays private until an employee accepts. You can cancel a
+        request at any time, and requests close by themselves after 30 days.
       </p>
     </section>
   );

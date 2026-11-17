@@ -16,7 +16,7 @@ export default function CopyButton({ text, label }: { text: string; label: strin
 
   return (
     <span className="inline-flex flex-wrap items-center gap-3">
-      <button type="button" onClick={copy} className="btn-ghost btn-sm">
+      <button type="button" onClick={copy} className="dw-btn dw-btn-quiet dw-btn-sm">
         {label}
       </button>
       <span role="status" aria-live="polite" className="dw-muted text-sm">

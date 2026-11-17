@@ -31,10 +31,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-screen bg-space text-ink">
         <MotionProvider>
           <SmoothScroll />
-          <Backdrop />
-          <ScrollProgress />
+          <div className="portal-chrome">
+            <Backdrop />
+            <ScrollProgress />
+          </div>
           <div className="relative z-10">{children}</div>
-          <FeedbackWidget />
+          <div className="portal-chrome">
+            <FeedbackWidget />
+          </div>
         </MotionProvider>
         {/* Visitor counts (page views, countries, devices, referrers) and page speed. No cookies, nothing visible. */}
         <Analytics />

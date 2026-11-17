@@ -8,8 +8,8 @@ import { RESUME_MAX_BYTES } from "@/lib/dwaar/resume-safety";
 import type { CompanyOption } from "@/lib/dwaar/profile";
 import { ResumeFileError, readResumeFile } from "@/lib/resume-file";
 
-// "Ask for a referral": company, job details, your resume, and a short note. Like filling in the visitor book
-// at reception. The resume is read inside your own browser first; the file is then stored privately.
+// "Ask for a referral": company, job details, your resume, and a short note. Fill in the company and job,
+// then send. The resume is read inside your own browser first; the file is then stored privately.
 
 const initialState: RequestFormState = { errors: {}, message: null };
 
@@ -58,11 +58,11 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
         if (file) formData.set("resume", file);
         formAction(formData);
       }}
-      className="dw-paper flex max-w-2xl flex-col gap-7"
+      className="dw-card flex max-w-2xl flex-col gap-7"
       noValidate
     >
       {state.message && (
-        <p role="alert" className="rounded-xl border border-rose-700/40 bg-rose-100 px-4 py-3 text-sm text-rose-900">
+        <p role="alert" className="dw-alert dw-alert-error">
           {state.message}
         </p>
       )}
@@ -83,7 +83,7 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
               onChange={(e) => set("companyId", e.target.value)}
               aria-invalid={errors.companyId ? true : undefined}
               aria-describedby={describe("companyId")}
-              className="field-input mt-3"
+              className="dw-input mt-3"
             >
               <option value="">Choose a company</option>
               {companies.map((c) => (
@@ -106,7 +106,7 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
               placeholder="For example: Backend Engineer"
               aria-invalid={errors.jobTitle ? true : undefined}
               aria-describedby={describe("jobTitle")}
-              className="field-input mt-3"
+              className="dw-input mt-3"
             />
             <FieldError id={errorId("jobTitle")} message={errors.jobTitle} />
           </div>
@@ -123,7 +123,7 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
               placeholder="REQ-12345"
               aria-invalid={errors.jobId ? true : undefined}
               aria-describedby={describe("jobId")}
-              className="field-input mt-3"
+              className="dw-input mt-3"
             />
             <FieldError id={errorId("jobId")} message={errors.jobId} />
           </div>
@@ -142,7 +142,7 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
             placeholder="https://company.com/careers/123"
             aria-invalid={errors.jobUrl ? true : undefined}
             aria-describedby={describe("jobUrl")}
-            className="field-input mt-3"
+            className="dw-input mt-3"
           />
           <FieldError id={errorId("jobUrl")} message={errors.jobUrl} />
         </div>
@@ -161,7 +161,7 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
             maxLength={JOB_DESCRIPTION_LIMITS.max}
             aria-invalid={errors.jobDescription ? true : undefined}
             aria-describedby={["jobDescription-hint", describe("jobDescription")].filter(Boolean).join(" ")}
-            className="field-input mt-3"
+            className="dw-input mt-3"
           />
           <p className="dw-muted mt-1 text-right text-xs">{values.jobDescription.length}/{JOB_DESCRIPTION_LIMITS.max}</p>
           <FieldError id={errorId("jobDescription")} message={errors.jobDescription} />
@@ -185,8 +185,8 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
           />
           <p id="resumeFile-status" role="status" className="mt-2 text-sm">
             {fileState.status === "reading" && <span className="dw-muted">Reading {fileState.name}…</span>}
-            {fileState.status === "ok" && <span className="text-emerald-800">✓ {fileState.name} is ready.</span>}
-            {fileState.status === "error" && <span className="text-rose-800">{fileState.message}</span>}
+            {fileState.status === "ok" && <span className="dw-ok-text">✓ {fileState.name} is ready.</span>}
+            {fileState.status === "error" && <span className="dw-bad-text">{fileState.message}</span>}
           </p>
           <FieldError id={errorId("resume")} message={errors.resume} />
         </div>
@@ -198,7 +198,7 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
               name="consent"
               aria-invalid={errors.consent ? true : undefined}
               aria-describedby={describe("consent")}
-              className="mt-1 h-4 w-4 accent-cyan-700"
+              className="mt-1 h-4 w-4 "
             />
             <span>
               I agree that Dwaar stores my resume privately and that an AI reads it with the job description to give me a match
@@ -226,7 +226,7 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
             placeholder="Two or three lines: your experience and why this role fits you."
             aria-invalid={errors.note ? true : undefined}
             aria-describedby={describe("note")}
-            className="field-input mt-3"
+            className="dw-input mt-3"
           />
           <p className="dw-muted mt-1 text-right text-xs">{values.note.length}/{REQUEST_LIMITS.note}</p>
           <FieldError id={errorId("note")} message={errors.note} />
@@ -238,10 +238,10 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
       </fieldset>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <button type="submit" disabled={pending || fileState.status === "reading"} className="btn-glow btn-lg">
-          {pending ? "Sending…" : "Send to reception"}
+        <button type="submit" disabled={pending || fileState.status === "reading"} className="dw-btn dw-btn-primary dw-btn-lg">
+          {pending ? "Sending…" : "Send request"}
         </button>
-        <Link href="/apps/dwaar/requests" className="btn-ghost btn-lg text-center">Cancel</Link>
+        <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Cancel</Link>
       </div>
       {pending && (
         <p role="status" className="dw-muted -mt-3 text-sm">
@@ -255,7 +255,7 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <p id={id} className="mt-2 text-sm text-rose-800">
+    <p id={id} className="mt-2 text-sm dw-bad-text">
       {message}
     </p>
   );

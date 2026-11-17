@@ -51,7 +51,7 @@ describe("notifyProviders", () => {
 describe("the email", () => {
   it("says the role and company but nothing about the candidate, in HTML and text", async () => {
     const html = await render(<NewRequestEmail jobTitle="Data <b>Analyst</b>" company="Acme" assetBaseUrl="https://apps.vyuhika.com" />);
-    expect(html).toContain("Open your reception desk");
+    expect(html).toContain("Open your employee desk");
     expect(html).not.toContain("<b>Analyst</b>");
     const text = newRequestText("Data Analyst", "Acme", "https://apps.vyuhika.com/");
     expect(text).toContain("Role: Data Analyst");

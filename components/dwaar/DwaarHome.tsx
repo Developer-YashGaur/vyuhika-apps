@@ -37,13 +37,13 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
     return (
       <>
         {notice}
-        <section className="dw-paper max-w-2xl">
-          <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">Welcome. Let&apos;s set up your profile.</h2>
+        <section className="dw-card max-w-2xl">
+          <h2 className="dw-display text-2xl font-medium ">Welcome. Let&apos;s set up your profile.</h2>
           <p className="mt-3 leading-relaxed dw-muted">
             It takes about a minute. You are signed in as <span >{data.user.email}</span>.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link href="/apps/dwaar/profile" className="btn-glow btn-lg text-center">Create my profile</Link>
+            <Link href="/apps/dwaar/profile" className="dw-btn dw-btn-primary dw-btn-lg text-center">Create my profile</Link>
             <SignOutButton />
           </div>
         </section>
@@ -61,13 +61,13 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
   return (
     <>
       {notice}
-      <section className="dw-paper max-w-2xl">
-        <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">{profile.display_name}</h2>
+      <section className="dw-card max-w-2xl">
+        <h2 className="dw-display text-2xl font-medium ">{profile.display_name}</h2>
         {profile.headline && <p className="mt-1 dw-muted">{profile.headline}</p>}
 
         <div className="mt-5 flex flex-wrap gap-2">
-          {profile.is_candidate && <span className="chip chip-cyan">Looking for referrals</span>}
-          {profile.is_provider && <span className="chip chip-violet">Can refer people</span>}
+          {profile.is_candidate && <span className="dw-chip dw-chip-good">Looking for referrals</span>}
+          {profile.is_provider && <span className="dw-chip dw-chip-info">Can refer people</span>}
         </div>
 
         {profile.is_provider && (
@@ -88,19 +88,19 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
 
         {profile.is_provider && profile.work_email_verified_at && (
           <div className="mt-6">
-            <Link href="/apps/dwaar/inbox" className="btn-glow btn-lg inline-flex">Open reception desk</Link>
+            <Link href="/apps/dwaar/inbox" className="dw-btn dw-btn-primary dw-btn-lg inline-flex">Open employee desk</Link>
           </div>
         )}
 
         {profile.is_candidate && (
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link href="/apps/dwaar/requests/new" className="btn-glow btn-lg text-center">Ask for a referral</Link>
-            <Link href="/apps/dwaar/requests" className="btn-ghost btn-lg text-center">My requests</Link>
+            <Link href="/apps/dwaar/requests/new" className="dw-btn dw-btn-primary dw-btn-lg text-center">Ask for a referral</Link>
+            <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet dw-btn-lg text-center">My requests</Link>
           </div>
         )}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link href="/apps/dwaar/profile" className="btn-ghost btn-lg text-center">Edit profile</Link>
+          <Link href="/apps/dwaar/profile" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Edit profile</Link>
           <SignOutButton />
         </div>
       </section>
@@ -109,7 +109,7 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
         <WorkEmailConfirm email={profile.provider_work_email} available={workEmailConfirmationConfigured()} />
       )}
 
-      <details className="dw-paper mt-6 max-w-2xl">
+      <details className="dw-card mt-6 max-w-2xl">
         <summary className="cursor-pointer font-medium">Delete my profile</summary>
         <p className="mt-3 text-sm leading-relaxed dw-muted">
           This removes your Dwaar profile: your name, headline, roles, company and work email. It also cancels your open
@@ -117,7 +117,7 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
           back later. To remove the sign-in account too, write to support@vyuhika.com.
         </p>
         <form action={deleteProfileAction} className="mt-4">
-          <button type="submit" className="btn-ghost btn-sm">Yes, delete my profile</button>
+          <button type="submit" className="dw-btn dw-btn-quiet dw-btn-sm">Yes, delete my profile</button>
         </form>
       </details>
     </>
@@ -137,8 +137,8 @@ function Notice({ params }: { params: Params }) {
   return (
     <p
       role={error ? "alert" : "status"}
-      className={`mb-6 max-w-2xl rounded-xl border px-4 py-3 text-sm ${
-        error ? "border-rose-300/40 bg-rose-500/10 text-rose-100" : "border-cyan-300/40 bg-cyan-500/10 text-cyan-50"
+      className={`mb-6 max-w-2xl dw-alert ${
+        error ? "dw-alert-error" : "dw-alert-info"
       }`}
     >
       {error ?? info}
@@ -148,14 +148,14 @@ function Notice({ params }: { params: Params }) {
 
 function SignedOut({ disabled = false }: { disabled?: boolean }) {
   return (
-    <section className="dw-paper max-w-2xl">
-      <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">Sign in at reception</h2>
+    <section className="dw-card max-w-2xl">
+      <h2 className="dw-display text-2xl font-medium ">Sign in to start</h2>
       <p className="mt-3 leading-relaxed dw-muted">
         Sign in with Google to create your Dwaar profile. Choose whether you want referrals, want to refer people, or both.
         Dwaar is in early access, so things may change.
       </p>
       <form action={signInWithGoogle} className="mt-6">
-        <button type="submit" disabled={disabled} className="btn-glow btn-lg">Continue with Google</button>
+        <button type="submit" disabled={disabled} className="dw-btn dw-btn-primary dw-btn-lg">Continue with Google</button>
       </form>
       {disabled && <p className="mt-3 text-sm dw-muted">Sign-in is not set up on this server yet.</p>}
       <p className="mt-5 text-sm dw-muted">
@@ -169,7 +169,7 @@ function SignedOut({ disabled = false }: { disabled?: boolean }) {
 function SignOutButton() {
   return (
     <form action={signOut}>
-      <button type="submit" className="btn-ghost btn-lg w-full sm:w-auto">Sign out</button>
+      <button type="submit" className="dw-btn dw-btn-quiet dw-btn-lg w-full sm:w-auto">Sign out</button>
     </form>
   );
 }

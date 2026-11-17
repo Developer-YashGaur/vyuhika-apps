@@ -11,6 +11,7 @@ import { notifyProviders } from "@/lib/dwaar/notify";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
 import { deliverBoost, deliverMessage } from "@/lib/dwaar/deliver-boost";
+import { boostPaymentsEnabled } from "@/lib/dwaar/features";
 import { razorpayKeys } from "@/lib/dwaar/razorpay";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
@@ -227,6 +228,7 @@ export async function startBoostAction(requestId: string): Promise<BoostActionSt
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/apps/dwaar");
+  if (!boostPaymentsEnabled()) return { ok: false, message: boostMessage("unavailable") }; // paid Boost is switched off for now
   if (typeof requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(requestId)) return { ok: false, message: boostMessage("failed") };
 
   const keys = razorpayKeys();

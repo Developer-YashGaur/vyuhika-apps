@@ -3,7 +3,7 @@
 export type RequestStatus = "open" | "accepted" | "cancelled" | "expired";
 
 export const STATUS_STAMP: Record<RequestStatus, { label: string; tone: "wait" | "ok" | "closed" }> = {
-  open: { label: "Waiting at reception", tone: "wait" },
+  open: { label: "Waiting for an employee", tone: "wait" },
   accepted: { label: "Accepted", tone: "ok" },
   cancelled: { label: "Cancelled", tone: "closed" },
   expired: { label: "Expired", tone: "closed" },

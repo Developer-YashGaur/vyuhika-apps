@@ -40,9 +40,9 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
     [errors[name] ? errorId(name) : null, extra].filter(Boolean).join(" ") || undefined;
 
   return (
-    <form action={formAction} className="dw-paper flex max-w-2xl flex-col gap-7" noValidate>
+    <form action={formAction} className="dw-card flex max-w-2xl flex-col gap-7" noValidate>
       {state.message && (
-        <p role="alert" className="rounded-xl border border-rose-700/40 bg-rose-100 px-4 py-3 text-sm text-rose-900">
+        <p role="alert" className="dw-alert dw-alert-error">
           {state.message}
         </p>
       )}
@@ -52,7 +52,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
       </p>
 
       <div>
-        <label htmlFor="displayName" className="font-display text-lg font-medium tracking-[-0.03em]">
+        <label htmlFor="displayName" className="dw-display text-lg font-medium ">
           Your name
         </label>
         <input
@@ -64,13 +64,13 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
           autoComplete="name"
           aria-invalid={errors.displayName ? true : undefined}
           aria-describedby={describe("displayName")}
-          className="field-input mt-3"
+          className="dw-input mt-3"
         />
         <FieldError id={errorId("displayName")} message={errors.displayName} />
       </div>
 
       <div>
-        <label htmlFor="headline" className="font-display text-lg font-medium tracking-[-0.03em]">
+        <label htmlFor="headline" className="dw-display text-lg font-medium ">
           Headline <span className="text-sm font-normal dw-muted">(optional)</span>
         </label>
         <input
@@ -82,21 +82,21 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
           placeholder="For example: Backend developer, 3 years"
           aria-invalid={errors.headline ? true : undefined}
           aria-describedby={describe("headline")}
-          className="field-input mt-3"
+          className="dw-input mt-3"
         />
         <FieldError id={errorId("headline")} message={errors.headline} />
       </div>
 
       <fieldset aria-describedby={describe("roles")}>
-        <legend className="font-display text-lg font-medium tracking-[-0.03em]">What do you want to do?</legend>
+        <legend className="dw-display text-lg font-medium ">What do you want to do?</legend>
         <p className="mt-1 text-sm dw-muted">You can choose both.</p>
         <div className="mt-3 flex flex-col gap-3">
-          <label className="pill-option">
+          <label className="dw-option">
             <span className="flex items-center gap-3">
               <input
                 type="checkbox"
                 name="isCandidate"
-                className="h-4 w-4 accent-cyan-700"
+                className="h-4 w-4 "
                 checked={values.isCandidate}
                 onChange={(e) => set("isCandidate", e.target.checked)}
               />
@@ -104,12 +104,12 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
             </span>
             <span className="pl-7 text-sm dw-muted">Ask employees at a company to refer you for a job.</span>
           </label>
-          <label className="pill-option">
+          <label className="dw-option">
             <span className="flex items-center gap-3">
               <input
                 type="checkbox"
                 name="isProvider"
-                className="h-4 w-4 accent-cyan-700"
+                className="h-4 w-4 "
                 checked={values.isProvider}
                 onChange={(e) => set("isProvider", e.target.checked)}
               />
@@ -122,9 +122,9 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
       </fieldset>
 
       {values.isProvider && (
-        <div className="flex flex-col gap-5 rounded-2xl border border-dashed border-[#1d1a16]/30 p-5">
+        <div className="flex flex-col gap-5 dw-panel">
           <div>
-            <label htmlFor="companyId" className="font-display text-lg font-medium tracking-[-0.03em]">
+            <label htmlFor="companyId" className="dw-display text-lg font-medium ">
               Company you work at
             </label>
             {companies.length === 0 ? (
@@ -139,7 +139,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
                 onChange={(e) => set("companyId", e.target.value)}
                 aria-invalid={errors.companyId ? true : undefined}
                 aria-describedby={describe("companyId")}
-                className="field-input mt-3"
+                className="dw-input mt-3"
               >
                 <option value="">Choose a company</option>
                 {companies.map((company) => (
@@ -153,7 +153,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
           </div>
 
           <div>
-            <label htmlFor="workEmail" className="font-display text-lg font-medium tracking-[-0.03em]">
+            <label htmlFor="workEmail" className="dw-display text-lg font-medium ">
               Work email
             </label>
             <input
@@ -167,7 +167,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
               placeholder="name@yourcompany.com"
               aria-invalid={errors.workEmail ? true : undefined}
               aria-describedby={describe("workEmail", "workEmail-hint")}
-              className="field-input mt-3"
+              className="dw-input mt-3"
             />
             <p id="workEmail-hint" className="mt-2 text-sm dw-muted">
               It must use your company&apos;s email domain. Personal addresses like Gmail do not work. After you save, we
@@ -186,7 +186,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
               name="consent"
               aria-invalid={errors.consent ? true : undefined}
               aria-describedby={describe("consent")}
-              className="mt-1 h-4 w-4 accent-cyan-700"
+              className="mt-1 h-4 w-4 "
             />
             <span>
               I have read the{" "}
@@ -201,10 +201,10 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <button type="submit" disabled={pending} className="btn-glow btn-lg">
+        <button type="submit" disabled={pending} className="dw-btn dw-btn-primary dw-btn-lg">
           {pending ? "Saving…" : isNew ? "Create my profile" : "Save changes"}
         </button>
-        <Link href="/apps/dwaar" className="btn-ghost btn-lg text-center">
+        <Link href="/apps/dwaar" className="dw-btn dw-btn-quiet dw-btn-lg text-center">
           Cancel
         </Link>
       </div>
@@ -215,7 +215,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <p id={id} className="mt-2 text-sm text-rose-800">
+    <p id={id} className="mt-2 text-sm dw-bad-text">
       {message}
     </p>
   );

@@ -3,7 +3,7 @@ import EmailLayout, { colors } from "@/components/emails/EmailLayout";
 import { inboxUrl } from "@/lib/dwaar/request-email-text";
 
 // Sent to confirmed referral providers when a candidate asks for a referral at their company.
-// It says only the role and the company. The candidate's details stay behind the sign-in on the reception desk.
+// It says only the role and the company. The candidate's details stay behind the sign-in on the employee desk.
 
 type Props = { jobTitle: string; company: string; assetBaseUrl: string };
 
@@ -27,7 +27,7 @@ export default function NewRequestEmail({ jobTitle, company, assetBaseUrl }: Pro
         className="email-title"
         style={{ margin: 0, fontSize: "28px", lineHeight: "36px", fontWeight: 700, color: colors.ink }}
       >
-        Someone is waiting at your reception
+        Someone is asking for a referral
       </Heading>
       <Text style={{ margin: "14px 0 0", fontSize: "16px", lineHeight: "26px", color: colors.mist }}>
         {`A candidate asked for a referral at ${company}.`}
@@ -66,7 +66,7 @@ export default function NewRequestEmail({ jobTitle, company, assetBaseUrl }: Pro
             borderRadius: "999px",
           }}
         >
-          Open your reception desk
+          Open your employee desk
         </Link>
       </Section>
 

@@ -7,12 +7,7 @@ export default function CompanyMonogram({ name, size = 48 }: { name: string; siz
     <span
       aria-hidden="true"
       className="dw-monogram"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.4,
-        background: `linear-gradient(145deg, hsl(${hue} 55% 34%), hsl(${(hue + 40) % 360} 60% 22%))`,
-      }}
+      style={{ width: size, height: size, fontSize: size * 0.38, background: `hsl(${hue} 36% 30%)` }}
     >
       {letters}
     </span>

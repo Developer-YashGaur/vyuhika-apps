@@ -80,7 +80,7 @@ describe("friendlyRequestError", () => {
 
 describe("format helpers", () => {
   it("maps statuses to stamps", () => {
-    expect(statusStamp("open").label).toBe("Waiting at reception");
+    expect(statusStamp("open").label).toBe("Waiting for an employee");
     expect(statusStamp("accepted").tone).toBe("ok");
     expect(statusStamp("weird").tone).toBe("closed");
   });

@@ -74,7 +74,7 @@ export default function BoostButton({ requestId }: { requestId: string }) {
 
   return (
     <div className="mt-3">
-      <button type="button" onClick={start} disabled={phase !== "idle"} className="btn-glow btn-sm" aria-describedby={`boost-note-${requestId}`}>
+      <button type="button" onClick={start} disabled={phase !== "idle"} className="dw-btn dw-btn-primary dw-btn-sm" aria-describedby={`boost-note-${requestId}`}>
         {phase === "working" ? "Opening payment…" : "Boost this request"}
       </button>
       <p id={`boost-note-${requestId}`} className="dw-muted mt-2 text-xs">
