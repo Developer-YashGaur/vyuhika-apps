@@ -149,6 +149,48 @@ export type Database = {
           },
         ]
       }
+      dwaar_boost_orders: {
+        Row: {
+          amount_paise: number
+          candidate_id: string
+          created_at: string
+          currency: string
+          gateway_order_id: string | null
+          gateway_payment_id: string | null
+          id: string
+          paid_at: string | null
+          request_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_paise: number
+          candidate_id: string
+          created_at?: string
+          currency?: string
+          gateway_order_id?: string | null
+          gateway_payment_id?: string | null
+          id?: string
+          paid_at?: string | null
+          request_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_paise?: number
+          candidate_id?: string
+          created_at?: string
+          currency?: string
+          gateway_order_id?: string | null
+          gateway_payment_id?: string | null
+          id?: string
+          paid_at?: string | null
+          request_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dwaar_profiles: {
         Row: {
           consent_accepted_at: string

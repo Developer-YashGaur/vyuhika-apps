@@ -67,3 +67,10 @@ export function boostMessage(kind: Exclude<BoostStart["kind"], "ready">): string
       return "We could not start the payment. Nothing was charged. Please try again.";
   }
 }
+
+// Which of my requests already have a paid Boost. RLS makes this return only my own orders.
+export async function listPaidBoostRequestIds(supabase: Db): Promise<Set<string>> {
+  const { data, error } = await supabase.from("dwaar_boost_orders").select("request_id").in("status", ["paid", "delivered"]);
+  if (error) throw new Error("Could not load your Boost orders.");
+  return new Set((data ?? []).map((row) => row.request_id));
+}
