@@ -6,7 +6,7 @@ import { respondToRequestAction } from "@/app/apps/dwaar/actions";
 import CompanyMonogram from "@/components/dwaar/CompanyMonogram";
 import RequestCard from "@/components/dwaar/RequestCard";
 import { timeAgo } from "@/lib/dwaar/format";
-import { ANSWER_NOTES, listAccepted, listInbox, mailtoLink, type Answer } from "@/lib/dwaar/inbox";
+import { ANSWER_NOTES, listAccepted, listInbox, type Answer } from "@/lib/dwaar/inbox";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { passNumber } from "@/lib/dwaar/monogram";
 import { getMyProfile, listCompanyOptions } from "@/lib/dwaar/profile";
@@ -144,11 +144,10 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
 
       <h2 className="dw-display mt-14 text-xl">People you accepted</h2>
       {accepted.length === 0 ? (
-        <p className="mt-3 max-w-2xl dw-muted">When you accept a request, the candidate&apos;s email appears here so you can get in touch.</p>
+        <p className="mt-3 max-w-2xl dw-muted">When you accept a request, the candidate can send you one message. You reply here. Emails are never shared.</p>
       ) : (
         <ul className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {accepted.map((r) => {
-            const mail = mailtoLink(r.out_candidate_email, r.out_job_title, r.out_company_name);
             return (
               <li key={r.out_id}>
                 <RequestCard
@@ -161,14 +160,16 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
                   tone="ok"
                 >
                   <p className="mb-3 text-sm">
-                    Email: <strong className="break-all">{r.out_candidate_email}</strong>
+                    {!r.out_candidate_messaged
+                      ? "Waiting for the candidate's message."
+                      : r.out_my_replies === 0
+                        ? "The candidate wrote to you. Please reply."
+                        : "You replied."}
                   </p>
                   <div className="flex flex-wrap items-center gap-3">
-                    {mail && (
-                      <a href={mail} className="dw-btn dw-btn-primary dw-btn-sm">
-                        Write to {r.out_candidate_name.split(" ")[0]}
-                      </a>
-                    )}
+                    <Link href={`/apps/dwaar/requests/${r.out_id}/chat`} className="dw-btn dw-btn-primary dw-btn-sm">
+                      Open chat
+                    </Link>
                     <a href={r.out_job_url} target="_blank" rel="noopener noreferrer" className="dw-link text-sm">
                       View the job posting
                     </a>

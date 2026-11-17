@@ -1,11 +1,13 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { CONSENT_VERSION } from "@/lib/dwaar/consent";
 import { deleteMyProfile, getMyProfile, saveMyProfile } from "@/lib/dwaar/profile";
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
+import { sendMessage } from "@/lib/dwaar/chat";
 import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
@@ -281,4 +283,21 @@ export async function deliverBoostAction(_previous: BoostDeliverState, formData:
   );
   if (outcome.kind === "delivered") redirect(`/apps/dwaar/requests/${outcome.requestId}/boost`);
   return { message: deliverMessage(outcome.kind) };
+}
+
+// ---- The chat after a request is accepted ----
+
+export type ChatFormState = { message: string | null; sent: boolean };
+
+export async function sendMessageAction(requestId: string, _previous: ChatFormState, formData: FormData): Promise<ChatFormState> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  if (typeof requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(requestId)) return { message: "Something went wrong. Please try again in a moment.", sent: false };
+
+  const result = await sendMessage(supabase, requestId, formData.get("body"));
+  if (!result.ok) return { message: result.message, sent: false };
+  revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
+  return { message: null, sent: true };
 }

@@ -9,7 +9,7 @@ export const metadata = dwaarMetadata;
 const POINTS = [
   "A free resume match score before you ask anyone",
   "Employees see your headline and the job, never your resume",
-  "Your email stays private until someone accepts",
+  "Your email is never shared with employees",
 ];
 
 export default function DwaarPage({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string; deleted?: string; confirmed?: string }> }) {

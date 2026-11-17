@@ -74,14 +74,17 @@ export default function DwaarPrivacyPage() {
           <section>
             <h2 className="dw-display text-xl font-medium">Who can see it</h2>
             <p className="mt-3">
-              Employees who work at the company you asked, and who confirmed their work email, can see your name, your headline,
-              the job title, the job ID, the job link and your note. They cannot see your resume, the job description or your
-              score. Your email address is shown only to the one employee who accepts your request, and only after they accept.
+              Your request is shown to a few employees at a time (5 at first, and 5 more after 24 hours if nobody has accepted),
+              only those who work at the company you asked, confirmed their work email and chose to receive requests. They can
+              see your name, your headline, the job title, the job ID, the job link and your note. They cannot see your resume,
+              the job description or your score. Your email address is never shown to them. After one employee accepts, you can
+              send that person one message inside Dwaar and they can reply. Emails and phone numbers are not allowed in
+              messages. Messages are deleted when the request is deleted.
               People cannot ask for a referral at the company they work at, and employees never see their own requests.
             </p>
             <p className="mt-3">
               Confirmed employees at that company get an email saying that someone is asking for a referral, with the job
-              title and the company, and at most 3 such emails a day. Your name is not in that email.
+              title and the company, and at most 3 such emails a day (and no more than the weekly limit they set). Your name is not in that email.
             </p>
             <p className="mt-3">
               Our database is set up so that one person cannot read another person&apos;s private data. Our providers process

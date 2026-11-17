@@ -622,16 +622,37 @@ export type Database = {
         Args: { p_request_ids: string[]; p_secret: string }
         Returns: number
       }
+      dwaar_chat_info: {
+        Args: { p_request_id: string }
+        Returns: {
+          out_can_send: boolean
+          out_company_name: string
+          out_is_candidate: boolean
+          out_job_title: string
+          out_other_name: string
+        }[]
+      }
+      dwaar_chat_messages: {
+        Args: { p_request_id: string }
+        Returns: {
+          out_body: string
+          out_created_at: string
+          out_id: number
+          out_mine: boolean
+        }[]
+      }
+      dwaar_send_message: { Args: { p_body: string; p_request_id: string }; Returns: string }
       dwaar_my_accepted_requests: {
         Args: never
         Returns: {
           out_accepted_at: string
-          out_candidate_email: string
+          out_candidate_messaged: boolean
           out_candidate_name: string
           out_company_name: string
           out_id: string
           out_job_title: string
           out_job_url: string
+          out_my_replies: number
         }[]
       }
       dwaar_my_requests: {

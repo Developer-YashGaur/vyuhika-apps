@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ANSWER_NOTES, friendlyRespondError, mailtoLink, respondToRequest } from "@/lib/dwaar/inbox";
+import { ANSWER_NOTES, friendlyRespondError, respondToRequest } from "@/lib/dwaar/inbox";
 
 const fakeDb = (reply: { data: unknown; error: { code: string } | null }) => {
   const calls: { name: string; args: Record<string, unknown> }[] = [];
@@ -32,13 +32,5 @@ describe("messages and links", () => {
   it("has a note for every answer and a generic error", () => {
     expect(Object.keys(ANSWER_NOTES).sort()).toEqual(["accepted", "dismissed", "unavailable"]);
     expect(friendlyRespondError("???")).toMatch(/Something went wrong/);
-  });
-  it("builds a mailto link only for a real address, with the subject encoded", () => {
-    const link = mailtoLink("a@b.com", "Dev & Ops", "Acme");
-    expect(link).toBe("mailto:a@b.com?subject=Referral%20for%20Dev%20%26%20Ops%20at%20Acme");
-    expect(mailtoLink("not an email", "Dev", "Acme")).toBeNull();
-    expect(mailtoLink("a@b.com?cc=x@y.com", "Dev", "Acme")).toBeNull();
-    expect(mailtoLink("a@b.com?bcc=evil", "Dev", "Acme")).toBeNull();
-    expect(mailtoLink("a@b.com,c@d.com", "Dev", "Acme")).toBeNull();
   });
 });

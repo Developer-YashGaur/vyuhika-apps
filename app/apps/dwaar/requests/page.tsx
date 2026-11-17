@@ -128,7 +128,10 @@ function RequestItem({ request: r, analysis, boost, boostOn }: { request: MyRequ
       {r.out_note && <p className="dw-muted text-sm italic">&ldquo;{r.out_note}&rdquo;</p>}
       {r.out_status === "accepted" && (
         <p className="text-sm">
-          <strong>{r.out_accepted_by_name}</strong> accepted your request. They have your email and may write to you.
+          <strong>{r.out_accepted_by_name}</strong> accepted your request. You can send them one message.{" "}
+          <Link href={`/apps/dwaar/requests/${r.out_id}/chat`} className="dw-link">
+            Open chat
+          </Link>
         </p>
       )}
       {boost?.status === "delivered" ? (

@@ -36,19 +36,9 @@ export async function listAccepted(supabase: Db): Promise<AcceptedItem[]> {
   return data ?? [];
 }
 
-// Plain addresses only: no ? & # % , ; or spaces, so an address can never add extra parts to the link.
-const SAFE_EMAIL = /^[A-Za-z0-9._+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
-
-// A "write an email" link, only for a plain address. The subject is filled in for the employee.
-export function mailtoLink(email: string, jobTitle: string, company: string): string | null {
-  if (!SAFE_EMAIL.test(email)) return null;
-  const subject = `Referral for ${jobTitle} at ${company}`;
-  return `mailto:${email}?subject=${encodeURIComponent(subject)}`;
-}
-
 // What the inbox page says after an answer.
 export const ANSWER_NOTES: Record<Answer, string> = {
-  accepted: "You accepted the request. The candidate's email is now under \"People you accepted\".",
+  accepted: "You accepted the request. The candidate can now write you one message. It will appear under \"People you accepted\".",
   dismissed: "Removed from your list. Other employees at your company still see it.",
   unavailable: "That request is no longer open. Someone else may have taken it, or the candidate cancelled it.",
 };

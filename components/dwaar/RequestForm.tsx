@@ -232,8 +232,8 @@ export default function RequestForm({ companies }: { companies: CompanyOption[] 
           <FieldError id={errorId("note")} message={errors.note} />
         </div>
         <p className="dw-muted text-sm leading-relaxed">
-          Employees at this company see your name, headline, the job and your note. Your email is shared only with the person
-          who accepts. They do not see your resume.
+          Employees at this company see your name, headline, the job and your note. Your email is never shared. The person who
+          accepts can read one message from you in Dwaar. They do not see your resume.
         </p>
       </fieldset>
 
