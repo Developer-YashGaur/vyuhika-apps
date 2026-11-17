@@ -1,5 +1,5 @@
-// Public values only. There is intentionally no service-role key anywhere in this app.
-// (A test fails if the words "service_role" appear in the code.)
+// Public values only. This app deliberately has no admin-level Supabase key anywhere.
+// (tests/dwaar-conventions.test.ts fails if one is ever added.)
 export function supabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
