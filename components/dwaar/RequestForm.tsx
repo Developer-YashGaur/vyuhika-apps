@@ -61,11 +61,11 @@ export default function RequestForm({ companies, initial }: { companies: Company
         if (file) formData.set("resume", file);
         formAction(formData);
       }}
-      className="dw-card flex max-w-2xl flex-col gap-7"
+      className="dw-card dw-cols"
       noValidate
     >
       {state.message && (
-        <p role="alert" className="dw-alert dw-alert-error">
+        <p role="alert" className="dw-alert dw-alert-error dw-span">
           {state.message}
         </p>
       )}
@@ -242,9 +242,9 @@ export default function RequestForm({ companies, initial }: { companies: Company
         </p>
       </fieldset>
 
-      {state.check && <MatchCheck check={state.check} />}
+      {state.check && <div className="dw-span"><MatchCheck check={state.check} /></div>}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="dw-span flex flex-col gap-3 sm:flex-row">
         <button type="submit" name="intent" value="check" disabled={pending || fileState.status === "reading"} className="dw-btn dw-btn-quiet dw-btn-lg">
           {pending ? "Working…" : "Check my match"}
         </button>

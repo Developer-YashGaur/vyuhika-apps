@@ -42,7 +42,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
     return (
       <>
         <h1 className="dw-title dw-display mb-8">Employee desk</h1>
-        <section className="dw-card max-w-2xl">
+        <section className="dw-card">
           <h2 className="dw-display text-xl">This desk is for confirmed employees</h2>
           <p className="dw-muted mt-3 leading-relaxed">
             {profile.is_provider
@@ -61,7 +61,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
     return (
       <>
         <h1 className="dw-title dw-display mb-8">Employee desk</h1>
-        <section className="dw-card max-w-2xl">
+        <section className="dw-card">
           <h2 className="dw-display text-xl">Referral requests are switched off</h2>
           <p className="dw-muted mt-3 leading-relaxed">
             You choose whether to receive requests. Switch it on in your profile and you will see candidates asking for a
@@ -92,7 +92,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
       {note && (
         <p
           role={params.answer === "error" ? "alert" : "status"}
-          className={`mb-6 max-w-2xl dw-alert ${
+          className={`mb-6 dw-alert ${
             params.answer === "error" ? "dw-alert-error" : "dw-alert-info"
           }`}
         >
@@ -107,7 +107,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
       </p>
 
       {inbox.length === 0 ? (
-        <section className="dw-card mt-6 max-w-2xl">
+        <section className="dw-card mt-6">
           <p className="dw-muted">No one is waiting right now. New requests appear here.</p>
         </section>
       ) : (

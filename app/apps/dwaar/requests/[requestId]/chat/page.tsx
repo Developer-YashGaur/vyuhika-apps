@@ -16,7 +16,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export default function ChatPage({ params }: { params: Promise<{ requestId: string }> }) {
   return (
     <div className="dw-wrap dw-page">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-3xl">
         <Suspense fallback={<p className="dw-muted">Loading…</p>}>
           <ChatContent params={params} />
         </Suspense>

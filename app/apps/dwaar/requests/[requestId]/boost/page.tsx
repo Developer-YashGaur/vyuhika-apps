@@ -52,7 +52,7 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
   const linkedinTips = toStringList(result.linkedin_tips);
 
   return (
-    <div className="grid max-w-3xl gap-6">
+    <div className="grid gap-6 lg:grid-cols-2">
       <section className="dw-card">
         <p className="text-lg leading-relaxed">{result.summary}</p>
         <p className="dw-muted mt-3 text-sm leading-relaxed">

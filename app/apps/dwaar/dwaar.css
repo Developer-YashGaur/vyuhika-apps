@@ -53,7 +53,7 @@ body:has([data-app="dwaar"]) .portal-chrome { display: none; }
 .dw-skip:focus { top: 12px; }
 
 /* ------------------------------------------------------------ layout */
-.dw-wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+.dw-wrap { width: 100%; max-width: 1680px; margin: 0 auto; padding-inline: clamp(20px, 4vw, 72px); }
 .dw-main { flex: 1; }
 .dw-page { padding-block: 36px 80px; }
 @media (min-width: 720px) { .dw-page { padding-block: 56px 104px; } }
@@ -84,7 +84,7 @@ body:has([data-app="dwaar"]) .portal-chrome { display: none; }
 .dw-menu-panel a:hover { background: var(--dw-primary-soft); }
 
 .dw-footer { background: var(--dw-deep); color: rgba(246, 242, 233, 0.75); font-size: 0.9rem; }
-.dw-footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; padding: 28px 20px; }
+.dw-footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; padding-block: 28px; }
 .dw-footer a { color: rgba(246, 242, 233, 0.9); text-decoration: underline; text-underline-offset: 3px; }
 .dw-footer a:hover { color: #fff; }
 
@@ -178,3 +178,20 @@ textarea.dw-input { min-height: 120px; resize: vertical; }
 .dw-ok-text { color: var(--dw-good); }
 .dw-bad-text { color: var(--dw-bad); }
 .dw-eyebrow { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dw-brass-text); }
+
+/* ------------------------------------------------------------ wide layouts */
+/* Forms and cards use the whole page width: two columns from 1000px. */
+.dw-cols { display: grid; gap: 28px 64px; align-content: start; }
+.dw-cols > * { min-width: 0; }
+@media (min-width: 1000px) {
+  .dw-cols { grid-template-columns: 1fr 1fr; }
+  .dw-span { grid-column: 1 / -1; }
+}
+.dw-stack { display: flex; flex-direction: column; gap: 28px; }
+/* A card with the person on the left and what they can do on the right. */
+.dw-split { display: grid; gap: 28px; }
+@media (min-width: 900px) { .dw-split { grid-template-columns: 1.1fr 1fr; gap: 64px; align-items: start; } }
+.dw-actions { display: flex; flex-direction: column; gap: 12px; }
+.dw-actions .dw-btn { width: 100%; text-align: center; }
+/* Long legal text: sections side by side on wide screens. */
+@media (min-width: 1100px) { .dw-prose-cols { display: grid !important; grid-template-columns: 1fr 1fr; gap: 40px 72px; align-items: start; } }

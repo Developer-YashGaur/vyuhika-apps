@@ -19,7 +19,7 @@ export default function DwaarPrivacyPage() {
           Draft for early access. It will be reviewed by a lawyer before Dwaar opens to everyone.
         </p>
 
-        <div className="dw-card mt-10 flex max-w-3xl flex-col gap-8 leading-relaxed dw-muted">
+        <div className="dw-card dw-prose-cols mt-10 flex flex-col gap-8 leading-relaxed dw-muted">
           <section>
             <h2 className="dw-display text-xl font-medium">What Dwaar is</h2>
             <p className="mt-3">

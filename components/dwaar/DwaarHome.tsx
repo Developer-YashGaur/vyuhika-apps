@@ -37,7 +37,7 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
     return (
       <>
         {notice}
-        <section className="dw-card max-w-2xl">
+        <section className="dw-card">
           <h2 className="dw-display text-2xl font-medium ">Welcome. Let&apos;s set up your profile.</h2>
           <p className="mt-3 leading-relaxed dw-muted">
             It takes about a minute. You are signed in as <span >{data.user.email}</span>.
@@ -61,7 +61,8 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
   return (
     <>
       {notice}
-      <section className="dw-card max-w-2xl">
+      <section className="dw-card dw-split">
+        <div>
         <h2 className="dw-display text-2xl font-medium ">{profile.display_name}</h2>
         {profile.headline && <p className="mt-1 dw-muted">{profile.headline}</p>}
 
@@ -86,21 +87,21 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
           </dl>
         )}
 
+        </div>
+
+        <div className="dw-actions">
         {profile.is_provider && profile.work_email_verified_at && (
-          <div className="mt-6">
-            <Link href="/apps/dwaar/inbox" className="dw-btn dw-btn-primary dw-btn-lg inline-flex">Open employee desk</Link>
-          </div>
+          <Link href="/apps/dwaar/inbox" className="dw-btn dw-btn-primary dw-btn-lg">Open employee desk</Link>
         )}
 
         {profile.is_candidate && (
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <>
             <Link href="/apps/dwaar/requests/new" className="dw-btn dw-btn-primary dw-btn-lg text-center">Ask for a referral</Link>
             <Link href="/apps/dwaar/find" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Find jobs for my resume</Link>
             <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet dw-btn-lg text-center">My requests</Link>
-          </div>
+          </>
         )}
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Link href="/apps/dwaar/profile" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Edit profile</Link>
           <SignOutButton />
         </div>
@@ -110,7 +111,7 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
         <WorkEmailConfirm email={profile.provider_work_email} available={workEmailConfirmationConfigured()} />
       )}
 
-      <details className="dw-card mt-6 max-w-2xl">
+      <details className="dw-card mt-6">
         <summary className="cursor-pointer font-medium">Delete my profile</summary>
         <p className="mt-3 text-sm leading-relaxed dw-muted">
           This removes your Dwaar profile: your name, headline, roles, company and work email. It also cancels your open
@@ -138,7 +139,7 @@ function Notice({ params }: { params: Params }) {
   return (
     <p
       role={error ? "alert" : "status"}
-      className={`mb-6 max-w-2xl dw-alert ${
+      className={`mb-6 dw-alert ${
         error ? "dw-alert-error" : "dw-alert-info"
       }`}
     >
@@ -149,7 +150,7 @@ function Notice({ params }: { params: Params }) {
 
 function SignedOut({ disabled = false }: { disabled?: boolean }) {
   return (
-    <section className="dw-card max-w-2xl">
+    <section className="dw-card">
       <h2 className="dw-display text-2xl font-medium ">Sign in to start</h2>
       <p className="mt-3 leading-relaxed dw-muted">
         Sign in with Google to create your Dwaar profile. Choose whether you want referrals, want to refer people, or both.

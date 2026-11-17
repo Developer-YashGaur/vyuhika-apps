@@ -13,7 +13,7 @@ export default function WorkEmailConfirm({ email, available }: { email: string; 
 
   if (!available) {
     return (
-      <section className="dw-card mt-6 max-w-2xl">
+      <section className="dw-card mt-6">
         <h3 className="dw-display text-xl font-medium ">Confirm your work email</h3>
         <p className="mt-2 text-sm dw-muted">Confirming work emails is not switched on yet. We will tell you when it is.</p>
       </section>
@@ -24,7 +24,7 @@ export default function WorkEmailConfirm({ email, available }: { email: string; 
   const sent = sendState.sent;
 
   return (
-    <section className="dw-card mt-6 max-w-2xl" aria-labelledby="confirm-heading">
+    <section className="dw-card mt-6" aria-labelledby="confirm-heading">
       <h3 id="confirm-heading" className="dw-display text-xl font-medium ">
         Confirm your work email
       </h3>

@@ -84,13 +84,13 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   return (
     <>
       {info && (
-        <p role="status" className="dw-alert dw-alert-info mb-6 max-w-2xl">
+        <p role="status" className="dw-alert dw-alert-info mb-6">
           {info}
         </p>
       )}
 
       {requests.length === 0 ? (
-        <section className="dw-card max-w-2xl">
+        <section className="dw-card">
           <h2 className="dw-display text-xl">No requests yet</h2>
           <p className="dw-muted mt-3">
             When you ask for a referral, it appears here, and you can follow it from &ldquo;Waiting for an employee&rdquo; to an

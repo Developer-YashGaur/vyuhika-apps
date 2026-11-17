@@ -52,7 +52,7 @@ export default function FindJobsForm({ companies }: { companies: CompanyChoice[]
 
   return (
     <div className="flex flex-col gap-10">
-      <form action={formAction} className="dw-card flex max-w-2xl flex-col gap-6" noValidate>
+      <form action={formAction} className="dw-card flex flex-col gap-6 lg:max-w-3xl" noValidate>
         {state.message && (
           <p role="alert" className="dw-alert dw-alert-error">
             {state.message}
@@ -131,7 +131,7 @@ export default function FindJobsForm({ companies }: { companies: CompanyChoice[]
           {picked ? ` You chose “${picked}”.` : " Choose a job above first, or pick a company and add the job later."}
         </p>
         {companies.length === 0 ? (
-          <p className="dw-card mt-6 max-w-2xl">No company has employees accepting requests yet. You can still ask for a referral at any listed company.</p>
+          <p className="dw-card mt-6">No company has employees accepting requests yet. You can still ask for a referral at any listed company.</p>
         ) : (
           <ul className="dw-grid mt-6">
             {companies.map((c) => (

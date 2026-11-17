@@ -42,9 +42,9 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
     [errors[name] ? errorId(name) : null, extra].filter(Boolean).join(" ") || undefined;
 
   return (
-    <form action={formAction} className="dw-card flex max-w-2xl flex-col gap-7" noValidate>
+    <form action={formAction} className="dw-card dw-cols" noValidate>
       {state.message && (
-        <p role="alert" className="dw-alert dw-alert-error">
+        <p role="alert" className="dw-alert dw-alert-error dw-span">
           {state.message}
         </p>
       )}
@@ -242,7 +242,7 @@ export default function ProfileForm({ isNew, initial, companies, accountEmail }:
         </div>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="dw-span flex flex-col gap-3 sm:flex-row">
         <button type="submit" disabled={pending} className="dw-btn dw-btn-primary dw-btn-lg">
           {pending ? "Saving…" : isNew ? "Create my profile" : "Save changes"}
         </button>
