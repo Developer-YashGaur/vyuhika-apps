@@ -8,6 +8,7 @@ import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
 import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
+import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
 import { scoreRequest } from "@/lib/dwaar/score-request";
@@ -76,6 +77,9 @@ export async function deleteProfileAction(): Promise<void> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/apps/dwaar");
+  // First remove the resume files and cancel open requests. If that fails, stop: nothing is half-deleted.
+  const forgotten = await removeMyResumes(supabase);
+  if (!forgotten.ok) redirect("/apps/dwaar?error=delete");
   const result = await deleteMyProfile(supabase, data.user.id);
   redirect(result.ok ? "/apps/dwaar?deleted=1" : "/apps/dwaar?error=delete");
 }
@@ -187,7 +191,9 @@ export async function cancelRequestAction(formData: FormData): Promise<void> {
 
   const id = formData.get("requestId");
   if (typeof id !== "string" || id.length === 0) redirect("/apps/dwaar/requests");
-  await cancelRequest(supabase, id);
+  const cancelled = await cancelRequest(supabase, id);
+  // A cancelled request does not keep a resume: delete its file and clear its details.
+  if (cancelled.ok && cancelled.data) await removeMyResumes(supabase, id);
   redirect("/apps/dwaar/requests?cancelled=1");
 }
 

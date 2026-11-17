@@ -64,9 +64,10 @@ export default function DwaarPrivacyPage() {
               predict what a recruiter or an employee will decide. You can have 5 resume checks in any 24 hours.
             </p>
             <p className="mt-3">
-              Resume files are not deleted automatically yet. We plan to delete them 90 days after a request closes. Until that is
-              switched on, cancelling a request or deleting your profile does not remove the file. To have it removed, write to
-              support@vyuhika.com and we will delete it.
+              When you cancel a request, we delete its resume file and clear its job description and score. When you delete your
+              Dwaar profile, we cancel your open requests and do the same for all your requests. Resume files of requests
+              that closed on their own (expired or accepted) are not deleted automatically yet. We plan to delete them 90 days
+              after the request closes. Until that is switched on, write to support@vyuhika.com and we will delete a file for you.
             </p>
           </section>
           <section>

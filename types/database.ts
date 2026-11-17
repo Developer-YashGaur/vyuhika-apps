@@ -454,6 +454,10 @@ export type Database = {
         }
         Returns: string
       }
+      dwaar_forget_my_requests: {
+        Args: { p_request_id?: string }
+        Returns: number
+      }
       dwaar_issue_work_email_code: {
         Args: { p_secret: string }
         Returns: {

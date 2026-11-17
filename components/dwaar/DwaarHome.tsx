@@ -112,8 +112,9 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
       <details className="dw-paper mt-6 max-w-2xl">
         <summary className="cursor-pointer font-medium">Delete my profile</summary>
         <p className="mt-3 text-sm leading-relaxed dw-muted">
-          This removes your Dwaar profile: your name, headline, roles, company and work email. Your Google sign-in stays,
-          so you can come back later. To remove the sign-in account too, write to support@vyuhika.com.
+          This removes your Dwaar profile: your name, headline, roles, company and work email. It also cancels your open
+          requests and deletes your resume files, job descriptions and scores. Your Google sign-in stays, so you can come
+          back later. To remove the sign-in account too, write to support@vyuhika.com.
         </p>
         <form action={deleteProfileAction} className="mt-4">
           <button type="submit" className="btn-ghost btn-sm">Yes, delete my profile</button>
