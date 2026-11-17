@@ -30,9 +30,12 @@ describe("Dwaar conventions", () => {
 
   it("every server action re-checks who is signed in", () => {
     const actions = readFileSync("app/apps/dwaar/actions.ts", "utf8");
-    for (const name of ["saveProfileAction", "deleteProfileAction"]) {
+    // Sign-in and sign-out are the only actions that run before there is a signed-in person.
+    const names = [...actions.matchAll(/export async function (\w+)/g)].map((m) => m[1]).filter((n) => n !== "signInWithGoogle" && n !== "signOut");
+    expect(names.length).toBeGreaterThanOrEqual(7);
+    for (const name of names) {
       const body = actions.slice(actions.indexOf(`function ${name}`));
-      expect(body.slice(0, 600), name).toContain("auth.getUser()");
+      expect(body.slice(0, 700), name).toContain("auth.getUser()");
     }
   });
 

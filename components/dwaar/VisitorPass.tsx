@@ -10,6 +10,7 @@ export default function VisitorPass({
   meta,
   stamp,
   stampTone = "wait",
+  tileName,
   children,
 }: {
   number: string;
@@ -18,6 +19,7 @@ export default function VisitorPass({
   meta?: string;
   stamp?: string;
   stampTone?: "wait" | "ok" | "closed";
+  tileName?: string; // the name the round tile is made from (defaults to the company)
   children?: ReactNode;
 }) {
   return (
@@ -28,7 +30,7 @@ export default function VisitorPass({
         <span className="dw-pass-number">{number}</span>
       </header>
       <div className="dw-pass-body">
-        <CompanyMonogram name={company} />
+        <CompanyMonogram name={tileName ?? company} />
         <div className="min-w-0">
           <h3 className="dw-pass-title">{title}</h3>
           <p className="dw-pass-company">{company}</p>

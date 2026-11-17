@@ -6,6 +6,7 @@ import { CONSENT_VERSION } from "@/lib/dwaar/consent";
 import { deleteMyProfile, getMyProfile, saveMyProfile } from "@/lib/dwaar/profile";
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
+import { respondToRequest } from "@/lib/dwaar/inbox";
 import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
 import { scoreRequest } from "@/lib/dwaar/score-request";
@@ -181,4 +182,20 @@ export async function cancelRequestAction(formData: FormData): Promise<void> {
   if (typeof id !== "string" || id.length === 0) redirect("/apps/dwaar/requests");
   await cancelRequest(supabase, id);
   redirect("/apps/dwaar/requests?cancelled=1");
+}
+
+// ---- Referral requests (employee side) ----
+
+export async function respondToRequestAction(formData: FormData): Promise<void> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+
+  const id = formData.get("requestId");
+  const decision = formData.get("decision");
+  if (typeof id !== "string" || id.length === 0 || (decision !== "accept" && decision !== "dismiss")) redirect("/apps/dwaar/inbox");
+
+  const result = await respondToRequest(supabase, id, decision === "accept");
+  redirect(result.ok ? `/apps/dwaar/inbox?answer=${result.answer}` : "/apps/dwaar/inbox?answer=error");
 }

@@ -86,6 +86,12 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
           </dl>
         )}
 
+        {profile.is_provider && profile.work_email_verified_at && (
+          <div className="mt-6">
+            <Link href="/apps/dwaar/inbox" className="btn-glow btn-lg inline-flex">Open reception desk</Link>
+          </div>
+        )}
+
         {profile.is_candidate && (
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link href="/apps/dwaar/requests/new" className="btn-glow btn-lg text-center">Ask for a referral</Link>
