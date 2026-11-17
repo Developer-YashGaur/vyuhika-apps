@@ -1,6 +1,4 @@
 import Link from "next/link";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
 import { dwaarPrivacyMetadata } from "@/lib/dwaar/metadata";
 
 export const metadata = dwaarPrivacyMetadata;
@@ -9,78 +7,131 @@ export const metadata = dwaarPrivacyMetadata;
 // India's Digital Personal Data Protection Act, 2023 before Dwaar opens to the public. Keep every sentence true to the code.
 export default function DwaarPrivacyPage() {
   return (
-    <>
-      <Navbar />
-      <main id="top" className="gutter pt-28 pb-28 sm:pt-32">
-        <Link href="/apps/dwaar" className="back-link">
+    <div className="dw-wrap dw-page">
+        <Link href="/apps/dwaar" className="dw-back">
           <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
             <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Dwaar
         </Link>
-        <h1 className="page-title font-display mt-8">Terms and privacy notice</h1>
-        <p role="note" className="measure mt-5 rounded-xl border border-amber-300/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-50">
+        <h1 className="dw-title dw-display mt-8">Terms and privacy notice</h1>
+        <p role="note" className="dw-alert dw-alert-warn mt-5">
           Draft for early access. It will be reviewed by a lawyer before Dwaar opens to everyone.
         </p>
 
-        <div className="measure mt-10 flex flex-col gap-8 leading-relaxed text-mist">
+        <div className="dw-card dw-prose-cols mt-10 flex flex-col gap-8 leading-relaxed dw-muted">
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">What Dwaar is</h2>
+            <h2 className="dw-display text-xl font-medium">What Dwaar is</h2>
             <p className="mt-3">
-              Dwaar is an early-access service from Vyuhika Apps. Today you can sign in and create a profile. Asking for
-              and giving referrals is not open yet. Dwaar does not promise any job, interview or referral.
+              Dwaar is an early-access service from Vyuhika Apps. Candidates ask employees of a company for a referral for a
+              job, and employees who work at that company can accept. Dwaar does not promise any job, interview or referral,
+              and nobody pays anything in this version.
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">What we collect</h2>
+            <h2 className="dw-display text-xl font-medium">What we collect</h2>
             <p className="mt-3">
               From your Google account: your name and email address. From you: your display name, an optional headline, whether you
-              are looking for referrals or can refer people, and, if you can refer people, your company and work email. We
-              also record which version of this notice you accepted, and when.
+              are looking for referrals or can refer people, and, if you can refer people, your company and work email. If you
+              are looking for referrals we also ask for your LinkedIn profile link, your phone number, your skills and, if you
+              wish, up to 3 other links (for example GitHub or a portfolio). We also record which version of this notice you accepted, and when.
+            </p>
+            <p className="mt-3">
+              When you ask for a referral: the company, the job title, an optional job ID, the job link, the job description,
+              an optional note, and your resume file (PDF or Word, up to 2 MB). We record that you agreed to the resume check,
+              and when.
             </p>
             <p className="mt-3">
               If you can refer people, we email a 6-digit code to your work email to check that the address is yours. We keep
               only a scrambled copy of the code, for 15 minutes, together with how many codes you asked for, to prevent abuse.
             </p>
-            <p className="mt-3">We do not collect resumes, phone numbers or payment details in this version.</p>
+            <p className="mt-3">We do not collect payment card details. Payments are handled by Razorpay.</p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">Why we collect it</h2>
+            <h2 className="dw-display text-xl font-medium">Your resume and the match score</h2>
             <p className="mt-3">
-              To create your profile and, later, to connect people who want referrals with employees who can give them.
-              We check that a work email belongs to the company you chose by comparing its domain with the company&apos;s
-              saved email domains. We do not sell your data.
+              Your resume file is stored privately, in a folder only your account can open. Your browser reads the text out of
+              the file. Our server checks that the file really is a PDF or Word file and never opens it. To give you the free match
+              score, we send the text of your resume and the job description to Google&apos;s Gemini AI service. Before that we
+              remove email addresses and phone numbers from the text.
+            </p>
+            <p className="mt-3">
+              We keep the result: a score from 0 to 100, one short sentence, and lists of skills that matched or are missing.
+              We do not keep the extracted resume text. The score is an estimate made by an AI. It can be wrong, and it does not
+              predict what a recruiter or an employee will decide. You can have 5 resume checks in any 24 hours (more while you have a Plus pass).
+            </p>
+            <p className="mt-3">
+              The check runs before a request is sent, and a request needs a match score of at least 60. A check keeps its
+              result (summary, matched and missing skills, and tips) for 2 hours, so that checking and sending use one AI call.
+              After that, only the date and score stay, to count your daily limit. With &ldquo;Find jobs for my resume&rdquo;, the
+              text of your resume (without email addresses and phone numbers) is sent to the same AI service to suggest job titles.
+              We do not store the resume or the suggestions for this. You can do 5 such searches in any 24 hours. The list of
+              companies shows only how many employees accept requests, never who they are.
+            </p>
+            <p className="mt-3">
+              When you cancel a request, we delete its resume file and clear its job description and score. When you delete your
+              Dwaar profile, we cancel your open requests and do the same for all your requests. A request that closed (accepted or cancelled) loses its resume file, job description and score 90 days later. A request that is still open after 180 days is cancelled and loses them too. This clean-up runs once a day.</p>
+          </section>
+          <section>
+            <h2 className="dw-display text-xl font-medium">Why we collect it</h2>
+            <p className="mt-3">
+              To create your profile, to connect people who want referrals with employees who can give them, and to give
+              you the match score. We check that a work email belongs to the company you chose by comparing its domain with the
+              company&apos;s saved email domains. We do not sell your data.
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">Who can see it</h2>
+            <h2 className="dw-display text-xl font-medium">Who can see it</h2>
             <p className="mt-3">
-              Only you can see your profile in this version. Our database is set up so that one person cannot read
-              another person&apos;s profile. Our hosting and database providers (Vercel and Supabase) process the data for us.
+              Your request is shown to a few employees at a time (5 at first, and 5 more after 24 hours if nobody has accepted),
+              only those who work at the company you asked, confirmed their work email and chose to receive requests. They can
+              see your name, your headline, your LinkedIn link, your other links, your skills, the job title, the job ID, the job link
+              and your note. They cannot see your resume, the job description or your score. Your phone number and email address are
+              hidden from them. After an employee accepts, they can ask you in the chat for your phone number or email. Nothing is
+              shown unless you choose Share for that question, and you can decline. After one employee accepts, you can
+              send that person one message inside Dwaar and they can reply. Emails and phone numbers are not allowed in
+              messages; use the phone and email buttons in the chat. After each message, an AI service reads it to check that it
+              is about the referral. A message that is not may be flagged so our staff can review it. Messages are deleted when the request is deleted.
+              People cannot ask for a referral at the company they work at, and employees never see their own requests.
+            </p>
+            <p className="mt-3">
+              Confirmed employees at that company get an email saying that someone is asking for a referral, with the job
+              title and the company, and at most 3 such emails a day (and no more than the weekly limit they set). Your name is not in that email.
+            </p>
+            <p className="mt-3">
+              Our database is set up so that one person cannot read another person&apos;s private data. Our providers process
+              data for us: Vercel (hosting), Supabase (database and file storage), Google (the AI check) and Resend (email).
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">Your choices</h2>
+            <h2 className="dw-display text-xl font-medium">How long requests last</h2>
+            <p className="mt-3">
+              An open request closes by itself after 30 days. You can have up to 5 open requests, and you can cancel one at any
+              time.
+            </p>
+          </section>
+          <section>
+            <h2 className="dw-display text-xl font-medium">Your choices</h2>
             <p className="mt-3">
               You can change your profile any time from the Dwaar page, and you can delete it there with one button. Deleting
-              removes the profile details above. Your Google sign-in record stays so you can come back; to remove it too,
-              write to support@vyuhika.com and we will delete it.
+              removes the profile details above. Your Google sign-in record stays so you can come back; to remove it too, or to
+              remove a resume file, write to support@vyuhika.com and we will delete it.
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">Using Dwaar</h2>
+            <h2 className="dw-display text-xl font-medium">Using Dwaar</h2>
             <p className="mt-3">
-              Give only true information. Use your own work email, never someone else&apos;s. We may remove profiles that
-              break these rules. Dwaar is provided as it is, and early-access features can change or stop.
+              Give only true information, and attach only your own resume. Use your own work email, never someone else&apos;s.
+              Do not put instructions meant for an AI into your resume or job description. Resumes that try to manipulate the
+              check get a lower, capped score. We may remove profiles that break these rules. Dwaar is provided as it is, and
+              early-access features can change or stop.
             </p>
           </section>
           <section>
-            <h2 className="font-display text-xl font-medium text-ink">Contact</h2>
+            <h2 className="dw-display text-xl font-medium">Contact</h2>
             <p className="mt-3">Questions or requests about your data: support@vyuhika.com.</p>
           </section>
         </div>
-      </main>
-      <Footer />
-    </>
+      </div>
   );
 }

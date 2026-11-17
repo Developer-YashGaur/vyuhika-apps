@@ -1,6 +1,7 @@
 import "server-only"; // build fails if this file is ever imported into browser code
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import type { GenerateFn } from "@/lib/ai/generate-json";
+import type { SearchFn } from "@/lib/ai/search";
 
 // The only file that talks to Google. The API key is read from the server's environment
 // (.env.local locally, Vercel's settings in production) and never leaves the server.
@@ -58,5 +59,28 @@ export function createGeminiGenerate(): GenerateFn | null {
       },
     });
     return response.text;
+  };
+}
+
+// Like createGeminiGenerate, but the model may search Google while it answers (Google Search grounding) and the
+// answer is plain text, because grounding together with a JSON schema is not reliable. A second call turns the text
+// into JSON. Returns null when the key is missing.
+export function createGeminiSearch(): SearchFn | null {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) return null;
+
+  const ai = new GoogleGenAI({ apiKey });
+  // Web search can need a stronger model than the cheap default. Set GEMINI_SEARCH_MODEL in .env.local to change it.
+  const model = process.env.GEMINI_SEARCH_MODEL?.trim() || getGeminiModel();
+
+  return async ({ prompt, signal }) => {
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+      config: { tools: [{ googleSearch: {} }], abortSignal: signal },
+    });
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+    const sources = chunks.flatMap((chunk) => (chunk.web?.uri ? [{ uri: chunk.web.uri, title: chunk.web.title ?? "" }] : []));
+    return { text: response.text ?? "", sources };
   };
 }

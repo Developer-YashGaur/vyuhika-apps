@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { deleteProfileAction, signInWithGoogle, signOut } from "@/app/apps/dwaar/actions";
+import InviteCard from "@/components/dwaar/InviteCard";
 import WorkEmailConfirm from "@/components/dwaar/WorkEmailConfirm";
+import { inviteRewardsEnabled, planPaymentsEnabled } from "@/lib/dwaar/features";
+import { getInviteSummary } from "@/lib/dwaar/invites";
 import { getMyProfile, listCompanyOptions } from "@/lib/dwaar/profile";
 import { workEmailConfirmationConfigured } from "@/lib/dwaar/work-email";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -10,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 // What the Dwaar front page shows: sign in, finish your profile, or your profile.
 // It reads the signed-in person from cookies, so the page wraps it in <Suspense>.
 
-type Params = { error?: string; saved?: string; deleted?: string; confirmed?: string };
+type Params = { error?: string; saved?: string; deleted?: string; confirmed?: string; invite?: string };
 
 const ERRORS: Record<string, string> = {
   signin: "Sign-in did not finish. Please try again.",
@@ -37,13 +40,13 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
     return (
       <>
         {notice}
-        <section className="glass-panel glow-cyan max-w-2xl">
-          <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">Welcome. Let&apos;s set up your profile.</h2>
-          <p className="mt-3 leading-relaxed text-mist">
-            It takes about a minute. You are signed in as <span className="text-ink">{data.user.email}</span>.
+        <section className="dw-card">
+          <h2 className="dw-display text-2xl font-medium ">Welcome. Let&apos;s set up your profile.</h2>
+          <p className="mt-3 leading-relaxed dw-muted">
+            It takes about a minute. You are signed in as <span >{data.user.email}</span>.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <Link href="/apps/dwaar/profile" className="btn-glow btn-lg text-center">Create my profile</Link>
+            <Link href="/apps/dwaar/profile" className="dw-btn dw-btn-primary dw-btn-lg text-center">Create my profile</Link>
             <SignOutButton />
           </div>
         </section>
@@ -58,56 +61,73 @@ export default async function DwaarHome({ searchParams }: { searchParams: Promis
     companyName = options.find((c) => c.id === profile.provider_company_id)?.name ?? null;
   }
 
+  const invites = profile.is_candidate && inviteRewardsEnabled() ? await getInviteSummary(supabase) : null;
+
   return (
     <>
       {notice}
-      <section className="glass-panel glow-cyan max-w-2xl">
-        <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">{profile.display_name}</h2>
-        {profile.headline && <p className="mt-1 text-mist">{profile.headline}</p>}
+      <section className="dw-card dw-split">
+        <div>
+        <h2 className="dw-display text-2xl font-medium ">{profile.display_name}</h2>
+        {profile.headline && <p className="mt-1 dw-muted">{profile.headline}</p>}
 
         <div className="mt-5 flex flex-wrap gap-2">
-          {profile.is_candidate && <span className="chip chip-cyan">Looking for referrals</span>}
-          {profile.is_provider && <span className="chip chip-violet">Can refer people</span>}
+          {profile.is_candidate && <span className="dw-chip dw-chip-good">Looking for referrals</span>}
+          {profile.is_provider && <span className="dw-chip dw-chip-info">Can refer people</span>}
         </div>
 
         {profile.is_provider && (
           <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-mist">Company</dt>
-              <dd className="text-ink">{companyName ?? "Not available"}</dd>
+              <dt className="dw-muted">Company</dt>
+              <dd>{companyName ?? "Not available"}</dd>
             </div>
             <div>
-              <dt className="text-mist">Work email</dt>
-              <dd className="break-all text-ink">
+              <dt className="dw-muted">Work email</dt>
+              <dd className="break-all">
                 {profile.provider_work_email}{" "}
-                <span className="text-mist">({profile.work_email_verified_at ? "confirmed" : "not yet confirmed"})</span>
+                <span className="dw-muted">({profile.work_email_verified_at ? "confirmed" : "not yet confirmed"})</span>
               </dd>
             </div>
           </dl>
         )}
 
-        <p className="mt-6 text-sm text-mist">
-          Asking for and giving referrals is not open yet. Your profile is saved, and we will tell you when it opens.
-        </p>
+        </div>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link href="/apps/dwaar/profile" className="btn-glow btn-lg text-center">Edit profile</Link>
+        <div className="dw-actions">
+        {profile.is_provider && profile.work_email_verified_at && (
+          <Link href="/apps/dwaar/inbox" className="dw-btn dw-btn-primary dw-btn-lg">Open employee desk</Link>
+        )}
+
+        {profile.is_candidate && (
+          <>
+            <Link href="/apps/dwaar/requests/new" className="dw-btn dw-btn-primary dw-btn-lg text-center">Ask for a referral</Link>
+            <Link href="/apps/dwaar/find" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Find jobs for my resume</Link>
+            <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet dw-btn-lg text-center">My requests</Link>
+            {planPaymentsEnabled() && <Link href="/apps/dwaar/plus" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Dwaar Plus</Link>}
+          </>
+        )}
+
+          <Link href="/apps/dwaar/profile" className="dw-btn dw-btn-quiet dw-btn-lg text-center">Edit profile</Link>
           <SignOutButton />
         </div>
       </section>
+
+      {invites && <InviteCard summary={invites} initialCode={params.invite} />}
 
       {profile.is_provider && profile.provider_work_email && !profile.work_email_verified_at && (
         <WorkEmailConfirm email={profile.provider_work_email} available={workEmailConfirmationConfigured()} />
       )}
 
-      <details className="glass-panel mt-6 max-w-2xl">
+      <details className="dw-card mt-6">
         <summary className="cursor-pointer font-medium">Delete my profile</summary>
-        <p className="mt-3 text-sm leading-relaxed text-mist">
-          This removes your Dwaar profile: your name, headline, roles, company and work email. Your Google sign-in stays,
-          so you can come back later. To remove the sign-in account too, write to support@vyuhika.com.
+        <p className="mt-3 text-sm leading-relaxed dw-muted">
+          This removes your Dwaar profile: your name, headline, roles, company and work email. It also cancels your open
+          requests and deletes your resume files, job descriptions and scores. Your Google sign-in stays, so you can come
+          back later. To remove the sign-in account too, write to support@vyuhika.com.
         </p>
         <form action={deleteProfileAction} className="mt-4">
-          <button type="submit" className="btn-ghost btn-sm">Yes, delete my profile</button>
+          <button type="submit" className="dw-btn dw-btn-quiet dw-btn-sm">Yes, delete my profile</button>
         </form>
       </details>
     </>
@@ -127,8 +147,8 @@ function Notice({ params }: { params: Params }) {
   return (
     <p
       role={error ? "alert" : "status"}
-      className={`mb-6 max-w-2xl rounded-xl border px-4 py-3 text-sm ${
-        error ? "border-rose-300/40 bg-rose-500/10 text-rose-100" : "border-cyan-300/40 bg-cyan-500/10 text-cyan-50"
+      className={`mb-6 dw-alert ${
+        error ? "dw-alert-error" : "dw-alert-info"
       }`}
     >
       {error ?? info}
@@ -138,19 +158,19 @@ function Notice({ params }: { params: Params }) {
 
 function SignedOut({ disabled = false }: { disabled?: boolean }) {
   return (
-    <section className="glass-panel glow-cyan max-w-2xl">
-      <h2 className="font-display text-2xl font-medium tracking-[-0.03em]">Get early access</h2>
-      <p className="mt-3 leading-relaxed text-mist">
+    <section className="dw-card">
+      <h2 className="dw-display text-2xl font-medium ">Sign in to start</h2>
+      <p className="mt-3 leading-relaxed dw-muted">
         Sign in with Google to create your Dwaar profile. Choose whether you want referrals, want to refer people, or both.
-        Asking for and giving referrals is not open yet.
+        Dwaar is in early access, so things may change.
       </p>
       <form action={signInWithGoogle} className="mt-6">
-        <button type="submit" disabled={disabled} className="btn-glow btn-lg">Continue with Google</button>
+        <button type="submit" disabled={disabled} className="dw-btn dw-btn-primary dw-btn-lg">Continue with Google</button>
       </form>
-      {disabled && <p className="mt-3 text-sm text-mist">Sign-in is not set up on this server yet.</p>}
-      <p className="mt-5 text-sm text-mist">
+      {disabled && <p className="mt-3 text-sm dw-muted">Sign-in is not set up on this server yet.</p>}
+      <p className="mt-5 text-sm dw-muted">
         We only use your Google name and email address to set up your profile. Read the{" "}
-        <Link href="/apps/dwaar/privacy" className="text-link">privacy notice</Link>.
+        <Link href="/apps/dwaar/privacy" className="dw-link">privacy notice</Link>.
       </p>
     </section>
   );
@@ -159,7 +179,7 @@ function SignedOut({ disabled = false }: { disabled?: boolean }) {
 function SignOutButton() {
   return (
     <form action={signOut}>
-      <button type="submit" className="btn-ghost btn-lg w-full sm:w-auto">Sign out</button>
+      <button type="submit" className="dw-btn dw-btn-quiet dw-btn-lg w-full sm:w-auto">Sign out</button>
     </form>
   );
 }

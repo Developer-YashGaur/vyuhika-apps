@@ -1,0 +1,39 @@
+// What the browser gives Razorpay checkout. Only public values go in here: the key id, the order id and the amount.
+// The key SECRET is never available in the browser. The "handler" only shows a message: whether a payment really
+// happened is decided by the server (the webhook), never by this page.
+
+export type CheckoutInput = { keyId: string; gatewayOrderId: string; amountPaise: number };
+export type PaymentResponse = { razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string };
+export type CheckoutCallbacks = { onPaid: (response: PaymentResponse) => void; onDismiss: () => void };
+
+export type CheckoutOptions = {
+  key: string;
+  order_id: string;
+  amount: number;
+  currency: "INR";
+  name: string;
+  description: string;
+  theme: { color: string };
+  handler: (response: PaymentResponse) => void;
+  modal: { ondismiss: () => void };
+};
+
+export function buildCheckoutOptions(
+  input: CheckoutInput,
+  callbacks: CheckoutCallbacks,
+  description = "Boost: a better resume, profile and LinkedIn tips",
+): CheckoutOptions {
+  return {
+    key: input.keyId,
+    order_id: input.gatewayOrderId,
+    amount: input.amountPaise,
+    currency: "INR",
+    name: "Dwaar by Vyuhika",
+    description,
+    theme: { color: "#22d3ee" },
+    handler: callbacks.onPaid,
+    modal: { ondismiss: callbacks.onDismiss },
+  };
+}
+
+export const CHECKOUT_SCRIPT_URL = "https://checkout.razorpay.com/v1/checkout.js";

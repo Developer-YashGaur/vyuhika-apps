@@ -32,7 +32,7 @@ function fakeDb(result: { data?: unknown; error?: { code?: string; message?: str
   return { db, calls };
 }
 
-const input = { displayName: "Meera", headline: null, isCandidate: true, isProvider: true, companyId: "c1", workEmail: "meera@acme.com" };
+const input = { displayName: "Meera", headline: null, isCandidate: true, isProvider: true, companyId: "c1", workEmail: "meera@acme.com", acceptsRequests: true, weeklyLimit: 3, linkedinUrl: null, phone: null, otherLinks: [] as string[], skills: [] as string[] };
 
 describe("friendlyDbError", () => {
   it("explains the work-email rule", () => {
@@ -66,7 +66,13 @@ describe("saveMyProfile", () => {
   it("clears company and email when the person stops being a provider", async () => {
     const { db, calls } = fakeDb({});
     await saveMyProfile(db, "user-1", { ...input, isProvider: false }, { isNew: false, consentVersion: "v1" });
-    expect(calls[0].payload).toMatchObject({ provider_company_id: null, provider_work_email: null });
+    expect(calls[0].payload).toMatchObject({ provider_company_id: null, provider_work_email: null, accepts_requests: false });
+  });
+
+  it("saves the opt-in and the weekly limit for an employee", async () => {
+    const { db, calls } = fakeDb({});
+    await saveMyProfile(db, "user-1", input, { isNew: false, consentVersion: "v1" });
+    expect(calls[0].payload).toMatchObject({ accepts_requests: true, weekly_request_limit: 3 });
   });
 
   it("returns a friendly message when the database refuses", async () => {

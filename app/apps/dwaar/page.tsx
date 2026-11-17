@@ -1,40 +1,49 @@
-import Link from "next/link";
 import { Suspense } from "react";
-import Footer from "@/components/Footer";
-import Navbar from "@/components/Navbar";
+import DoorArch from "@/components/dwaar/art/DoorArch";
 import DwaarHome from "@/components/dwaar/DwaarHome";
+import HowItWorks from "@/components/dwaar/HowItWorks";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 
 export const metadata = dwaarMetadata;
 
+const POINTS = [
+  "A free resume match score before you ask anyone",
+  "Employees see your headline and the job, never your resume",
+  "Your email is never shared with employees",
+];
+
 export default function DwaarPage({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string; deleted?: string; confirmed?: string }> }) {
   return (
-    <>
-      <Navbar />
-      <main id="top" className="gutter pt-28 pb-28 sm:pt-32">
-        <Link href="/#apps" className="back-link">
-          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-            <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          All apps
-        </Link>
-
-        <header className="mt-8 mb-10 sm:mb-14">
-          <div className="flex flex-wrap items-center gap-4">
-            <h1 className="page-title font-display">Dwaar</h1>
-            <span className="badge badge-glow glow-cyan">Early access</span>
-          </div>
-          <p className="measure mt-5 text-lg leading-relaxed text-mist">
-            Dwaar means &ldquo;door&rdquo;. It is a place where job seekers can ask employees for a referral, and
-            employees can help people get in.
+    <div className="dw-wrap dw-page">
+      <section className="dw-hero">
+        <div>
+          <p className="dw-eyebrow">Referrals, made simple</p>
+          <h1 className="dw-title dw-display mt-3">Find the right door into the company you want.</h1>
+          <p className="dw-lede mt-5">
+            Dwaar checks how well your resume fits a job, then shows your request to employees at that company. If one
+            agrees, you get a referral.
           </p>
-        </header>
+          <ul className="dw-points">
+            {POINTS.map((p) => (
+              <li key={p}>
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <path d="m3 9.5 4 4 8-9" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {p}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <DoorArch />
+      </section>
 
-        <Suspense fallback={<p className="text-mist">Loading…</p>}>
+      <section id="desk" aria-label="Your Dwaar desk" className="mt-16 scroll-mt-24">
+        <Suspense fallback={<p className="dw-muted">Loading…</p>}>
           <DwaarHome searchParams={searchParams} />
         </Suspense>
-      </main>
-      <Footer />
-    </>
+      </section>
+
+      <HowItWorks />
+    </div>
   );
 }

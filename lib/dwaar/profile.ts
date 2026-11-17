@@ -21,6 +21,9 @@ export function friendlyDbError(error: { code?: string; message?: string } | nul
       if (error.message?.includes("work email")) {
         return "That email does not belong to the company you chose. Use your work email, like name@yourcompany.com. If your company is missing its email domain, write to support@vyuhika.com.";
       }
+      if (error.message?.includes("linkedin") || error.message?.includes("phone") || error.message?.includes("links") || error.message?.includes("skills")) {
+        return "One of your details is not in the right format. Please check your LinkedIn link, phone number, links and skills.";
+      }
       return GENERIC;
     case "23505":
       return "That work email is already linked to another account.";
@@ -64,6 +67,12 @@ export async function saveMyProfile(
     is_provider: input.isProvider,
     provider_company_id: input.isProvider ? input.companyId : null,
     provider_work_email: input.isProvider ? input.workEmail : null,
+    accepts_requests: input.isProvider && input.acceptsRequests,
+    weekly_request_limit: input.weeklyLimit,
+    linkedin_url: input.linkedinUrl,
+    phone: input.phone,
+    other_links: input.otherLinks,
+    skills: input.skills,
   };
 
   const { error } = options.isNew
