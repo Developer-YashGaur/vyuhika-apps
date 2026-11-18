@@ -9,11 +9,12 @@ import { site } from "@/lib/site";
 describe("sitemap", () => {
   const urls = sitemap().map((entry) => entry.url);
 
-  it("lists the home page and the two live apps, using the site URL", () => {
+  it("lists the home page and the three live apps on this site, using the site URL", () => {
     expect(urls).toEqual([
       "https://apps.vyuhika.com",
       "https://apps.vyuhika.com/apps/resume-matcher",
       "https://apps.vyuhika.com/apps/cover-letter-writer",
+      "https://apps.vyuhika.com/apps/dwaar",
     ]);
     expect(site.url).toBe("https://apps.vyuhika.com");
   });

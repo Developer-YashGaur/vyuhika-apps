@@ -88,7 +88,7 @@ describe("the grid", () => {
 
   it("on tablets the last odd card spans both columns, and on very wide screens every small card takes one of 5 columns", () => {
     expect(cells[0]).toContain("sm:col-span-2");
-    expect(cells[3]).toContain("sm:col-span-2"); // 3 small cards in 2 columns: the last one spans both
+    expect(cells[cells.length - 1]).toContain("sm:col-span-2"); // an odd number of small cards in 2 columns: the last one spans both
     expect(cells[1]).not.toContain("sm:col-span-2");
     for (const cell of cells.slice(1)) expect(cell).toContain("min-[137.5rem]:col-span-1");
     expect(cells[0]).toContain("min-[137.5rem]:col-span-2");

@@ -2,9 +2,9 @@ import { Suspense } from "react";
 import DoorArch from "@/components/dwaar/art/DoorArch";
 import DwaarHome from "@/components/dwaar/DwaarHome";
 import HowItWorks from "@/components/dwaar/HowItWorks";
-import { dwaarMetadata } from "@/lib/dwaar/metadata";
+import { dwaarPublicMetadata } from "@/lib/dwaar/metadata";
 
-export const metadata = dwaarMetadata;
+export const metadata = dwaarPublicMetadata;
 
 const POINTS = [
   "A free resume match score before you ask anyone",

@@ -51,6 +51,7 @@ describe("links come from lib/site.ts", () => {
       site.owner.portfolio,
       "/apps/resume-matcher",
       "/apps/cover-letter-writer",
+      "/apps/dwaar",
       site.links.linkedin,
       site.links.youtube,
     ]);
