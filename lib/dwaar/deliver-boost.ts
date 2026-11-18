@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { generateJson, type GenerateFn } from "@/lib/ai/generate-json";
-import { BOOST_SYSTEM_INSTRUCTION, boostResultSchema, buildBoostPrompt, finalizeBoostResult } from "@/lib/dwaar/boost-writer";
+import { BOOST_SYSTEM_INSTRUCTION, boostResultSchema, buildBoostPrompt, finalizeBoostResult, type FinalBoost } from "@/lib/dwaar/boost-writer";
 import { RESUME_TEXT_LIMITS } from "@/lib/dwaar/request-form";
 import { prepareUntrustedText } from "@/lib/dwaar/resume-safety";
 
@@ -42,7 +42,7 @@ export async function deliverBoost({ supabase, secret, generate, model }: Deps, 
   const description = prepareUntrustedText(job.out_job_description);
   if (resume.flagged || description.flagged) return { kind: "flagged" };
 
-  const save = (status: "done" | "failed", result?: ReturnType<typeof finalizeBoostResult>) =>
+  const save = (status: "done" | "failed", result?: FinalBoost) =>
     supabase.rpc("dwaar_save_boost_result", {
       p_order_id: args.orderId,
       p_secret: secret,

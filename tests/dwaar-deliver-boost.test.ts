@@ -6,7 +6,16 @@ const RESUME = "Backend engineer. Built Python APIs at Acme from 2019 to 2024. R
 const JOB = { out_request_id: "req-1", out_job_title: "Backend Engineer", out_company_name: "Infosys", out_job_description: "We need Python and API experience. 5 years." };
 
 const goodAnswer = JSON.stringify({
-  improvedResume: "[Your name]\n\nSUMMARY\nBackend engineer.\n\nEXPERIENCE\nBuilt Python APIs at Acme 2019 to 2024, cutting latency by 40% and growing traffic 900%. " + "More detail. ".repeat(20),
+  resume: {
+    name: "Asha Rao",
+    headline: "Backend Engineer",
+    summary: "Backend engineer with Python and API experience.",
+    skills: [{ label: "Languages", items: ["Python"] }],
+    experience: [{ title: "Backend Engineer", company: "Acme", location: "", dates: "2019 - 2024", bullets: ["Built Python APIs, cutting latency by 40% and growing traffic 900%."] }],
+    projects: [],
+    education: [],
+    certifications: [],
+  },
   summary: "Python API work now comes first.",
   changes: ["Reordered sections."],
   profileTips: ["Add a project."],

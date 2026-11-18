@@ -3,8 +3,13 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import CopyButton from "@/components/dwaar/CopyButton";
+import PrintButton from "@/components/dwaar/PrintButton";
+import ResumeView from "@/components/dwaar/ResumeView";
+import { boostNextStep } from "@/lib/dwaar/boost-next";
+import { getMyProfile } from "@/lib/dwaar/profile";
+import { parseResumeDoc, resumeDocToText, type ResumeContact } from "@/lib/dwaar/resume-doc";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
-import { toStringList } from "@/lib/dwaar/requests";
+import { listMyAnalyses, toStringList } from "@/lib/dwaar/requests";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -47,26 +52,54 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
     .maybeSingle();
   if (!result?.improved_resume) notFound();
 
+  const [profile, analyses] = await Promise.all([getMyProfile(supabase, auth.user.id), listMyAnalyses(supabase)]);
+  const score = analyses.find((a) => a.requestId === requestId && a.status === "done")?.score ?? null;
+  const next = boostNextStep(score);
+  const doc = parseResumeDoc(result.improved_resume);
+  // Contact details come from the person's own profile and sign-in. The AI never sees or writes them.
+  const contact: ResumeContact = {
+    name: profile?.display_name ?? "",
+    email: auth.user.email ?? null,
+    phone: profile?.phone ?? null,
+    linkedin: profile?.linkedin_url ?? null,
+    links: profile?.other_links ?? [],
+  };
+  const copyText = doc ? resumeDocToText(doc, contact) : result.improved_resume;
+
   const changes = toStringList(result.changes);
   const profileTips = toStringList(result.profile_tips);
   const linkedinTips = toStringList(result.linkedin_tips);
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <section className="dw-card">
-        <p className="text-lg leading-relaxed">{result.summary}</p>
-        <p className="dw-muted mt-3 text-sm leading-relaxed">
-          This was written by an AI from your own resume. Read every line and keep only what is true. Replace each
-          [placeholder] with your real details, and add your name and contact details yourself.
+      <section className={next.good ? "dw-alert dw-alert-good lg:col-span-2" : "dw-alert dw-alert-info lg:col-span-2"}>
+        <h2 className="dw-display text-xl font-medium">{next.title}</h2>
+        <p className="mt-1 leading-relaxed">{result.summary || next.text}</p>
+        <p className="mt-1 text-sm leading-relaxed">{next.text}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <PrintButton />
+          <CopyButton text={copyText} label="Copy as text" />
+          {next.good && (
+            <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet">
+              Continue with my request
+            </Link>
+          )}
+        </div>
+        <p className="mt-3 text-sm leading-relaxed">
+          To save a PDF, choose Download PDF and then &ldquo;Save as PDF&rdquo; in the window that opens. This was written by an AI from your own
+          resume, so read every line and keep only what is true. Replace each [placeholder] with your real details.
         </p>
       </section>
 
-      <section className="dw-card">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="dw-display text-xl font-medium">Your improved resume</h2>
-          <CopyButton text={result.improved_resume} label="Copy resume" />
-        </div>
-        <pre className="mt-4 whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">{result.improved_resume}</pre>
+      <section className="lg:col-span-2">
+        {doc ? (
+          <ResumeView doc={doc} contact={contact} />
+        ) : (
+          <div className="dw-card">
+            <h2 className="dw-display text-xl font-medium">Your improved resume</h2>
+            <pre className="mt-4 whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">{result.improved_resume}</pre>
+          </div>
+        )}
       </section>
 
       <TipList title="What we changed" items={changes} />
