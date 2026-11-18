@@ -32,8 +32,19 @@ function splitHeader(line: string) {
   return { first: "", second: left.trim(), dates };
 }
 
+// Some old Boosts were saved on one line. Put the line breaks back before headings, bullets and job titles.
+function restoreLines(text: string): string {
+  const flat = text.replace(/\r/g, "");
+  if (flat.split("\n").filter((l) => l.trim()).length >= 6) return flat;
+  return flat
+    .replace(/\s+(SUMMARY|SKILLS|TECHNICAL SKILLS|EXPERIENCE|WORK EXPERIENCE|PROFESSIONAL EXPERIENCE|PROJECTS|EDUCATION|CERTIFICATIONS)(?=\s)/g, "\n$1\n")
+    .replace(/\s*•\s*/g, "\n• ")
+    .replace(/([.!?])\s+(?=[A-Z][A-Z&.,'-]*(?:\s+[A-Z][A-Z&.,'-]*)*\s+[—–]\s)/g, "$1\n")
+    .replace(/([.!?])\s+(?=[A-Z][\w/ &]{0,30}:\s)/g, "$1\n");
+}
+
 export function parseLegacyResume(text: string): SavedResume | null {
-  const lines = text.replace(/\r/g, "").split("\n").map((l) => l.trimEnd());
+  const lines = restoreLines(text).split("\n").map((l) => l.trimEnd());
   const head: string[] = [];
   const body: Record<Section, string[]> = { summary: [], skills: [], experience: [], projects: [], education: [], certifications: [] };
   let current: Section | null = null;
@@ -50,12 +61,12 @@ export function parseLegacyResume(text: string): SavedResume | null {
   if (Object.values(body).every((b) => b.length === 0)) return null;
 
   const name = head[0] && !head[0].includes("[") && head[0].length <= 60 ? head[0] : "";
-  const headline = head.slice(name ? 1 : 0).find((l) => !l.includes("@") && !/\d{6,}/.test(l)) ?? "";
+  const headline = head.slice(name ? 1 : 0).find((l) => !l.includes("[") && !l.includes("@") && !/\d{6,}/.test(l)) ?? "";
 
   const skills = body.skills.map((l) => {
     const clean = l.replace(BULLET, "");
     const [label, ...rest] = clean.includes(":") ? clean.split(":") : ["", clean];
-    return { label: cut(label, 40), items: (rest.join(":") || "").split(/[,;]/).map((s) => cut(s, 40)).filter(Boolean).slice(0, 20) };
+    return { label: cut(label, 40), items: (rest.join(":") || "").replace(/\.\s*$/, "").split(/[,;]/).map((s) => cut(s, 40)).filter(Boolean).slice(0, 20) };
   }).filter((s) => s.items.length > 0).slice(0, 6);
 
   const experience: SavedResume["experience"] = [];

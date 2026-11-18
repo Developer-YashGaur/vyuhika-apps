@@ -27,8 +27,22 @@ describe("old plain-text Boost read as a resume", () => {
     expect(doc?.experience[0].bullets.length).toBe(2);
     expect(doc?.education[0].dates).toBe("2018–2022");
     expect(doc?.name).toBe("");
+    expect(doc?.headline).toBe("");
   });
   it("returns null when there are no sections", () => expect(parseLegacyResume("just some words")).toBe(null));
+});
+
+describe("old Boost saved on one line", () => {
+  const flat = "[Your name] SUMMARY Backend engineer with Python. SKILLS Languages: Python, SQL, Bash/Shell. Backend: FastAPI, Flask. EXPERIENCE ACCENTURE — Custom Software Engineer | April 2026 – Present • Built APIs. • Cut latency. PRODT CONSULTING SERVICES — Senior Developer | January 2022 – October 2024 • Led design. EDUCATION B.Tech, CSE — IET, Alwar | 2018–2022";
+  const doc = parseLegacyResume(flat);
+  it("still becomes a resume", () => {
+    expect(doc?.skills.length).toBe(2);
+    expect(doc?.skills[0].items.join(",")).toBe("Python,SQL,Bash/Shell");
+    expect(doc?.experience.length).toBe(2);
+    expect(doc?.experience[1].company).toBe("PRODT CONSULTING SERVICES");
+    expect(doc?.experience[0].bullets.length).toBe(2);
+    expect(doc?.education[0].dates).toBe("2018–2022");
+  });
 });
 
 describe("PDF", () => {
