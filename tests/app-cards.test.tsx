@@ -78,17 +78,19 @@ describe("the grid", () => {
     for (const name of apps.map((a) => a.name)) expect(html).toContain(name);
   });
 
-  it("gives the first app the big tile and shares the rest evenly on laptops (6 columns: 4+2, then 3+3)", () => {
+  it("gives the first app the big tile and shares the rest evenly on laptops (6 columns: 4+2, then 3+3, then one full-width card)", () => {
     expect(cells[0]).toContain("lg:col-span-4");
     expect(cells[1]).toContain("lg:col-span-2");
     expect(cells[2]).toContain("lg:col-span-3");
     expect(cells[3]).toContain("lg:col-span-3");
+    expect(cells[4]).toContain("lg:col-span-6"); // 3 cards after the second: the last one fills the whole row
     expect(html).toContain("lg:grid-cols-6");
   });
 
-  it("on tablets the last odd card spans both columns, and on very wide screens every small card takes one of 5 columns", () => {
+  it("on tablets an even number of small cards needs no spanning, and on very wide screens every small card takes one of 5 columns", () => {
     expect(cells[0]).toContain("sm:col-span-2");
-    expect(cells[cells.length - 1]).toContain("sm:col-span-2"); // an odd number of small cards in 2 columns: the last one spans both
+    // 4 small cards fill 2 columns evenly, so none of them needs to span both.
+    for (const cell of cells.slice(1)) expect(cell).not.toContain("sm:col-span-2");
     expect(cells[1]).not.toContain("sm:col-span-2");
     for (const cell of cells.slice(1)) expect(cell).toContain("min-[137.5rem]:col-span-1");
     expect(cells[0]).toContain("min-[137.5rem]:col-span-2");
