@@ -4,7 +4,7 @@ import type { Database } from "@/types/database";
 import { stripDelimiters } from "@/lib/ai/delimiters";
 import { generateJson, type GenerateFn } from "@/lib/ai/generate-json";
 import { RESUME_END, RESUME_START } from "@/lib/analyze/prompt";
-import { ROLE_FREE_DAILY, ROLE_SEARCH_CREDIT_COST, type RoleSearchStatus } from "@/lib/dwaar/role-search-note";
+import { ROLE_FREE_SEARCHES, ROLE_SEARCH_CREDIT_COST, type RoleSearchStatus } from "@/lib/dwaar/role-search-note";
 import { prepareUntrustedText, redactContacts, stripLinks } from "@/lib/dwaar/resume-safety";
 
 // "Find jobs for my resume": the AI reads a resume and suggests job titles that fit it, with a short honest reason
@@ -81,7 +81,7 @@ export async function getRoleSearchStatus(supabase: Db): Promise<RoleSearchStatu
   const { data, error } = await supabase.rpc("dwaar_role_search_status");
   const row = Array.isArray(data) ? data[0] : undefined;
   if (error || !row) return null;
-  return { used: row.out_used, free: row.out_free, max: row.out_max, cost: row.out_cost, credits: row.out_credits };
+  return { used: row.out_used, today: row.out_today, free: row.out_free, max: row.out_max, cost: row.out_cost, credits: row.out_credits };
 }
 
 export async function findRoles({ supabase, secret, generate }: Deps, resumeText: string): Promise<RoleOutcome> {
@@ -89,7 +89,7 @@ export async function findRoles({ supabase, secret, generate }: Deps, resumeText
 
   const status = await getRoleSearchStatus(supabase);
   if (!status) return { kind: "failed" };
-  if (status.used >= status.max) return { kind: "limit" };
+  if (status.today >= status.max) return { kind: "limit" };
   if (status.used >= status.free && status.credits < status.cost) return { kind: "no-credits" };
 
   const resume = prepareUntrustedText(resumeText);
@@ -121,7 +121,7 @@ export async function findRoles({ supabase, secret, generate }: Deps, resumeText
 
 export const ROLE_MESSAGES = {
   limit: "You have reached today's limit of job searches. Please try again tomorrow.",
-  "no-credits": `You have used today's ${ROLE_FREE_DAILY} free job searches. Each extra search takes ${ROLE_SEARCH_CREDIT_COST} credits, and you do not have enough. You can get credits on the Credits page.`,
+  "no-credits": `You have used your ${ROLE_FREE_SEARCHES} free job searches. Each search now takes ${ROLE_SEARCH_CREDIT_COST} credits, and you do not have enough. You can get credits on the Credits page.`,
   failed: "We could not read your resume right now. Please try again in a moment.",
   unavailable: "Job suggestions are not available right now. Please try again later.",
 } as const;

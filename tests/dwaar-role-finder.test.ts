@@ -6,7 +6,7 @@ function fakeDb(used = 0, recordError: { code: string } | null = null, credits =
   const supabase = {
     rpc: async (name: string, args: Record<string, unknown> = {}) => {
       calls.push({ name, args });
-      if (name === "dwaar_role_search_status") return { data: [{ out_used: used, out_free: 5, out_max: 50, out_cost: 2, out_credits: credits }], error: null };
+      if (name === "dwaar_role_search_status") return { data: [{ out_used: used, out_today: used, out_free: 5, out_max: 50, out_cost: 2, out_credits: credits }], error: null };
       return { data: recordError ? null : true, error: recordError };
     },
   };
@@ -108,11 +108,11 @@ describe("buildRolePrompt", () => {
 import { roleSearchNote } from "@/lib/dwaar/role-search-note";
 
 describe("roleSearchNote: people are told before they click", () => {
-  const base = { used: 0, free: 5, max: 50, cost: 2, credits: 0 };
+  const base = { used: 0, today: 0, free: 5, max: 50, cost: 2, credits: 0 };
   it("free searches left", () => {
-    const n = roleSearchNote({ ...base, used: 2 });
+    const n = roleSearchNote({ ...base, used: 2, today: 2 });
     expect(n.canSearch).toBe(true);
-    expect(n.text).toContain("3 of 5 free");
+    expect(n.text).toContain("3 of your 5 free");
   });
   it("free ones used, enough credits: says it takes credits", () => {
     const n = roleSearchNote({ ...base, used: 5, credits: 20 });
@@ -123,6 +123,6 @@ describe("roleSearchNote: people are told before they click", () => {
     expect(roleSearchNote({ ...base, used: 5, credits: 1 }).canSearch).toBe(false);
   });
   it("safety cap: blocked", () => {
-    expect(roleSearchNote({ ...base, used: 50, credits: 999 }).canSearch).toBe(false);
+    expect(roleSearchNote({ ...base, used: 60, today: 50, credits: 999 }).canSearch).toBe(false);
   });
 });

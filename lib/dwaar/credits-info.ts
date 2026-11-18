@@ -1,5 +1,5 @@
 import { BOOST_CREDIT_COST } from "@/lib/dwaar/credit-boost";
-import { ROLE_FREE_DAILY, ROLE_SEARCH_CREDIT_COST } from "@/lib/dwaar/role-search-note";
+import { ROLE_FREE_SEARCHES, ROLE_SEARCH_CREDIT_COST } from "@/lib/dwaar/role-search-note";
 import { PLAN_CREDITS, PLAN_PRICE_RUPEES } from "@/lib/dwaar/plan";
 
 // What the Credits page shows. Every way to get or use credits is always listed. When one is switched off it is shown
@@ -43,8 +43,8 @@ export function creditWays(on: CreditSwitches): { earn: CreditWay[]; spend: Cred
     spend: [
       {
         id: "searches",
-        title: "Extra job searches",
-        detail: `You get ${ROLE_FREE_DAILY} free job searches a day. After that, each search takes ${ROLE_SEARCH_CREDIT_COST} credits.`,
+        title: "Job searches",
+        detail: `Everyone gets ${ROLE_FREE_SEARCHES} free job searches. After that, each search takes ${ROLE_SEARCH_CREDIT_COST} credits.`,
         available: true,
         reason: null,
         href: "/apps/dwaar/find",
