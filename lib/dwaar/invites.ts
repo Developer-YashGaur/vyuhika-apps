@@ -11,7 +11,7 @@ export type RedeemStatus = "ok" | "off" | "bad_code" | "own_code" | "already" | 
 
 export const INVITE_MESSAGES = {
   empty: "Please type the invite code first.",
-  ok: "Code saved. You and your friend each get a credit after you send your first request.",
+  ok: "Code saved. You and your friend each get 10 credits after you send your first request.",
   off: "Invite codes are not open yet.",
   bad_code: "We could not find that code. Please check it and try again.",
   own_code: "You cannot use your own code.",

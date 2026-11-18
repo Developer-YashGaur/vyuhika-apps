@@ -221,7 +221,7 @@ export default function RequestForm({ companies, initial }: { companies: Company
             />
             <span>
               I agree that Dwaar stores my resume privately and that an AI reads it with the job description to give me a match
-              score and tips. Employees never see my resume or my score. See the{" "}
+              score and tips. Employees at the company will see my match score and which skills matched or are missing, but never my resume. See the{" "}
               <Link href="/apps/dwaar/privacy" target="_blank" className="dw-link">privacy notice</Link>.
             </span>
           </label>

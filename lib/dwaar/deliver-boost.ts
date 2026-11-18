@@ -1,9 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { generateJson, type GenerateFn } from "@/lib/ai/generate-json";
-import { BOOST_SYSTEM_INSTRUCTION, boostResultSchema, buildBoostPrompt, finalizeBoostResult } from "@/lib/dwaar/boost-writer";
+import { analyzeMatch } from "@/lib/analyze/analyze";
+import { BOOST_SYSTEM_INSTRUCTION, boostResultSchema, buildBoostPrompt, finalizeBoostResult, type FinalBoost } from "@/lib/dwaar/boost-writer";
 import { RESUME_TEXT_LIMITS } from "@/lib/dwaar/request-form";
-import { prepareUntrustedText } from "@/lib/dwaar/resume-safety";
+import { parseResumeDoc, resumeDocToText } from "@/lib/dwaar/resume-doc";
+import { finalizeMatchResult, prepareUntrustedText } from "@/lib/dwaar/resume-safety";
 
 // Delivers a PAID Boost: reads the job from the database, cleans the resume text the browser read, asks the AI,
 // cleans the answer and saves it. A failed try never loses the payment: the order stays "paid" and can be retried
@@ -42,7 +44,7 @@ export async function deliverBoost({ supabase, secret, generate, model }: Deps, 
   const description = prepareUntrustedText(job.out_job_description);
   if (resume.flagged || description.flagged) return { kind: "flagged" };
 
-  const save = (status: "done" | "failed", result?: ReturnType<typeof finalizeBoostResult>) =>
+  const save = (status: "done" | "failed", result?: FinalBoost) =>
     supabase.rpc("dwaar_save_boost_result", {
       p_order_id: args.orderId,
       p_secret: secret,
@@ -63,7 +65,8 @@ export async function deliverBoost({ supabase, secret, generate, model }: Deps, 
       generate,
       logLabel: "boost",
     });
-    const result = finalizeBoostResult(raw, { resume: resume.text, jobDescription: description.text });
+    const written = finalizeBoostResult(raw, { resume: resume.text, jobDescription: description.text });
+    const result = await withNewScore(written, generate, description.text);
     const saved = await save("done", result);
     if (saved.error || saved.data !== true) {
       console.error("[dwaar] saving the boost failed:", saved.error?.code);
@@ -74,6 +77,22 @@ export async function deliverBoost({ supabase, secret, generate, model }: Deps, 
     console.error("[dwaar] boost writing failed:", (error as Error)?.name); // the kind of failure only, never the text
     await save("failed");
     return { kind: "failed" };
+  }
+}
+
+// Scores the improved resume for the same job, the same way the free check scores the original. This is part of the
+// Boost (no daily limit, nothing recorded). If scoring fails, the Boost is still delivered, just without a new score.
+async function withNewScore(written: FinalBoost, generate: GenerateFn, jobText: string): Promise<FinalBoost> {
+  try {
+    const doc = parseResumeDoc(written.improvedResume);
+    if (!doc) return written;
+    const text = prepareUntrustedText(resumeDocToText(doc, { name: doc.name, email: null, phone: null, linkedin: null, links: [] })).text;
+    const raw = await analyzeMatch(text, jobText, generate);
+    const scored = finalizeMatchResult(raw, false);
+    return { ...written, improvedResume: JSON.stringify({ ...doc, matchScore: scored.score, stillMissing: scored.missingKeywords.slice(0, 8) }) };
+  } catch (error) {
+    console.error("[dwaar] scoring the improved resume failed:", (error as Error)?.name, (error as { code?: string })?.code);
+    return written;
   }
 }
 

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { stripDelimiters } from "@/lib/ai/delimiters";
 import { JOB_END, JOB_START, RESUME_END, RESUME_START } from "@/lib/analyze/prompt";
 import { redactContacts, stripLinks } from "@/lib/dwaar/resume-safety";
+import { mapResumeText, resumeDocSchema } from "@/lib/dwaar/resume-doc";
 
 // The paid Boost: an honest rewrite of the resume for one job, plus profile and LinkedIn tips.
 // Same safety ideas as the free score: the person's text is DATA between delimiters, contact details are removed
@@ -27,11 +28,16 @@ Honesty rules (the most important ones):
   [add number] or [add tool] so they can fill it in themselves, only if it is true.
 - Contact details were removed on purpose. Do not add any email, phone number, address or web link.
 
-Resume rewrite (improvedResume):
-- Plain text with simple headings in capitals (SUMMARY, SKILLS, EXPERIENCE, PROJECTS, EDUCATION), only those that the resume supports.
-- Start with a line "[Your name]" and nothing else on that line.
-- Reorder and reword so the parts that matter for this job come first. Use the job's own words for things the person
-  really did. Start experience lines with strong verbs. Keep each line short and specific. Keep it to what the resume contains.
+Resume rewrite (resume): a proper, complete resume as structured fields, ready to send to a recruiter.
+- name: the person's name as written in the resume, or an empty string if the resume does not show it.
+- headline: one short line, such as the job title they are aiming for, using only what the resume supports.
+- summary: 2 to 4 sentences for this job, using only facts from the resume.
+- skills: groups such as "Languages", "Frameworks", "Tools". Include only skills the resume shows. Put the skills the job asks for first.
+- experience: every job in the resume, newest first. Fill title, company, location and dates exactly as the resume shows them
+  (leave a field empty if the resume does not say). Write 2 to 6 short bullet lines per job. Start each with a strong verb.
+  Use the job's own words only for things the person really did. Mention concrete details the resume gives: tools, projects, scale.
+- projects, education, certifications: include everything the resume shows, with its details. Leave a list empty if the resume has none.
+- No contact details of any kind. The app adds them from the person's profile.
 
 changes: 4 to 8 short sentences saying what you changed and why, in plain words.
 profileTips: up to 6 honest tips for the person's profile (for example projects or certificates that would close the gaps
@@ -42,13 +48,16 @@ summary: one plain sentence (under 30 words) on the biggest improvement.
 Reply only with JSON that matches the given schema.`;
 
 export const boostResultSchema = z.object({
-  improvedResume: z.string().min(200).max(15000),
+  resume: resumeDocSchema,
   summary: z.string().min(1).max(300),
   changes: z.array(z.string().max(300)).min(1).max(8),
   profileTips: z.array(z.string().max(300)).max(6),
   linkedinTips: z.array(z.string().max(300)).max(6),
 });
 export type BoostResult = z.infer<typeof boostResultSchema>;
+
+// What is saved: the resume as JSON text (the database column is text), plus the notes.
+export type FinalBoost = { improvedResume: string; summary: string; changes: string[]; profileTips: string[]; linkedinTips: string[] };
 
 export function buildBoostPrompt(args: { resume: string; jobTitle: string; company: string; jobDescription: string }): string {
   return [
@@ -78,14 +87,16 @@ function numberSet(text: string): Set<string> {
 
 const clean = (text: string) => redactContacts(stripLinks(text)).trim();
 
-export function finalizeBoostResult(result: BoostResult, source: { resume: string; jobDescription: string }): BoostResult {
+export function finalizeBoostResult(result: BoostResult, source: { resume: string; jobDescription: string }): FinalBoost {
   const known = new Set([...numberSet(source.resume), ...numberSet(source.jobDescription)]);
   let replaced = 0;
-  const improvedResume = clean(result.improvedResume).replace(NUMBER, (n) => {
-    if (known.has(n.replace(/,/g, ""))) return n;
-    replaced += 1;
-    return NUMBER_PLACEHOLDER;
-  });
+  const cleanLine = (text: string) =>
+    clean(text).replace(NUMBER, (n) => {
+      if (known.has(n.replace(/,/g, ""))) return n;
+      replaced += 1;
+      return NUMBER_PLACEHOLDER;
+    });
+  const doc = mapResumeText(result.resume, cleanLine);
 
   const list = (items: string[]) => items.map(clean).filter((item) => item.length > 0);
   const changes = list(result.changes);
@@ -93,7 +104,7 @@ export function finalizeBoostResult(result: BoostResult, source: { resume: strin
     changes.push(`We replaced ${replaced} number${replaced === 1 ? "" : "s"} that were not in your resume with ${NUMBER_PLACEHOLDER}. Fill in real figures only.`);
   }
   return {
-    improvedResume,
+    improvedResume: JSON.stringify(doc),
     summary: clean(result.summary),
     changes,
     profileTips: list(result.profileTips),

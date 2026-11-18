@@ -10,10 +10,10 @@ type Db = SupabaseClient<Database>;
 
 export const PLAN_PRICE_RUPEES = 199;
 export const PLAN_DAYS = 30;
-export const PLAN_CREDITS = 5;
+export const PLAN_CREDITS = 50;
 export const PLAN_DAILY_CHECKS = 20;
 export const FREE_DAILY_CHECKS = 5;
-export const PLAN_DESCRIPTION = "Dwaar Plus: 30 days of more resume checks, plus 5 credits";
+export const PLAN_DESCRIPTION = "Dwaar Plus: 30 days of more resume checks, plus 50 credits";
 
 export type MyPlan = { active: boolean; endsAt: string | null; dailyChecks: number };
 

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import FindJobsForm from "@/components/dwaar/FindJobsForm";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
+import { getRoleSearchStatus } from "@/lib/dwaar/role-finder";
 import { getMyProfile } from "@/lib/dwaar/profile";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -45,5 +46,6 @@ async function FindJobsContent() {
   // Only company names and how many employees accept requests. No employee details.
   const { data: rows } = await supabase.rpc("dwaar_companies_with_referrers");
   const companies = (rows ?? []).map((r) => ({ id: r.out_company_id, name: r.out_company_name, referrers: r.out_referrers }));
-  return <FindJobsForm companies={companies} />;
+  const searchStatus = await getRoleSearchStatus(supabase);
+  return <FindJobsForm companies={companies} searchStatus={searchStatus} />;
 }

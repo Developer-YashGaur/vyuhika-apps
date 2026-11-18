@@ -64,7 +64,7 @@ export default function ScoreCard({ analysis }: { analysis: Analysis }) {
             </ul>
           </div>
         )}
-        <p className="dw-muted mt-3 text-xs">Only you can see this. Employees never see your resume or your score.</p>
+        <p className="dw-muted mt-3 text-xs">Employees you ask for a referral can see this score and which skills matched. Nobody sees your resume.</p>
       </details>
     </section>
   );

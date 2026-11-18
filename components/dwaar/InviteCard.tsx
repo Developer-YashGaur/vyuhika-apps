@@ -9,7 +9,7 @@ export default function InviteCard({ summary, initialCode }: { summary: InviteSu
       <div>
         <h2 id="dw-invite-title" className="dw-display text-xl font-medium">Invite a friend</h2>
         <p className="mt-2 leading-relaxed dw-muted">
-          Share your code. When your friend sends their first referral request, you each get 1 credit.
+          Share your code. When your friend sends their first referral request, you each get 10 credits.
         </p>
         <p className="mt-4 text-sm dw-muted">Your code</p>
         <p className="dw-display select-all text-2xl tracking-widest">{summary.code}</p>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import { findOpeningsAction, findRolesAction, type FindOpeningsState, type FindRolesState } from "@/app/apps/dwaar/actions";
+import { roleSearchNote, type RoleSearchStatus } from "@/lib/dwaar/role-search-note";
 import { savePrefill } from "@/lib/dwaar/prefill";
 import { RESUME_MAX_BYTES } from "@/lib/dwaar/resume-safety";
 import { ResumeFileError, readResumeFile } from "@/lib/resume-file";
@@ -16,7 +17,8 @@ const initialState: FindRolesState = { message: null, roles: [] };
 
 type FileState = { status: "idle" | "reading" | "ok" | "error"; name: string; message: string | null };
 
-export default function FindJobsForm({ companies }: { companies: CompanyChoice[] }) {
+export default function FindJobsForm({ companies, searchStatus }: { companies: CompanyChoice[]; searchStatus: RoleSearchStatus | null }) {
+  const note = searchStatus ? roleSearchNote(searchStatus) : null;
   const [state, formAction, pending] = useActionState(findRolesAction, initialState);
   const [resumeText, setResumeText] = useState("");
   const [consent, setConsent] = useState(false);
@@ -111,7 +113,14 @@ export default function FindJobsForm({ companies }: { companies: CompanyChoice[]
           </span>
         </label>
 
-        <button type="submit" disabled={pending || fileState.status !== "ok" || !consent} className="dw-btn dw-btn-primary dw-btn-lg self-start">
+        {note && (
+          <p className={note.canSearch ? "dw-alert dw-alert-info" : "dw-alert dw-alert-error"}>
+            {note.text}{" "}
+            <Link href="/apps/dwaar/credits" className="dw-link">Your credits</Link>
+          </p>
+        )}
+
+        <button type="submit" disabled={pending || fileState.status !== "ok" || !consent || note?.canSearch === false} className="dw-btn dw-btn-primary dw-btn-lg self-start">
           {pending ? "Reading your resume…" : "Suggest jobs for me"}
         </button>
         {pending && (
