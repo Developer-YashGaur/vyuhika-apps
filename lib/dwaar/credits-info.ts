@@ -23,7 +23,7 @@ export function creditWays(on: CreditSwitches): { earn: CreditWay[]; spend: Cred
       {
         id: "invite",
         title: "Invite a friend",
-        detail: "You and your friend each get 1 credit when they send their first referral request.",
+        detail: "You and your friend each get 10 credits when they send their first referral request.",
         available: on.invites,
         reason: on.invites ? null : "Invite rewards are not open yet. We will switch them on soon.",
         href: "/apps/dwaar",

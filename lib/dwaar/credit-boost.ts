@@ -7,7 +7,7 @@ import type { Database } from "@/types/database";
 type Db = SupabaseClient<Database>;
 
 // Keep in step with 'boost_credit_cost' in private.dwaar_config (the database uses its own copy).
-export const BOOST_CREDIT_COST = 2;
+export const BOOST_CREDIT_COST = 20;
 
 export type SpendResult =
   | { kind: "paid"; orderId: string }
