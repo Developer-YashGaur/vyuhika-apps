@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Instrument_Sans, Unbounded } from "next/font/google";
@@ -43,8 +44,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </MotionProvider>
         {/* Visitor counts (page views, countries, devices, referrers) and page speed. No cookies, nothing visible. */}
-        <GoogleTagManager />
-        <CookieBanner />
+        {/* usePathname() needs a Suspense boundary on pages with a changing address (such as /apps/dwaar/requests/[id]). */}
+        <Suspense fallback={null}>
+          <GoogleTagManager />
+          <CookieBanner />
+        </Suspense>
         <Analytics />
         <SpeedInsights />
       </body>
