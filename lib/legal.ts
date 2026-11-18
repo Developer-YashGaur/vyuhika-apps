@@ -3,14 +3,14 @@
 // Details that the owner still has to confirm are written as PLACEHOLDERS below, shown in square brackets on the pages.
 
 export const company = {
-  legalName: "Vyuhika Technologies Pvt. Ltd.",
+  legalName: "Vyuhika Technologies",
   brand: "Vyuhika Apps",
   email: "support@vyuhika.com",
   // TO CONFIRM BEFORE YOU RELY ON THESE PAGES: replace each value with the real one (keep the square brackets away).
-  address: "[Registered office address: to be added]",
-  cin: "[Company registration number (CIN): to be added]",
-  grievanceOfficer: "[Name of the Grievance Officer: to be added]",
-  courts: "[City: to be added]",
+  address: "Virtual",
+  cin: "NA",
+  grievanceOfficer: "NA",
+  courts: "NA",
 };
 
 export type SitePage = { slug: string; path: string; title: string; description: string; updated: string };

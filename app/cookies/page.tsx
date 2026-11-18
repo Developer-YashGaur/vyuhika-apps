@@ -27,7 +27,7 @@ export default function CookiesPage() {
           came from) and how fast pages load. They do not use cookies and do not follow you across other sites.
         </li>
         <li>
-          <strong>Google Tag Manager.</strong> It is loaded on our public pages and lets us add measurement tools, such as Google
+          <strong>Google Tag Manager.</strong> It is loaded on our public pages only if you press Allow in the banner (you can say No thanks and the site works the same), and lets us add measurement tools, such as Google
           Analytics. Those tools may set cookies of their own to count visitors. Tag Manager is not loaded on Dwaar&apos;s pages that
           you see after you sign in (profile, requests, chat and inbox).
         </li>

@@ -39,8 +39,8 @@ export default function PrivacyPage() {
 
       <H2>Visit measurement</H2>
       <p>
-        We use Vercel Web Analytics and Speed Insights (visits, country, device, where you came from, page speed) and Google Tag Manager
-        on public pages. See <A href="/cookies">Cookies and Tracking</A>. None of it includes the text of your resume, letters or chats.
+        We use Vercel Web Analytics and Speed Insights (visits, country, device, where you came from, page speed) and, only if you allow it in the banner, Google Tag Manager
+        on public pages (only if you allow it). See <A href="/cookies">Cookies and Tracking</A>. None of it includes the text of your resume, letters or chats.
       </p>
 
       <H2>Payments</H2>
