@@ -562,6 +562,10 @@ export type Database = {
     Functions: {
       dwaar_analyses_used_today: { Args: never; Returns: number }
       dwaar_role_searches_used_today: { Args: never; Returns: number }
+      dwaar_role_search_status: {
+        Args: never
+        Returns: { out_used: number; out_free: number; out_max: number; out_cost: number; out_credits: number }[]
+      }
       dwaar_record_role_search: { Args: { p_secret: string }; Returns: boolean }
       dwaar_companies_with_referrers: {
         Args: never

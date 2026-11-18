@@ -4,6 +4,7 @@ import type { Database } from "@/types/database";
 import { stripDelimiters } from "@/lib/ai/delimiters";
 import { generateJson, type GenerateFn } from "@/lib/ai/generate-json";
 import { RESUME_END, RESUME_START } from "@/lib/analyze/prompt";
+import { ROLE_FREE_DAILY, ROLE_SEARCH_CREDIT_COST, type RoleSearchStatus } from "@/lib/dwaar/role-search-note";
 import { prepareUntrustedText, redactContacts, stripLinks } from "@/lib/dwaar/resume-safety";
 
 // "Find jobs for my resume": the AI reads a resume and suggests job titles that fit it, with a short honest reason
@@ -68,20 +69,28 @@ export function finalizeRoles(result: RoleSuggestions): RoleSuggestion[] {
 
 export type RoleOutcome =
   | { kind: "done"; roles: RoleSuggestion[] }
-  | { kind: "limit" } // today's 5 searches are used up
+  | { kind: "limit" } // the daily safety cap is reached
+  | { kind: "no-credits" } // the free searches are used and there are not enough credits for another
   | { kind: "failed" }
   | { kind: "unavailable" }; // not switched on on this server
 
 type Deps = { supabase: Db; secret: string | null; generate: GenerateFn | null };
 
-const DAILY_LIMIT = 5;
+// null if it cannot be read (the page then simply leaves the note out).
+export async function getRoleSearchStatus(supabase: Db): Promise<RoleSearchStatus | null> {
+  const { data, error } = await supabase.rpc("dwaar_role_search_status");
+  const row = Array.isArray(data) ? data[0] : undefined;
+  if (error || !row) return null;
+  return { used: row.out_used, free: row.out_free, max: row.out_max, cost: row.out_cost, credits: row.out_credits };
+}
 
 export async function findRoles({ supabase, secret, generate }: Deps, resumeText: string): Promise<RoleOutcome> {
   if (!secret || !generate) return { kind: "unavailable" };
 
-  const used = await supabase.rpc("dwaar_role_searches_used_today");
-  if (used.error || typeof used.data !== "number") return { kind: "failed" };
-  if (used.data >= DAILY_LIMIT) return { kind: "limit" };
+  const status = await getRoleSearchStatus(supabase);
+  if (!status) return { kind: "failed" };
+  if (status.used >= status.max) return { kind: "limit" };
+  if (status.used >= status.free && status.credits < status.cost) return { kind: "no-credits" };
 
   const resume = prepareUntrustedText(resumeText);
   try {
@@ -100,6 +109,7 @@ export async function findRoles({ supabase, secret, generate }: Deps, resumeText
     const recorded = await supabase.rpc("dwaar_record_role_search", { p_secret: secret });
     if (recorded.error) {
       console.error("[dwaar] recording the role search failed:", recorded.error.code);
+      if (recorded.error.code === "DW034") return { kind: "no-credits" };
       return recorded.error.code === "DW015" ? { kind: "limit" } : { kind: "failed" };
     }
     return { kind: "done", roles };
@@ -110,7 +120,8 @@ export async function findRoles({ supabase, secret, generate }: Deps, resumeText
 }
 
 export const ROLE_MESSAGES = {
-  limit: "You have used today's 5 job searches. Please try again tomorrow.",
+  limit: "You have reached today's limit of job searches. Please try again tomorrow.",
+  "no-credits": `You have used today's ${ROLE_FREE_DAILY} free job searches. Each extra search takes ${ROLE_SEARCH_CREDIT_COST} credits, and you do not have enough. You can get credits on the Credits page.`,
   failed: "We could not read your resume right now. Please try again in a moment.",
   unavailable: "Job suggestions are not available right now. Please try again later.",
 } as const;
