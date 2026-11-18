@@ -61,7 +61,7 @@ export function parseLegacyResume(text: string): SavedResume | null {
   if (Object.values(body).every((b) => b.length === 0)) return null;
 
   const name = head[0] && !head[0].includes("[") && head[0].length <= 60 ? head[0] : "";
-  const headline = head.slice(name ? 1 : 0).find((l) => !l.includes("@") && !/\d{6,}/.test(l)) ?? "";
+  const headline = head.slice(name ? 1 : 0).find((l) => !l.includes("[") && !l.includes("@") && !/\d{6,}/.test(l)) ?? "";
 
   const skills = body.skills.map((l) => {
     const clean = l.replace(BULLET, "");

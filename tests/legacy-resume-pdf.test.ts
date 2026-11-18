@@ -27,6 +27,7 @@ describe("old plain-text Boost read as a resume", () => {
     expect(doc?.experience[0].bullets.length).toBe(2);
     expect(doc?.education[0].dates).toBe("2018–2022");
     expect(doc?.name).toBe("");
+    expect(doc?.headline).toBe("");
   });
   it("returns null when there are no sections", () => expect(parseLegacyResume("just some words")).toBe(null));
 });
