@@ -763,6 +763,10 @@ export type Database = {
           out_status: string
         }[]
       }
+      dwaar_candidate_matches: {
+        Args: { p_request_ids: string[] }
+        Returns: { out_request_id: string; out_score: number; out_summary: string; out_strengths: Json; out_gaps: Json }[]
+      }
       dwaar_open_requests_for_provider: {
         Args: never
         Returns: {
