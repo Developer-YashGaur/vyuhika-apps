@@ -28,6 +28,7 @@ import { cancelRequest, createRequest } from "@/lib/dwaar/requests";
 import { UPLOAD_MESSAGES, checkResumeUpload } from "@/lib/dwaar/resume-safety";
 import { CHECK_MESSAGES, runCheck, saveCheckedScore, toView, type CheckView } from "@/lib/dwaar/match-check";
 import { createGeminiGenerate, createGeminiSearch, getGeminiModel } from "@/lib/ai/gemini";
+import { createTavilySearch } from "@/lib/ai/tavily-search";
 import { OPENINGS_MESSAGES, findOpenings, type Opening } from "@/lib/dwaar/openings";
 import { confirmWorkEmailCode, requestWorkEmailCode, serverSecret } from "@/lib/dwaar/work-email";
 import { getEmailSettings } from "@/lib/email/settings";
@@ -466,7 +467,7 @@ export async function findOpeningsAction(companyId: string, roleTitles: string[]
   const own = profile.is_provider ? profile.provider_company_id : null;
   if (!company || company.id === own) return { message: OPENINGS_MESSAGES.failed, openings: [] };
 
-  const outcome = await findOpenings({ supabase, secret: serverSecret(), search: createGeminiSearch(), generate: createGeminiGenerate() }, company.name, roleTitles);
+  const outcome = await findOpenings({ supabase, secret: serverSecret(), search: createTavilySearch() ?? createGeminiSearch(), generate: createGeminiGenerate() }, company.name, roleTitles);
   if (outcome.kind !== "done") return { message: OPENINGS_MESSAGES[outcome.kind === "none" ? "none" : outcome.kind], openings: [] };
   return { message: null, openings: outcome.openings };
 }

@@ -87,6 +87,10 @@ export function buildSearchPrompt(company: string, roleTitles: string[]): string
   ].join("\n");
 }
 
+export function buildSearchQuery(company: string, roleTitles: string[]): string {
+  return `${oneLine(company, 100)} careers job openings ${roleTitles.slice(0, 2).join(" OR ")}`.slice(0, 300);
+}
+
 export function buildStructurePrompt(searchText: string): string {
   return ["Turn these notes into the list.", "", SEARCH.start, stripDelimiters(searchText), SEARCH.end].join("\n");
 }
@@ -143,7 +147,7 @@ export async function findOpenings({ supabase, secret, search, generate, fetchFn
 
   let text: string;
   try {
-    ({ text } = await search({ prompt: buildSearchPrompt(company, roles), signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS) }));
+    ({ text } = await search({ prompt: buildSearchPrompt(company, roles), query: buildSearchQuery(company, roles), signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS) }));
   } catch (error) {
     console.error("[dwaar] the opening search failed:", (error as Error)?.name, String((error as Error)?.message).slice(0, 1500));
     return { kind: "failed" };
