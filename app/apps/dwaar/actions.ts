@@ -17,7 +17,7 @@ import { PLAN_DESCRIPTION, confirmPlanPayment, planMessage, startPlan } from "@/
 import { spendCreditsOnBoost, spendMessage } from "@/lib/dwaar/credit-boost";
 import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
-import { sendStatusEmails } from "@/lib/dwaar/notify-status";
+import { sendRequestSentEmail, sendStatusEmails } from "@/lib/dwaar/notify-status";
 import { ROLE_MESSAGES, findRoles, type RoleSuggestion } from "@/lib/dwaar/role-finder";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
@@ -210,6 +210,10 @@ export async function createRequestAction(_previous: RequestFormState, formData:
   const settings = getEmailSettings();
   const send = createResendSender();
   if (secret && settings && send) await notifyProviders(supabase, { secret, send, settings }, created.data);
+  if (settings && send) {
+    const company = (await listCompanyOptions(supabase)).find((c) => c.id === input.companyId)?.name ?? "the company";
+    await sendRequestSentEmail({ send, settings }, { to: data.user.email, name: me?.display_name ?? "", company, jobTitle: input.jobTitle, requestId: created.data });
+  }
 
   redirect("/apps/dwaar/requests?sent=1&check=done");
 }

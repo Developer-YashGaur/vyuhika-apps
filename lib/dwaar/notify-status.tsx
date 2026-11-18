@@ -15,6 +15,25 @@ type Deps = { secret: string; send: SendEmailFn; settings: EmailSettings };
 
 const KINDS: StatusKind[] = ["accepted", "message", "reply", "contact_asked", "contact_answered"];
 
+// "Your request was sent": a confirmation to the candidate right after they ask. It says only the job and company.
+export async function sendRequestSentEmail(
+  deps: Pick<Deps, "send" | "settings">,
+  info: { to: string | null | undefined; name: string; company: string; jobTitle: string; requestId: string },
+): Promise<boolean> {
+  if (!info.to) return false;
+  try {
+    const content = statusEmailContent(
+      { kind: "sent", requestId: info.requestId, toName: info.name, otherName: "", company: info.company, jobTitle: info.jobTitle },
+      deps.settings.assetBaseUrl,
+    );
+    const html = await render(<StatusEmail content={content} assetBaseUrl={deps.settings.assetBaseUrl} />);
+    return await deps.send({ from: deps.settings.from, to: info.to, subject: content.subject, html, text: content.text });
+  } catch (error) {
+    console.error("[dwaar] the request-sent email failed:", (error as Error)?.name);
+    return false;
+  }
+}
+
 export async function sendStatusEmails(supabase: Db, deps: Deps): Promise<{ sent: number; failed: number }> {
   const { data, error } = await supabase.rpc("dwaar_claim_email_events", { p_secret: deps.secret });
   if (error) {

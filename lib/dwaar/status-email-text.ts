@@ -2,7 +2,7 @@
 // and the HTML versions always say the same thing. These emails never carry message text, resumes, scores or anybody's
 // email address: they say what happened and link to the sign-in protected page.
 
-export type StatusKind = "accepted" | "message" | "reply" | "contact_asked" | "contact_answered";
+export type StatusKind = "sent" | "accepted" | "message" | "reply" | "contact_asked" | "contact_answered";
 
 export type StatusData = { kind: StatusKind; requestId: string; toName: string; otherName: string; company: string; jobTitle: string };
 
@@ -31,13 +31,27 @@ export function chatUrl(assetBaseUrl: string, requestId: string): string {
   return `${assetBaseUrl.replace(/\/+$/, "")}/apps/dwaar/requests/${requestId}/chat`;
 }
 
+export function requestsUrl(assetBaseUrl: string): string {
+  return `${assetBaseUrl.replace(/\/+$/, "")}/apps/dwaar/requests`;
+}
+
 export function statusEmailContent(data: StatusData, assetBaseUrl: string): StatusEmailContent {
   const other = cleanName(data.otherName);
-  const link = chatUrl(assetBaseUrl, data.requestId);
+  const link = data.kind === "sent" ? requestsUrl(assetBaseUrl) : chatUrl(assetBaseUrl, data.requestId);
   const common = { roleLabel: "Role", jobTitle: data.jobTitle, company: data.company, link };
   let body: Omit<StatusEmailContent, "text" | "roleLabel" | "jobTitle" | "company" | "link">;
 
-  if (data.kind === "accepted") {
+  if (data.kind === "sent") {
+    body = {
+      subject: `Your referral request was sent: ${data.jobTitle} at ${data.company}`,
+      preview: `We sent your request to employees at ${data.company}`,
+      heading: "Your request was sent",
+      intro: `Hi ${cleanName(data.toName, "there")}, we sent your referral request to employees at ${data.company} who chose to receive requests. If nobody accepts in 24 hours, it goes to a few more employees there.`,
+      buttonLabel: "See my requests",
+      note: "We email you again when an employee accepts. Your resume is never shown to employees. You can cancel the request any time.",
+      footer: "You get this email because you asked for a referral on Dwaar.",
+    };
+  } else if (data.kind === "accepted") {
     body = {
       subject: `${other} accepted your referral request at ${data.company}`,
       preview: `${other} accepted your request`,
