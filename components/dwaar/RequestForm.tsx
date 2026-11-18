@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { createRequestAction, type RequestFormState } from "@/app/apps/dwaar/actions";
 import MatchCheck from "@/components/dwaar/MatchCheck";
 import { readPrefill } from "@/lib/dwaar/prefill";
@@ -31,6 +31,12 @@ export default function RequestForm({ companies, initial }: { companies: Company
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sessionStorage exists only in the browser, so this cannot be the first render
     if (description) setValues((v) => (v.jobDescription ? v : { ...v, jobDescription: description }));
   }, [initial?.jobUrl]);
+  // After a submit, React resets the form and a dropdown goes back to its first option while our saved choice stays.
+  // Put the saved company back after every result, so "Check my match" does not lose it.
+  const companyRef = useRef<HTMLSelectElement>(null);
+  useEffect(() => {
+    if (companyRef.current) companyRef.current.value = values.companyId;
+  }, [state, values.companyId]);
   const set = (key: keyof typeof values, value: string) => setValues((v) => ({ ...v, [key]: value }));
 
   const { errors } = state;
@@ -89,6 +95,7 @@ export default function RequestForm({ companies, initial }: { companies: Company
             <select
               id="companyId"
               name="companyId"
+              ref={companyRef}
               value={values.companyId}
               onChange={(e) => set("companyId", e.target.value)}
               aria-invalid={errors.companyId ? true : undefined}
