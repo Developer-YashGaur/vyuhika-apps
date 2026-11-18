@@ -21,6 +21,7 @@ import { sendRequestSentEmail, sendStatusEmails } from "@/lib/dwaar/notify-statu
 import { ROLE_MESSAGES, findRoles, type RoleSuggestion } from "@/lib/dwaar/role-finder";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
+import { loadBoostResume, scoreResume } from "@/lib/dwaar/boost-resume";
 import { deliverBoost, deliverMessage } from "@/lib/dwaar/deliver-boost";
 import { boostPaymentsEnabled, inviteRewardsEnabled, planPaymentsEnabled } from "@/lib/dwaar/features";
 import { razorpayKeys } from "@/lib/dwaar/razorpay";
@@ -325,6 +326,20 @@ export async function deliverBoostAction(_previous: BoostDeliverState, formData:
   );
   if (outcome.kind === "delivered") redirect(`/apps/dwaar/requests/${outcome.requestId}/boost#resume-preview`);
   return { message: deliverMessage(outcome.kind) };
+}
+
+// Boosts written before the new score existed: score the improved resume now. The score is shown on the page; nothing is saved.
+export async function checkBoostScoreAction(formData: FormData): Promise<void> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  const requestId = formData.get("requestId");
+  if (typeof requestId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId)) redirect("/apps/dwaar/requests");
+  const boost = await loadBoostResume(supabase, data.user, requestId);
+  if (!boost) redirect("/apps/dwaar/requests");
+  const score = await scoreResume(boost, createGeminiGenerate());
+  redirect(`/apps/dwaar/requests/${requestId}/boost?${score === null ? "score=failed" : `score=${score}`}#resume-preview`);
 }
 
 // ---- The chat after a request is accepted ----
