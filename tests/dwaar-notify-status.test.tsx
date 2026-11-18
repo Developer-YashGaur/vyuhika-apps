@@ -96,3 +96,29 @@ describe("sendStatusEmails", () => {
     expect(send).not.toHaveBeenCalled();
   });
 });
+
+import { sendRequestSentEmail } from "@/lib/dwaar/notify-status";
+
+describe("the 'your request was sent' email", () => {
+  const info = { to: "asha@example.com", name: "Asha", company: "Acme", jobTitle: "Backend Engineer", requestId: REQ };
+  it("confirms the job and company and links to My requests", () => {
+    const c = statusEmailContent({ kind: "sent", requestId: REQ, toName: "Asha", otherName: "", company: "Acme", jobTitle: "Backend Engineer" }, settings.assetBaseUrl);
+    expect(c.subject).toBe("Your referral request was sent: Backend Engineer at Acme");
+    expect(c.link).toBe("https://apps.vyuhika.com/apps/dwaar/requests");
+    expect(c.text).toContain("Hi Asha");
+    expect(c.text).not.toMatch(/\bscore\b/i);
+  });
+  it("sends one email to the candidate", async () => {
+    const send = vi.fn(async (_m: EmailMessage) => true);
+    expect(await sendRequestSentEmail({ send, settings }, info)).toBe(true);
+    expect(send.mock.calls).toHaveLength(1);
+    expect(send.mock.calls[0][0].to).toBe("asha@example.com");
+  });
+  it("does nothing without an address, and never throws when sending fails", async () => {
+    const send = vi.fn(async (_m: EmailMessage) => true);
+    expect(await sendRequestSentEmail({ send, settings }, { ...info, to: null })).toBe(false);
+    expect(send).not.toHaveBeenCalled();
+    const failing = vi.fn(async (_m: EmailMessage): Promise<boolean> => { throw new Error("down"); });
+    expect(await sendRequestSentEmail({ send: failing, settings }, info)).toBe(false);
+  });
+});

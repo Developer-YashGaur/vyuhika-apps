@@ -3,12 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import CopyButton from "@/components/dwaar/CopyButton";
-import PrintButton from "@/components/dwaar/PrintButton";
 import ResumeView from "@/components/dwaar/ResumeView";
 import { boostNextStep } from "@/lib/dwaar/boost-next";
-import { getMyProfile } from "@/lib/dwaar/profile";
-import { resumeFileName } from "@/lib/dwaar/file-name";
-import { parseResumeDoc, resumeDisplayName, resumeDocToText, type ResumeContact } from "@/lib/dwaar/resume-doc";
+import { loadBoostResume } from "@/lib/dwaar/boost-resume";
+import { resumeDocToText } from "@/lib/dwaar/resume-doc";
+import { checkBoostScoreAction } from "@/app/apps/dwaar/actions";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { listMyAnalyses, toStringList } from "@/lib/dwaar/requests";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -18,7 +17,7 @@ export const metadata = dwaarMetadata;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export default function BoostResultPage({ params }: { params: Promise<{ requestId: string }> }) {
+export default function BoostResultPage({ params, searchParams }: { params: Promise<{ requestId: string }>; searchParams: Promise<{ score?: string }> }) {
   return (
     <div className="dw-wrap dw-page">
         <Link href="/apps/dwaar/requests" className="dw-back">
@@ -29,45 +28,33 @@ export default function BoostResultPage({ params }: { params: Promise<{ requestI
         </Link>
         <h1 className="dw-title dw-display mt-8 mb-10">Your Boost</h1>
         <Suspense fallback={<p className="dw-muted">Loading…</p>}>
-          <BoostResult params={params} />
+          <BoostResult params={params} searchParams={searchParams} />
         </Suspense>
       </div>
   );
 }
 
-async function BoostResult({ params }: { params: Promise<{ requestId: string }> }) {
+async function BoostResult({ params, searchParams }: { params: Promise<{ requestId: string }>; searchParams: Promise<{ score?: string }> }) {
   await connection();
   const { requestId } = await params;
+  const { score } = await searchParams;
   if (!UUID.test(requestId)) notFound();
   if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/apps/dwaar");
 
-  // The database only ever returns my own result (row-level security).
-  const { data: result } = await supabase
-    .from("dwaar_boost_results")
-    .select("improved_resume, summary, changes, profile_tips, linkedin_tips, status")
-    .eq("request_id", requestId)
-    .eq("status", "done")
-    .maybeSingle();
-  if (!result?.improved_resume) notFound();
+  const boost = await loadBoostResume(supabase, auth.user, requestId);
+  if (!boost) notFound();
+  const { doc, contact } = boost;
 
-  const [profile, analyses] = await Promise.all([getMyProfile(supabase, auth.user.id), listMyAnalyses(supabase)]);
+  const analyses = await listMyAnalyses(supabase);
   const before = analyses.find((a) => a.requestId === requestId && a.status === "done")?.score ?? null;
-  const doc = parseResumeDoc(result.improved_resume);
-  const after = doc?.matchScore ?? null;
+  const checked = /^\d{1,3}$/.test(score ?? "") ? Math.min(100, Number(score)) : null;
+  const after = doc?.matchScore ?? checked;
   const next = boostNextStep(after ?? before, after === null ? null : before);
-  // Contact details come from the person's own profile and sign-in. The AI never sees or writes them.
-  const contact: ResumeContact = {
-    name: profile?.display_name ?? "",
-    email: auth.user.email ?? null,
-    phone: profile?.phone ?? null,
-    linkedin: profile?.linkedin_url ?? null,
-    links: profile?.other_links ?? [],
-  };
-  const fileName = resumeFileName(doc ? resumeDisplayName(doc, contact.name) : contact.name);
-  const copyText = doc ? resumeDocToText(doc, contact) : result.improved_resume;
+  const copyText = doc ? resumeDocToText(doc, contact) : boost.raw;
+  const result = { summary: boost.summary, improved_resume: boost.raw, changes: boost.changes, profile_tips: boost.profileTips, linkedin_tips: boost.linkedinTips };
 
   const changes = toStringList(result.changes);
   const profileTips = toStringList(result.profile_tips);
@@ -88,9 +75,22 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
             {doc?.stillMissing && doc.stillMissing.length > 0 ? `Still not shown in the resume: ${doc.stillMissing.join(", ")}. Add these only if they are true for you.` : ""}
           </p>
         )}
+        {after === null && doc && (
+          <form action={checkBoostScoreAction} className="mt-3 flex flex-wrap items-center gap-3">
+            <input type="hidden" name="requestId" value={requestId} />
+            <button type="submit" className="dw-btn dw-btn-quiet">
+              Check the new score
+            </button>
+            <span className="text-sm">
+              {score === "failed" ? "We could not check it just now. Please try again." : "This Boost was written before scores were added. This scores the improved resume for the same job."}
+            </span>
+          </form>
+        )}
         <p className="mt-1 text-sm leading-relaxed">{next.text}</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <PrintButton fileName={fileName} />
+          <a href={`/apps/dwaar/requests/${requestId}/boost/pdf`} download className="dw-btn dw-btn-primary">
+            Download PDF
+          </a>
           <CopyButton text={copyText} label="Copy as text" />
           {next.good && (
             <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet">
@@ -99,7 +99,7 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
           )}
         </div>
         <p className="mt-3 text-sm leading-relaxed">
-          To save a PDF, choose Download PDF and then &ldquo;Save as PDF&rdquo; in the window that opens. This was written by an AI from your own
+          The PDF is named with your name and the role you applied for. This was written by an AI from your own
           resume, so read every line and keep only what is true. Replace each [placeholder] with your real details.
         </p>
       </section>
