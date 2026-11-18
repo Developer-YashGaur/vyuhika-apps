@@ -34,10 +34,17 @@ describe("apps list", () => {
     expect(apps.find((app) => app.slug === "interview-coach")).toMatchObject({ pricing: "pro", category: "Careers", status: "coming-soon" });
   });
 
-  it("lists exactly three live apps and one coming soon", () => {
+  it("includes Dwaar as a free, live careers app that links to its page", () => {
+    const dwaar = apps.find((app) => app.slug === "dwaar");
+    expect(dwaar).toMatchObject({ name: "Dwaar", pricing: "free", category: "Careers", status: "live", icon: "door" });
+    expect(appHref(dwaar!)).toBe("/apps/dwaar");
+  });
+
+  it("lists exactly four live apps and one coming soon", () => {
     expect(apps.filter((app) => app.status === "live").map((app) => app.slug)).toEqual([
       "resume-matcher",
       "cover-letter-writer",
+      "dwaar",
       "koshvia",
     ]);
     expect(apps.filter((app) => app.status === "coming-soon")).toHaveLength(1);

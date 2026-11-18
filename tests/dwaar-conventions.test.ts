@@ -21,11 +21,19 @@ describe("Dwaar conventions", () => {
     for (const file of sources) expect(readFileSync(file, "utf8"), file).not.toMatch(/service_role|SERVICE_ROLE/);
   });
 
-  it("every Dwaar page asks search engines not to index it (until launch)", () => {
+  it("only the public front page can be found by search engines; every other Dwaar page asks them to skip it", () => {
     const pages = files("app/apps/dwaar").filter((f) => f.endsWith("page.tsx"));
     expect(pages.length).toBeGreaterThanOrEqual(3);
-    for (const page of pages) expect(readFileSync(page, "utf8"), page).toMatch(/export const metadata = dwaar(Privacy)?Metadata/);
-    expect(readFileSync("lib/dwaar/metadata.ts", "utf8")).toMatch(/index: false/);
+    for (const page of pages) {
+      const isFront = page === join("app", "apps", "dwaar", "page.tsx");
+      const expected = isFront ? /export const metadata = dwaarPublicMetadata/ : /export const metadata = dwaar(Privacy)?Metadata/;
+      expect(readFileSync(page, "utf8"), page).toMatch(expected);
+    }
+    const meta = readFileSync("lib/dwaar/metadata.ts", "utf8");
+    expect(meta.match(/dwaarMetadata: Metadata = \{[\s\S]*?\n\};/)![0]).toMatch(/index: false/);
+    expect(meta.match(/dwaarPrivacyMetadata: Metadata = \{[\s\S]*?\n\};/)![0]).toMatch(/index: false/);
+    expect(meta.match(/dwaarPublicMetadata: Metadata = [^\n]*/)![0]).toBe("dwaarPublicMetadata: Metadata = dwaarFrontMetadata;");
+    expect(readFileSync("lib/metadata.ts", "utf8").match(/dwaarFrontMetadata = pageMetadata\([\s\S]*?\n\}\);/)![0]).not.toMatch(/robots/);
   });
 
   it("every server action re-checks who is signed in", () => {
@@ -46,7 +54,8 @@ describe("Dwaar conventions", () => {
     expect(types).toContain("company_options");
   });
 
-  it("Dwaar is not on the home page or in the sitemap yet", () => {
-    expect(readFileSync("lib/apps.ts", "utf8")).not.toMatch(/dwaar/i);
+  it("Dwaar is on the home page list and has page content for the sitemap", () => {
+    expect(readFileSync("lib/apps.ts", "utf8")).toMatch(/slug: "dwaar"/);
+    expect(readFileSync("lib/app-content.ts", "utf8")).toMatch(/slug: "dwaar"/);
   });
 });

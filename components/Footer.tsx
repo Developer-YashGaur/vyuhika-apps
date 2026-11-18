@@ -2,6 +2,7 @@ import Link from "next/link";
 import ExternalHint from "@/components/ExternalHint";
 import Logo from "@/components/Logo";
 import { apps, appHref, isExternal } from "@/lib/apps";
+import { sitePages } from "@/lib/legal";
 import { externalLinkProps, site } from "@/lib/site";
 
 // Every live app that has a page on this site (external apps like Koshvia are left out).
@@ -12,7 +13,7 @@ const internalApps = apps.filter((app) => app.status === "live" && !isExternal(a
 export default function Footer() {
   return (
     <footer className="border-t border-white/10">
-      <div className="gutter flex flex-col gap-6 pt-12 pb-24 text-sm text-mist sm:flex-row sm:items-center sm:justify-between">
+      <div className="gutter flex flex-col gap-6 pt-12 pb-10 text-sm text-mist sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Logo variant="horizontal" size={36} />
           <p className="mt-4">
@@ -46,6 +47,13 @@ export default function Footer() {
           </a>
         </nav>
       </div>
+      <nav aria-label="About and legal" className="gutter flex flex-wrap gap-x-6 gap-y-2 pb-24 text-sm text-mist">
+        {sitePages.map((page) => (
+          <Link key={page.slug} href={page.path} className="nav-link">
+            {page.title}
+          </Link>
+        ))}
+      </nav>
     </footer>
   );
 }

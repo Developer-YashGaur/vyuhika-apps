@@ -9,6 +9,7 @@ import sitemap from "@/app/sitemap";
 import MoreTools from "@/components/MoreTools";
 import Footer from "@/components/Footer";
 import { HOME_UPDATED, appContent } from "@/lib/app-content";
+import { sitePages } from "@/lib/legal";
 import { apps } from "@/lib/apps";
 import { coverLetterWriterMetadata, homeMetadata, resumeMatcherMetadata } from "@/lib/metadata";
 import { site } from "@/lib/site";
@@ -233,7 +234,7 @@ describe("indexing and the sitemap", () => {
 
   it("lastModified comes from real dates in lib/app-content.ts, not from the current time", () => {
     const entries = sitemap();
-    expect(entries.map((e) => e.lastModified)).toEqual([HOME_UPDATED, appContent["resume-matcher"].updated, appContent["cover-letter-writer"].updated]);
+    expect(entries.map((e) => e.lastModified)).toEqual([HOME_UPDATED, appContent["resume-matcher"].updated, appContent["cover-letter-writer"].updated, appContent.dwaar.updated, ...sitePages.map((p) => p.updated)]);
     for (const e of entries) {
       expect(String(e.lastModified)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(Date.parse(String(e.lastModified))).toBeLessThanOrEqual(Date.now());
@@ -248,12 +249,12 @@ describe("internal links", () => {
   it("the footer lists every live app on this site, and no external app", () => {
     const html = renderToStaticMarkup(<Footer />);
     const nav = html.match(/<nav aria-label="Apps">([\s\S]*?)<\/nav>/)![1];
-    expect(hrefs(nav)).toEqual(["/apps/resume-matcher", "/apps/cover-letter-writer"]);
+    expect(hrefs(nav)).toEqual(["/apps/resume-matcher", "/apps/cover-letter-writer", "/apps/dwaar"]);
   });
 
   it("More tools links to the other apps, and Koshvia opens in a new tab with the hint", () => {
     const html = renderToStaticMarkup(<MoreTools currentSlug="resume-matcher" />);
-    expect(hrefs(html)).toEqual(["/apps/cover-letter-writer", "https://koshvia.vyuhika.com"]);
+    expect(hrefs(html)).toEqual(["/apps/cover-letter-writer", "/apps/dwaar", "https://koshvia.vyuhika.com"]);
     const koshvia = html.match(/<a [^>]*koshvia[^>]*>[\s\S]*?<\/a>/)![0];
     expect(koshvia).toContain('target="_blank"');
     expect(koshvia).toContain('rel="noopener noreferrer"');

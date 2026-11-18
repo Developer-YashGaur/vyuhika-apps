@@ -1,10 +1,13 @@
 import { Suspense } from "react";
 import DoorArch from "@/components/dwaar/art/DoorArch";
 import DwaarHome from "@/components/dwaar/DwaarHome";
+import DwaarFaq from "@/components/dwaar/DwaarFaq";
 import HowItWorks from "@/components/dwaar/HowItWorks";
-import { dwaarMetadata } from "@/lib/dwaar/metadata";
+import JsonLd from "@/components/JsonLd";
+import { dwaarPublicMetadata } from "@/lib/dwaar/metadata";
+import { appStructuredData } from "@/lib/structured-data";
 
-export const metadata = dwaarMetadata;
+export const metadata = dwaarPublicMetadata;
 
 const POINTS = [
   "A free resume match score before you ask anyone",
@@ -15,6 +18,7 @@ const POINTS = [
 export default function DwaarPage({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string; deleted?: string; confirmed?: string }> }) {
   return (
     <div className="dw-wrap dw-page">
+      <JsonLd data={appStructuredData("dwaar")} />
       <section className="dw-hero">
         <div>
           <p className="dw-eyebrow">Referrals, made simple</p>
@@ -44,6 +48,7 @@ export default function DwaarPage({ searchParams }: { searchParams: Promise<{ er
       </section>
 
       <HowItWorks />
+      <DwaarFaq />
     </div>
   );
 }

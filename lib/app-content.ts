@@ -126,6 +126,57 @@ export const appContent: Record<string, AppContent> = {
       },
     ],
   },
+  dwaar: {
+    slug: "dwaar",
+    updated: "2026-11-18",
+    whatItDoes:
+      "Dwaar helps you ask for a job referral. You pick a company and a job, add your resume, and send a request. Employees at that company who chose to receive requests can see it, and one of them may accept. After that you can chat with that person inside Dwaar. You sign in with Google.",
+    steps: [
+      {
+        title: "Make your profile",
+        text: "Sign in with Google and add your name, your LinkedIn link, your phone number and your skills. Your phone number stays private.",
+      },
+      {
+        title: "Ask for a referral",
+        text: "Choose the company and the job, add your resume and the job description, and check your match score first. A request needs a score of at least 60.",
+      },
+      {
+        title: "Chat with the employee who accepts",
+        text: "When an employee accepts, you can write to them in Dwaar. They can ask for your phone number or email in the chat, and you choose whether to share.",
+      },
+    ],
+    whoFor:
+      "People who want a referral for a specific job at a company, and employees who are happy to refer good candidates. Employees confirm their work email before they can see any request.",
+    doesNot:
+      "Dwaar does not promise a referral, an interview or a job. An employee decides for themselves, and a request can stay unanswered. A request that nobody accepts within 30 days expires. The match score is an estimate made by an AI, so check it yourself. The chat is checked by an AI, so share nothing that is not about the referral.",
+    faq: [
+      {
+        question: "Is Dwaar free?",
+        answer:
+          "Yes. Asking for referrals, the match check and the chat are free. There are limits to keep it fair: up to 5 open requests at a time, and a limited number of resume checks each day.",
+      },
+      {
+        question: "Who can see my request and my details?",
+        answer:
+          "Only employees at the company you chose who confirmed their work email and chose to receive requests. They see your name, headline, LinkedIn link, other links, skills, the job and your note. They do not see your resume or your score. Your phone number and email stay hidden unless you choose to share them in the chat.",
+      },
+      {
+        question: "What happens to my resume?",
+        answer:
+          "Your resume file is stored privately and is used to check your match. An AI service (Google Gemini) reads its text for the match check. When a request is cancelled or old, the file is deleted. The privacy notice on the Dwaar page explains how long each thing is kept.",
+      },
+      {
+        question: "Who can ask for my phone number or email?",
+        answer:
+          "Only the employee who accepted your request, and only inside the chat. You see their question and choose Share or Decline. If you decline, they cannot ask again for that request.",
+      },
+      {
+        question: "What if nobody accepts my request?",
+        answer:
+          "It expires after 30 days and we email you. You can ask at another company or for another job. Employees can also leave a request unanswered, and that says nothing about your resume.",
+      },
+    ],
+  },
 };
 
 // The date the home page's words last changed (the sitemap's lastModified for "/"). Update it when the home page or the apps list changes.

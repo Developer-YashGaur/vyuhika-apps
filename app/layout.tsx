@@ -2,6 +2,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Instrument_Sans, Unbounded } from "next/font/google";
 import Backdrop from "@/components/Backdrop";
+import CookieBanner from "@/components/CookieBanner";
+import GoogleTagManager from "@/components/GoogleTagManager";
 import FeedbackWidget from "@/components/feedback/FeedbackWidget";
 import MotionProvider from "@/components/MotionProvider";
 import ScrollProgress from "@/components/ScrollProgress";
@@ -41,6 +43,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </MotionProvider>
         {/* Visitor counts (page views, countries, devices, referrers) and page speed. No cookies, nothing visible. */}
+        <GoogleTagManager />
+        <CookieBanner />
         <Analytics />
         <SpeedInsights />
       </body>
