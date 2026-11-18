@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
+import { dwaarFrontMetadata } from "@/lib/metadata";
 
 // Dwaar is live. Only its public front page (dwaarPublicMetadata) may be found by search engines.
 // Every page behind sign-in (profile, requests, inbox, chat, ...) and the draft privacy notice ask search engines to skip them.
-export const dwaarPublicMetadata: Metadata = {
-  title: { absolute: "Dwaar: ask for a job referral | Vyuhika Apps" },
-  description: "Ask employees at a company for a job referral. Add your resume, check your match score and chat with the employee who accepts.",
-  alternates: { canonical: "https://apps.vyuhika.com/apps/dwaar" },
-};
+export const dwaarPublicMetadata: Metadata = dwaarFrontMetadata;
 
 export const dwaarMetadata: Metadata = {
   title: { absolute: "Dwaar by Vyuhika Apps" },

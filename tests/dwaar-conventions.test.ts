@@ -32,7 +32,8 @@ describe("Dwaar conventions", () => {
     const meta = readFileSync("lib/dwaar/metadata.ts", "utf8");
     expect(meta.match(/dwaarMetadata: Metadata = \{[\s\S]*?\n\};/)![0]).toMatch(/index: false/);
     expect(meta.match(/dwaarPrivacyMetadata: Metadata = \{[\s\S]*?\n\};/)![0]).toMatch(/index: false/);
-    expect(meta.match(/dwaarPublicMetadata: Metadata = \{[\s\S]*?\n\};/)![0]).not.toMatch(/robots/);
+    expect(meta.match(/dwaarPublicMetadata: Metadata = [^\n]*/)![0]).toBe("dwaarPublicMetadata: Metadata = dwaarFrontMetadata;");
+    expect(readFileSync("lib/metadata.ts", "utf8").match(/dwaarFrontMetadata = pageMetadata\([\s\S]*?\n\}\);/)![0]).not.toMatch(/robots/);
   });
 
   it("every server action re-checks who is signed in", () => {

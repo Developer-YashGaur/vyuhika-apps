@@ -21,6 +21,7 @@ const allPublicFiles = [
   BRAND_FILES.ogDefault,
   BRAND_FILES.ogResumeMatcher,
   BRAND_FILES.ogCoverLetterWriter,
+  BRAND_FILES.ogDwaar,
   ...BRAND_FILES.manifestIcons,
   ...BRAND_FILES.email,
   BRAND_FILES.logo,

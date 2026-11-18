@@ -75,7 +75,7 @@ export const homeMetadata = pageMetadata({
   path: "",
   title: "Vyuhika Apps: Useful Web Tools, Built in Public",
   description:
-    "Free and paid web tools built in public by Yash Gaur: a Resume Matcher, a Cover Letter Writer, and Koshvia for budgets and investments.",
+    "Free and paid web tools built in public by Yash Gaur: Resume Matcher, Cover Letter Writer, Dwaar for job referrals, and Koshvia for budgets.",
   image: BRAND_FILES.ogDefault,
   imageAlt: `${siteName}: ${site.tagline}`,
 });
@@ -96,4 +96,13 @@ export const coverLetterWriterMetadata = pageMetadata({
     "Write a cover letter from your resume and a job description. It only uses facts from your resume and leaves blanks for your own examples. Free.",
   image: BRAND_FILES.ogCoverLetterWriter,
   imageAlt: "Cover Letter Writer by Vyuhika Apps",
+});
+
+// Dwaar's public front page. The pages behind sign-in stay out of search engines (see lib/dwaar/metadata.ts).
+export const dwaarFrontMetadata = pageMetadata({
+  path: "/apps/dwaar",
+  title: "Dwaar: Ask for a Job Referral | Vyuhika Apps",
+  description: "Ask employees at a company for a job referral. Add your resume, check your match score and chat with the employee who accepts.",
+  image: BRAND_FILES.ogDwaar,
+  imageAlt: "Dwaar by Vyuhika Apps: ask for a job referral",
 });

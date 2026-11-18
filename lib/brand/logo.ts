@@ -36,6 +36,7 @@ export const BRAND_FILES = {
   ogDefault: "/og/vyuhika.png",
   ogResumeMatcher: "/og/resume-matcher.png",
   ogCoverLetterWriter: "/og/cover-letter-writer.png",
+  ogDwaar: "/og/dwaar.png",
   manifestIcons: ["/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png"],
   email: ["/email/header.png", "/email/header.gif", "/email/logo-icon.png"],
   logo: "/brand/kit/icon-512.png", // square logo for search engines (Organization structured data)
