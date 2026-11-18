@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { buildConfirmationEmail } from "@/lib/feedback/emails";
 import { sampleFeedback } from "@/lib/feedback/email-samples";
+import { sitePages } from "@/lib/legal";
 import { site } from "@/lib/site";
 
 // Every outside link (portfolio, LinkedIn, YouTube) must come from lib/site.ts
@@ -54,6 +55,7 @@ describe("links come from lib/site.ts", () => {
       "/apps/dwaar",
       site.links.linkedin,
       site.links.youtube,
+      ...sitePages.map((page) => page.path),
     ]);
     expectSafeExternal(html);
   });

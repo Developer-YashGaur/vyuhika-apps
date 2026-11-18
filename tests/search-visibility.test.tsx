@@ -9,6 +9,7 @@ import sitemap from "@/app/sitemap";
 import MoreTools from "@/components/MoreTools";
 import Footer from "@/components/Footer";
 import { HOME_UPDATED, appContent } from "@/lib/app-content";
+import { sitePages } from "@/lib/legal";
 import { apps } from "@/lib/apps";
 import { coverLetterWriterMetadata, homeMetadata, resumeMatcherMetadata } from "@/lib/metadata";
 import { site } from "@/lib/site";
@@ -233,7 +234,7 @@ describe("indexing and the sitemap", () => {
 
   it("lastModified comes from real dates in lib/app-content.ts, not from the current time", () => {
     const entries = sitemap();
-    expect(entries.map((e) => e.lastModified)).toEqual([HOME_UPDATED, appContent["resume-matcher"].updated, appContent["cover-letter-writer"].updated, appContent.dwaar.updated]);
+    expect(entries.map((e) => e.lastModified)).toEqual([HOME_UPDATED, appContent["resume-matcher"].updated, appContent["cover-letter-writer"].updated, appContent.dwaar.updated, ...sitePages.map((p) => p.updated)]);
     for (const e of entries) {
       expect(String(e.lastModified)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(Date.parse(String(e.lastModified))).toBeLessThanOrEqual(Date.now());

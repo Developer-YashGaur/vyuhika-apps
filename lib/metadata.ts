@@ -106,3 +106,14 @@ export const dwaarFrontMetadata = pageMetadata({
   image: BRAND_FILES.ogDwaar,
   imageAlt: "Dwaar by Vyuhika Apps: ask for a job referral",
 });
+
+// Metadata for the About, Terms, Privacy, Refunds, Cookies and Contact pages (the list is in lib/legal.ts).
+export function sitePageMetadata(page: { path: string; title: string; description: string }): Metadata {
+  return pageMetadata({
+    path: page.path,
+    title: `${page.title} | Vyuhika Apps`,
+    description: page.description,
+    image: BRAND_FILES.ogDefault,
+    imageAlt: `${siteName}: ${site.tagline}`,
+  });
+}
