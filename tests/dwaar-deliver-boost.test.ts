@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { deliverBoost, deliverMessage } from "@/lib/dwaar/deliver-boost";
+import { BOOST_SYSTEM_INSTRUCTION } from "@/lib/dwaar/boost-writer";
+import { parseResumeDoc } from "@/lib/dwaar/resume-doc";
 
 const SECRET = "x".repeat(40);
 const RESUME = "Backend engineer. Built Python APIs at Acme from 2019 to 2024. Reduced latency by 40% for the payments team. ".repeat(3);
@@ -71,6 +73,34 @@ describe("deliverBoost", () => {
     expect(String(save.p_improved_resume)).toContain("40%");
     expect(String(save.p_improved_resume)).not.toContain("900%"); // the invented number was replaced
     expect(String(save.p_improved_resume)).toContain("[add number]");
+  });
+  it("scores the improved resume for the same job and saves the new score with it", async () => {
+    const { supabase, calls } = fakeDb();
+    const matchAnswer = JSON.stringify({
+      score: 91,
+      summary: "Python API work now matches the job well.",
+      matchedKeywords: ["Python"],
+      missingKeywords: ["5 years"],
+      suggestions: [
+        { title: "One", detail: "Add a project." },
+        { title: "Two", detail: "Add a number." },
+        { title: "Three", detail: "Add a tool." },
+      ],
+    });
+    const generate = vi.fn(async (r: { systemInstruction: string }) => (r.systemInstruction === BOOST_SYSTEM_INSTRUCTION ? goodAnswer : matchAnswer));
+    const out = await deliverBoost(deps(supabase, generate), { orderId: "order-1", resumeText: RESUME });
+    expect(out).toEqual({ kind: "delivered", requestId: "req-1" });
+    const saved = parseResumeDoc(String(calls.find((c) => c.name === "dwaar_save_boost_result")!.args.p_improved_resume));
+    expect(saved?.matchScore).toBe(65); // the AI said 91, but our honesty check keeps it close to the matched/missing keyword share (1 of 2)
+    expect(saved?.stillMissing).toEqual(["5 years"]);
+  });
+  it("still delivers the Boost when the new score cannot be worked out", async () => {
+    const { supabase, calls } = fakeDb();
+    const generate = vi.fn(async (r: { systemInstruction: string }) => (r.systemInstruction === BOOST_SYSTEM_INSTRUCTION ? goodAnswer : "not json"));
+    const out = await deliverBoost(deps(supabase, generate), { orderId: "order-1", resumeText: RESUME });
+    expect(out).toEqual({ kind: "delivered", requestId: "req-1" });
+    const saved = parseResumeDoc(String(calls.find((c) => c.name === "dwaar_save_boost_result")!.args.p_improved_resume));
+    expect(saved?.matchScore ?? null).toBe(null);
   });
   it("never sends contact details to the AI", async () => {
     const { supabase } = fakeDb();

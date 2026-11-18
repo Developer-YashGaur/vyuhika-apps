@@ -54,9 +54,10 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
   if (!result?.improved_resume) notFound();
 
   const [profile, analyses] = await Promise.all([getMyProfile(supabase, auth.user.id), listMyAnalyses(supabase)]);
-  const score = analyses.find((a) => a.requestId === requestId && a.status === "done")?.score ?? null;
-  const next = boostNextStep(score);
+  const before = analyses.find((a) => a.requestId === requestId && a.status === "done")?.score ?? null;
   const doc = parseResumeDoc(result.improved_resume);
+  const after = doc?.matchScore ?? null;
+  const next = boostNextStep(after ?? before, after === null ? null : before);
   // Contact details come from the person's own profile and sign-in. The AI never sees or writes them.
   const contact: ResumeContact = {
     name: profile?.display_name ?? "",
@@ -77,6 +78,16 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
       <section className={next.good ? "dw-alert dw-alert-good lg:col-span-2" : "dw-alert dw-alert-info lg:col-span-2"}>
         <h2 className="dw-display text-xl font-medium">{next.title}</h2>
         <p className="mt-1 leading-relaxed">{result.summary || next.text}</p>
+        {after !== null && (
+          <p className="mt-2 text-sm leading-relaxed">
+            <strong>Score for this job:</strong> {before !== null ? `${before} before the Boost, ` : ""}
+            {after} for the improved resume.{" "}
+            {before !== null && after < before
+              ? "The improved resume scores lower, so your original may be the better fit. Compare them before you decide. "
+              : ""}
+            {doc?.stillMissing && doc.stillMissing.length > 0 ? `Still not shown in the resume: ${doc.stillMissing.join(", ")}. Add these only if they are true for you.` : ""}
+          </p>
+        )}
         <p className="mt-1 text-sm leading-relaxed">{next.text}</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <PrintButton fileName={fileName} />

@@ -20,12 +20,20 @@ export const resumeDocSchema = z.object({
 });
 export type ResumeDoc = z.infer<typeof resumeDocSchema>;
 
+// What is saved: the resume plus how the improved resume scores for this job (worked out by us after writing it,
+// never by the writing AI). Both are optional, so Boosts saved earlier still open.
+export const savedResumeSchema = resumeDocSchema.extend({
+  matchScore: z.number().int().min(0).max(100).nullable().optional(),
+  stillMissing: z.array(line(60)).max(10).optional(),
+});
+export type SavedResume = z.infer<typeof savedResumeSchema>;
+
 export type ResumeContact = { name: string; email: string | null; phone: string | null; linkedin: string | null; links: string[] };
 
 // Old Boosts were saved as plain text. New ones are saved as JSON text. null means "plain text, show it as it is".
-export function parseResumeDoc(saved: string): ResumeDoc | null {
+export function parseResumeDoc(saved: string): SavedResume | null {
   try {
-    const parsed = resumeDocSchema.safeParse(JSON.parse(saved));
+    const parsed = savedResumeSchema.safeParse(JSON.parse(saved));
     return parsed.success ? parsed.data : null;
   } catch {
     return null;

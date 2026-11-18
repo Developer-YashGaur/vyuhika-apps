@@ -50,6 +50,11 @@ describe("what the Boost page says after the score", () => {
     expect(next.good).toBe(false);
     expect(next.text).toMatch(/tips/i);
   });
+  it("shows before and after when the improved resume was scored", () => {
+    expect(boostNextStep(91, 82).title).toBe("Good match: 82 before, 91 after");
+    expect(boostNextStep(50, 82).title).toBe("Match: 82 before, 50 after");
+    expect(boostNextStep(82, 82).title).toBe("Good match: 82 out of 100");
+  });
   it("no score still allows download", () => {
     expect(boostNextStep(null).good).toBe(false);
   });
