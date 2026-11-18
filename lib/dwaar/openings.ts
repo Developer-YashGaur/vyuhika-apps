@@ -145,7 +145,7 @@ export async function findOpenings({ supabase, secret, search, generate, fetchFn
   try {
     ({ text } = await search({ prompt: buildSearchPrompt(company, roles), signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS) }));
   } catch (error) {
-    console.error("[dwaar] the opening search failed:", (error as Error)?.name, String((error as Error)?.message).slice(0, 300));
+    console.error("[dwaar] the opening search failed:", (error as Error)?.name, String((error as Error)?.message).slice(0, 1500));
     return { kind: "failed" };
   }
 
