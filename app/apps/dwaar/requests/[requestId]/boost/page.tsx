@@ -7,7 +7,8 @@ import PrintButton from "@/components/dwaar/PrintButton";
 import ResumeView from "@/components/dwaar/ResumeView";
 import { boostNextStep } from "@/lib/dwaar/boost-next";
 import { getMyProfile } from "@/lib/dwaar/profile";
-import { parseResumeDoc, resumeDocToText, type ResumeContact } from "@/lib/dwaar/resume-doc";
+import { resumeFileName } from "@/lib/dwaar/file-name";
+import { parseResumeDoc, resumeDisplayName, resumeDocToText, type ResumeContact } from "@/lib/dwaar/resume-doc";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { listMyAnalyses, toStringList } from "@/lib/dwaar/requests";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -64,6 +65,7 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
     linkedin: profile?.linkedin_url ?? null,
     links: profile?.other_links ?? [],
   };
+  const fileName = resumeFileName(doc ? resumeDisplayName(doc, contact.name) : contact.name);
   const copyText = doc ? resumeDocToText(doc, contact) : result.improved_resume;
 
   const changes = toStringList(result.changes);
@@ -77,7 +79,7 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
         <p className="mt-1 leading-relaxed">{result.summary || next.text}</p>
         <p className="mt-1 text-sm leading-relaxed">{next.text}</p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <PrintButton />
+          <PrintButton fileName={fileName} />
           <CopyButton text={copyText} label="Copy as text" />
           {next.good && (
             <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet">
@@ -91,7 +93,8 @@ async function BoostResult({ params }: { params: Promise<{ requestId: string }> 
         </p>
       </section>
 
-      <section className="lg:col-span-2">
+      <section id="resume-preview" className="scroll-mt-24 lg:col-span-2">
+        <h2 className="dw-display mb-3 text-xl font-medium">Preview of your resume</h2>
         {doc ? (
           <ResumeView doc={doc} contact={contact} />
         ) : (

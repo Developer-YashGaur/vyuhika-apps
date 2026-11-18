@@ -319,7 +319,7 @@ export async function deliverBoostAction(_previous: BoostDeliverState, formData:
     { supabase, secret: serverSecret(), generate: createGeminiGenerate(), model: getGeminiModel() },
     { orderId, resumeText },
   );
-  if (outcome.kind === "delivered") redirect(`/apps/dwaar/requests/${outcome.requestId}/boost`);
+  if (outcome.kind === "delivered") redirect(`/apps/dwaar/requests/${outcome.requestId}/boost#resume-preview`);
   return { message: deliverMessage(outcome.kind) };
 }
 
