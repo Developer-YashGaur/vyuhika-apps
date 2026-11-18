@@ -25,6 +25,15 @@ const paths: Record<AppIconName, React.ReactNode> = {
       <path d="M18 9h2a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1v3l-4-3h-3" />
     </>
   ),
+  // A door ajar, with a handle.
+  door: (
+    <>
+      <path d="M5 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17" />
+      <path d="M3 21h18" />
+      <path d="M15 7l4 1.5V21" />
+      <path d="M11.5 12h.01" />
+    </>
+  ),
   // A wallet with a clasp.
   wallet: (
     <>

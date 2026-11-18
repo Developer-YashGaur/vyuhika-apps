@@ -8,7 +8,7 @@ export type Category = "Careers" | "Finance" | "Daily life" | "Developer tools" 
 // "freemium" means free to start, with a paid tier.
 export type Pricing = "free" | "pro" | "freemium";
 
-export type AppIconName = "match" | "letter" | "interview" | "wallet";
+export type AppIconName = "match" | "letter" | "interview" | "wallet" | "door";
 
 export type AppInfo = {
   slug: string;
@@ -40,6 +40,16 @@ export const apps: AppInfo[] = [
     category: "Careers",
     pricing: "free",
     icon: "letter",
+    status: "live",
+  },
+  {
+    slug: "dwaar",
+    name: "Dwaar",
+    description:
+      "Ask employees at a company for a job referral. Add your resume, see your match score, and chat with the employee who accepts. Your phone and email stay private.",
+    category: "Careers",
+    pricing: "free",
+    icon: "door",
     status: "live",
   },
   {
