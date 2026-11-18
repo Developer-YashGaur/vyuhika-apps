@@ -30,8 +30,8 @@ describe("Dwaar conventions", () => {
       expect(readFileSync(page, "utf8"), page).toMatch(expected);
     }
     const meta = readFileSync("lib/dwaar/metadata.ts", "utf8");
-    expect(meta).toMatch(/dwaarMetadata: Metadata = \{[^}]*index: false/s);
-    expect(meta).toMatch(/dwaarPrivacyMetadata: Metadata = \{[^}]*index: false/s);
+    expect(meta.match(/dwaarMetadata: Metadata = \{[\s\S]*?\n\};/)![0]).toMatch(/index: false/);
+    expect(meta.match(/dwaarPrivacyMetadata: Metadata = \{[\s\S]*?\n\};/)![0]).toMatch(/index: false/);
     expect(meta.match(/dwaarPublicMetadata: Metadata = \{[\s\S]*?\n\};/)![0]).not.toMatch(/robots/);
   });
 
