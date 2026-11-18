@@ -69,3 +69,14 @@ export async function scoreResume(boost: BoostResume, generate: GenerateFn | nul
     return null;
   }
 }
+
+// The new score of each of my delivered Boosts, by request. Old Boosts have none, so they are left out.
+export async function listBoostScores(supabase: Db): Promise<Map<string, number>> {
+  const scores = new Map<string, number>();
+  const { data } = await supabase.from("dwaar_boost_results").select("request_id, improved_resume").eq("status", "done");
+  for (const row of data ?? []) {
+    const score = row.improved_resume ? parseResumeDoc(row.improved_resume)?.matchScore : null;
+    if (typeof score === "number") scores.set(row.request_id, score);
+  }
+  return scores;
+}

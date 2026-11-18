@@ -9,6 +9,7 @@ import BoostForm from "@/components/dwaar/BoostForm";
 import RequestCard from "@/components/dwaar/RequestCard";
 import ScoreCard from "@/components/dwaar/ScoreCard";
 import { listMyBoosts, type MyBoost } from "@/lib/dwaar/boost";
+import { listBoostScores } from "@/lib/dwaar/boost-resume";
 import { boostPaymentsEnabled, inviteRewardsEnabled } from "@/lib/dwaar/features";
 import { BOOST_CREDIT_COST, getCreditBalance } from "@/lib/dwaar/credit-boost";
 import { notifyProviders } from "@/lib/dwaar/notify";
@@ -58,7 +59,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   const profile = await getMyProfile(supabase, data.user.id);
   if (!profile) redirect("/apps/dwaar/profile");
 
-  const [requests, analyses, boosts] = await Promise.all([listMyRequests(supabase), listMyAnalyses(supabase), listMyBoosts(supabase)]);
+  const [requests, analyses, boosts, boostScores] = await Promise.all([listMyRequests(supabase), listMyAnalyses(supabase), listMyBoosts(supabase), listBoostScores(supabase)]);
   // If a request has waited 24 hours with no answer, the database hands it to the next 5 employees. It decides when
   // (this does nothing earlier), so asking on every visit is safe. It runs after the page is sent.
   const secret = serverSecret();
@@ -107,7 +108,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
         <ul className="dw-grid">
           {requests.map((r) => (
             <li key={r.out_id}>
-              <RequestItem request={r} analysis={analysisById.get(r.out_id)} boost={boosts.get(r.out_id)} boostOn={boostOn} credits={credits} />
+              <RequestItem request={r} analysis={analysisById.get(r.out_id)} boost={boosts.get(r.out_id)} boostScore={boostScores.get(r.out_id) ?? null} boostOn={boostOn} credits={credits} />
             </li>
           ))}
         </ul>
@@ -116,7 +117,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   );
 }
 
-function RequestItem({ request: r, analysis, boost, boostOn, credits }: { request: MyRequest; analysis?: Analysis; boost?: MyBoost; boostOn: boolean; credits: number }) {
+function RequestItem({ request: r, analysis, boost, boostScore, boostOn, credits }: { request: MyRequest; analysis?: Analysis; boost?: MyBoost; boostScore: number | null; boostOn: boolean; credits: number }) {
   const stamp = statusStamp(r.out_status);
   return (
     <RequestCard
@@ -128,6 +129,14 @@ function RequestItem({ request: r, analysis, boost, boostOn, credits }: { reques
       tone={stamp.tone}
     >
       {analysis && <ScoreCard analysis={analysis} />}
+      {analysis?.score != null && boost?.status === "delivered" && (
+        <p className="dw-alert dw-alert-good text-sm">
+          <strong>{boostScore !== null ? `After your Boost: ${boostScore} out of 100` : "Your Boost is ready."}</strong> (was {analysis.score}).{" "}
+          <Link href={`/apps/dwaar/requests/${r.out_id}/boost`} className="dw-link">
+            {boostScore !== null ? "See your improved resume" : "Open it and check the new score"}
+          </Link>
+        </p>
+      )}
       {r.out_note && <p className="dw-muted text-sm italic">&ldquo;{r.out_note}&rdquo;</p>}
       {r.out_status === "accepted" && (
         <p className="text-sm">

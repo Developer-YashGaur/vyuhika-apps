@@ -2,7 +2,13 @@ import { matchBand, type CandidateMatch } from "@/lib/dwaar/candidate-match";
 
 // For the employee: how well the candidate's resume fits this job, so they can decide quickly whether to help.
 export default function MatchSummary({ match }: { match: CandidateMatch | undefined }) {
-  if (!match) return null;
+  if (!match) {
+    return (
+      <p className="dw-muted mb-3 text-sm">
+        No resume match score for this request. It was made before scores were shared with employees, or the check did not finish.
+      </p>
+    );
+  }
   const band = matchBand(match.score);
   const chip = band.tone === "good" ? "dw-chip dw-chip-good" : band.tone === "info" ? "dw-chip dw-chip-info" : "dw-chip dw-chip-warn";
   return (
