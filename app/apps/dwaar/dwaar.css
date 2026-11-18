@@ -72,7 +72,7 @@ body:has([data-app="dwaar"]) .portal-chrome { display: none; }
 .dw-brand:hover { color: #fff; }
 .dw-brand-tag { font-family: var(--font-dw-body), system-ui, sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #e9cf94; border: 1px solid rgba(233, 207, 148, 0.5); border-radius: 999px; padding: 2px 8px; }
 .dw-nav { display: none; align-items: center; gap: 4px; }
-.dw-nav a { color: rgba(246, 242, 233, 0.88); padding: 8px 12px; border-radius: 8px; font-weight: 500; font-size: 0.95rem; }
+.dw-nav a { white-space: nowrap; color: rgba(246, 242, 233, 0.88); padding: 8px 12px; border-radius: 8px; font-weight: 500; font-size: 0.95rem; }
 .dw-nav a:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
 @media (min-width: 760px) { .dw-nav { display: flex; } .dw-menu { display: none; } }
 .dw-menu { position: relative; }
@@ -481,3 +481,12 @@ textarea.dw-input { min-height: 120px; resize: vertical; }
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
 }
+
+/* Account chip in the top bar (sign in / credits) */
+.dw-account { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(246, 242, 233, 0.45); color: #f6f2e9; font-weight: 600; font-size: 0.875rem; white-space: nowrap; }
+.dw-account:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* Options that exist but are not open (or not allowed) yet: visible, greyed, with a reason */
+.dw-way { border: 1px solid var(--dw-line); border-radius: 12px; padding: 16px 18px; background: var(--dw-surface); }
+.dw-way-locked { background: var(--dw-surface-2); color: var(--dw-muted); border-style: dashed; }
+.dw-way-locked h3 { color: var(--dw-muted); }
