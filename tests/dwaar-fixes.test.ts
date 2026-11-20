@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { pickBetterDraft, shouldTryAgain } from "@/lib/dwaar/deliver-boost";
 import { buildBoostPrompt } from "@/lib/dwaar/boost-writer";
 import { matchCompanyId } from "@/lib/dwaar/jobs";
+import { friendlyRequestError } from "@/lib/dwaar/requests";
+import { friendlyRespondError } from "@/lib/dwaar/inbox";
 
 const draft = (name: string) => ({ improvedResume: name, summary: "", changes: [], profileTips: [], linkedinTips: [] });
 
@@ -54,5 +56,12 @@ describe("matchCompanyId", () => {
     expect(matchCompanyId("Info", list)).toBe("");
     expect(matchCompanyId("", list)).toBe("");
     expect(matchCompanyId("Acme", [{ id: "a", name: "Acme Inc" }, { id: "b", name: "Acme LLC" }])).toBe("");
+  });
+});
+
+describe("suspended accounts", () => {
+  it("get a clear message instead of a generic error", () => {
+    expect(friendlyRequestError("DW060")).toContain("suspended");
+    expect(friendlyRespondError("DW060")).toContain("suspended");
   });
 });
