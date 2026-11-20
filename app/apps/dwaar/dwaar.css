@@ -341,3 +341,32 @@ textarea.dw-input { min-height: 120px; resize: vertical; }
   .dw-wrap { padding-inline: 16px; }
   .dw-menu summary { padding: 0 10px; }
 }
+
+/* ------------------------------------------------------------ feedback and bug reports (bottom right, same button as the other apps) */
+body:has([data-app="dwaar"]) .feedback-chrome {
+  --color-ink: #0b1220;
+  --color-mist: #566074;
+  --color-accent: #2451e6;
+  font-family: var(--font-dw-body), system-ui, sans-serif;
+}
+body:has([data-app="dwaar"]) .feedback-fab { background: #fff; border: 1px solid #c4ccdc; box-shadow: 0 6px 24px rgba(11, 18, 32, 0.18); backdrop-filter: none; }
+body:has([data-app="dwaar"]) .feedback-fab:hover { border-color: #2451e6; box-shadow: 0 8px 28px rgba(36, 81, 230, 0.28); }
+body:has([data-app="dwaar"]) .feedback-dialog::backdrop { background: rgba(11, 18, 32, 0.45); }
+body:has([data-app="dwaar"]) .feedback-panel { background: #fff; border: 1px solid #e3e7ef; box-shadow: 0 24px 60px rgba(11, 18, 32, 0.25); backdrop-filter: none; }
+body:has([data-app="dwaar"]) .feedback-type { background: #f7f8fb; border-color: #c4ccdc; color: #2a3344; }
+body:has([data-app="dwaar"]) .feedback-type:hover { border-color: #2451e6; color: #0b1220; }
+body:has([data-app="dwaar"]) .feedback-type.is-selected { background: #eef1ff; border-color: #2451e6; box-shadow: none; color: #0b1220; }
+body:has([data-app="dwaar"]) .feedback-input { background: #fff; border-color: #c4ccdc; color: #0b1220; }
+body:has([data-app="dwaar"]) .feedback-input::placeholder { color: #6b7488; }
+body:has([data-app="dwaar"]) .feedback-input:focus { border-color: #2451e6; outline: none; box-shadow: 0 0 0 3px rgba(36, 81, 230, 0.2); }
+body:has([data-app="dwaar"]) .feedback-check { background: #eef1ff; border-color: #c9d3fb; }
+body:has([data-app="dwaar"]) .feedback-success-icon { background: #eef1ff; color: #2451e6; }
+body:has([data-app="dwaar"]) .feedback-panel .text-rose-200, body:has([data-app="dwaar"]) .feedback-panel .upload-error { color: #b42318; }
+/* Keep the button clear of the Boost/credit bars and the cookie banner on phones. */
+@media (max-width: 639px) { body:has([data-app="dwaar"]) .feedback-fab { bottom: 1rem; } }
+body:has([data-app="dwaar"]) .feedback-panel .btn-glow { color: #fff; background: #2451e6; box-shadow: none; }
+body:has([data-app="dwaar"]) .feedback-panel .btn-glow:hover { background: #1c42c2; transform: none; box-shadow: none; }
+body:has([data-app="dwaar"]) .feedback-panel .btn-glow:disabled { color: #566074; background: #e3e7ef; }
+body:has([data-app="dwaar"]) .feedback-panel .btn-ghost { color: #0b1220; background: #fff; border-color: #c4ccdc; backdrop-filter: none; }
+body:has([data-app="dwaar"]) .feedback-panel .file-chip-remove:hover { background: #eef1ff; }
+body:has([data-app="dwaar"]) .feedback-panel .upload-error { background: #fef3f2; border-color: #fda29b; }

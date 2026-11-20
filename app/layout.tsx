@@ -39,7 +39,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <ScrollProgress />
           </div>
           <div className="relative z-10">{children}</div>
-          <div className="portal-chrome">
+          {/* Not inside portal-chrome: Dwaar switches that off but keeps this button, in its own light colours (see dwaar.css). */}
+          <div className="feedback-chrome">
             <FeedbackWidget />
           </div>
         </MotionProvider>
