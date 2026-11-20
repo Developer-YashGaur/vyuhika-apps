@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/apps/dwaar#how", label: "How it works" },
   { href: "/apps/dwaar/find", label: "Find jobs" },
   { href: "/apps/dwaar/requests", label: "My requests" },
+  { href: "/apps/dwaar/chats", label: "Chats" },
   { href: "/apps/dwaar/inbox", label: "Employee desk" },
   { href: "/apps/dwaar/credits", label: "Credits" },
   { href: "/apps/dwaar/profile", label: "Profile" },

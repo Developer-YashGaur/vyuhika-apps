@@ -763,6 +763,21 @@ export type Database = {
           out_status: string
         }[]
       }
+      dwaar_my_chats: {
+        Args: never
+        Returns: {
+          out_request_id: string
+          out_job_title: string
+          out_company_name: string
+          out_other_name: string
+          out_is_candidate: boolean
+          out_last_body: string | null
+          out_last_at: string | null
+          out_last_mine: boolean | null
+          out_message_count: number
+          out_accepted_at: string
+        }[]
+      }
       dwaar_set_resume_shared: {
         Args: { p_request_id: string; p_shared: boolean }
         Returns: boolean
