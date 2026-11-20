@@ -149,11 +149,33 @@ export type Database = {
           },
         ]
       }
+      dwaar_ai_uses: {
+        Row: {
+          created_at: string
+          id: number
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          kind: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       dwaar_boost_orders: {
         Row: {
           amount_paise: number
           candidate_id: string
           created_at: string
+          credits_spent: number
           currency: string
           delivery_attempts: number
           gateway_order_id: string | null
@@ -168,6 +190,7 @@ export type Database = {
           amount_paise: number
           candidate_id: string
           created_at?: string
+          credits_spent?: number
           currency?: string
           delivery_attempts?: number
           gateway_order_id?: string | null
@@ -182,6 +205,7 @@ export type Database = {
           amount_paise?: number
           candidate_id?: string
           created_at?: string
+          credits_spent?: number
           currency?: string
           delivery_attempts?: number
           gateway_order_id?: string | null
@@ -193,6 +217,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "dwaar_boost_orders_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "dwaar_boost_orders_request_id_fkey"
             columns: ["request_id"]
@@ -257,10 +288,441 @@ export type Database = {
             foreignKeyName: "dwaar_boost_results_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_boost_results_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
             referencedRelation: "dwaar_referral_requests"
             referencedColumns: ["id"]
           },
         ]
+      }
+      dwaar_chat_reads: {
+        Row: {
+          last_read_at: string
+          request_id: string
+          user_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          request_id: string
+          user_id: string
+        }
+        Update: {
+          last_read_at?: string
+          request_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_chat_reads_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_chat_reads_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_contact_requests: {
+        Row: {
+          answered_at: string | null
+          asked_at: string
+          kind: string
+          request_id: string
+          status: string
+        }
+        Insert: {
+          answered_at?: string | null
+          asked_at?: string
+          kind: string
+          request_id: string
+          status?: string
+        }
+        Update: {
+          answered_at?: string | null
+          asked_at?: string
+          kind?: string
+          request_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_contact_requests_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_contact_requests_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_credits_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          id: number
+          reason: string
+          ref: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: never
+          reason: string
+          ref: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: never
+          reason?: string
+          ref?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dwaar_email_events: {
+        Row: {
+          created_at: string
+          id: number
+          kind: string
+          request_id: string
+          sent_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          kind: string
+          request_id: string
+          sent_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          kind?: string
+          request_id?: string
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_email_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_email_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_invite_codes: {
+        Row: {
+          code: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dwaar_invites: {
+        Row: {
+          created_at: string
+          invitee_id: string
+          inviter_id: string
+          rewarded_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          invitee_id: string
+          inviter_id: string
+          rewarded_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          invitee_id?: string
+          inviter_id?: string
+          rewarded_at?: string | null
+        }
+        Relationships: []
+      }
+      dwaar_job_alerts: {
+        Row: {
+          created_at: string
+          is_active: boolean
+          keywords: string
+          last_sent_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          is_active?: boolean
+          keywords: string
+          last_sent_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          is_active?: boolean
+          keywords?: string
+          last_sent_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dwaar_jobs: {
+        Row: {
+          company: string
+          description: string
+          external_id: string
+          fetched_at: string
+          id: string
+          is_active: boolean
+          location: string
+          posted_at: string | null
+          source: string
+          title: string
+          url: string
+        }
+        Insert: {
+          company: string
+          description?: string
+          external_id: string
+          fetched_at?: string
+          id?: string
+          is_active?: boolean
+          location?: string
+          posted_at?: string | null
+          source: string
+          title: string
+          url: string
+        }
+        Update: {
+          company?: string
+          description?: string
+          external_id?: string
+          fetched_at?: string
+          id?: string
+          is_active?: boolean
+          location?: string
+          posted_at?: string | null
+          source?: string
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      dwaar_match_checks: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          gaps: Json | null
+          id: number
+          input_hash: string
+          model: string | null
+          score: number
+          strengths: Json | null
+          summary: string | null
+          tips: Json | null
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          gaps?: Json | null
+          id?: never
+          input_hash: string
+          model?: string | null
+          score: number
+          strengths?: Json | null
+          summary?: string | null
+          tips?: Json | null
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          gaps?: Json | null
+          id?: never
+          input_hash?: string
+          model?: string | null
+          score?: number
+          strengths?: Json | null
+          summary?: string | null
+          tips?: Json | null
+        }
+        Relationships: []
+      }
+      dwaar_message_flags: {
+        Row: {
+          created_at: string
+          id: number
+          message_id: number
+          reason: string
+          request_id: string
+          reviewed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          message_id: number
+          reason: string
+          request_id: string
+          reviewed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          message_id?: number
+          reason?: string
+          request_id?: string
+          reviewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_message_flags_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: true
+            referencedRelation: "dwaar_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_message_flags_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_message_flags_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: number
+          request_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: never
+          request_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: never
+          request_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_messages_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_messages_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_opening_searches: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: never
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: never
+        }
+        Relationships: []
+      }
+      dwaar_plan_passes: {
+        Row: {
+          amount_paise: number
+          created_at: string
+          currency: string
+          ends_at: string | null
+          gateway_order_id: string | null
+          gateway_payment_id: string | null
+          id: string
+          paid_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_paise: number
+          created_at?: string
+          currency?: string
+          ends_at?: string | null
+          gateway_order_id?: string | null
+          gateway_payment_id?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_paise?: number
+          created_at?: string
+          currency?: string
+          ends_at?: string | null
+          gateway_order_id?: string | null
+          gateway_payment_id?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       dwaar_profiles: {
         Row: {
@@ -364,6 +826,13 @@ export type Database = {
             foreignKeyName: "dwaar_provider_notifications_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_provider_notifications_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
             referencedRelation: "dwaar_referral_requests"
             referencedColumns: ["id"]
           },
@@ -371,12 +840,13 @@ export type Database = {
       }
       dwaar_referral_requests: {
         Row: {
-          chat_closed_at: string | null
           accepted_at: string | null
           accepted_by: string | null
           candidate_id: string
+          chat_closed_at: string | null
           company_id: string
           created_at: string
+          expiry_notified_at: string | null
           id: string
           job_description: string | null
           job_id: string | null
@@ -386,16 +856,18 @@ export type Database = {
           notified_at: string | null
           resume_consent_at: string | null
           resume_path: string | null
+          resume_shared: boolean
           status: Database["public"]["Enums"]["referral_status"]
           updated_at: string
         }
         Insert: {
-          chat_closed_at?: string | null
           accepted_at?: string | null
           accepted_by?: string | null
           candidate_id: string
+          chat_closed_at?: string | null
           company_id: string
           created_at?: string
+          expiry_notified_at?: string | null
           id?: string
           job_description?: string | null
           job_id?: string | null
@@ -405,16 +877,18 @@ export type Database = {
           notified_at?: string | null
           resume_consent_at?: string | null
           resume_path?: string | null
+          resume_shared?: boolean
           status?: Database["public"]["Enums"]["referral_status"]
           updated_at?: string
         }
         Update: {
-          chat_closed_at?: string | null
           accepted_at?: string | null
           accepted_by?: string | null
           candidate_id?: string
+          chat_closed_at?: string | null
           company_id?: string
           created_at?: string
+          expiry_notified_at?: string | null
           id?: string
           job_description?: string | null
           job_id?: string | null
@@ -424,6 +898,7 @@ export type Database = {
           notified_at?: string | null
           resume_consent_at?: string | null
           resume_path?: string | null
+          resume_shared?: boolean
           status?: Database["public"]["Enums"]["referral_status"]
           updated_at?: string
         }
@@ -462,6 +937,82 @@ export type Database = {
             foreignKeyName: "dwaar_request_dismissals_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_request_dismissals_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_request_offers: {
+        Row: {
+          offered_at: string
+          provider_id: string
+          request_id: string
+          wave: number
+        }
+        Insert: {
+          offered_at?: string
+          provider_id: string
+          request_id: string
+          wave: number
+        }
+        Update: {
+          offered_at?: string
+          provider_id?: string
+          request_id?: string
+          wave?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_request_offers_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_request_offers_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_request_outcomes: {
+        Row: {
+          outcome: string
+          reported_at: string
+          request_id: string
+        }
+        Insert: {
+          outcome: string
+          reported_at?: string
+          request_id: string
+        }
+        Update: {
+          outcome?: string
+          reported_at?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_request_outcomes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_request_outcomes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
             referencedRelation: "dwaar_referral_requests"
             referencedColumns: ["id"]
           },
@@ -506,10 +1057,53 @@ export type Database = {
             foreignKeyName: "dwaar_resume_analyses_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: true
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_resume_analyses_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
             referencedRelation: "dwaar_referral_requests"
             referencedColumns: ["id"]
           },
         ]
+      }
+      dwaar_role_searches: {
+        Row: {
+          candidate_id: string
+          created_at: string
+          id: number
+        }
+        Insert: {
+          candidate_id: string
+          created_at?: string
+          id?: never
+        }
+        Update: {
+          candidate_id?: string
+          created_at?: string
+          id?: never
+        }
+        Relationships: []
+      }
+      dwaar_suspensions: {
+        Row: {
+          suspended_at: string
+          suspended_by: string | null
+          user_id: string
+        }
+        Insert: {
+          suspended_at?: string
+          suspended_by?: string | null
+          user_id: string
+        }
+        Update: {
+          suspended_at?: string
+          suspended_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       dwaar_work_email_codes: {
         Row: {
@@ -544,12 +1138,6 @@ export type Database = {
         }
         Relationships: []
       }
-      dwaar_suspensions: {
-        Row: { suspended_at: string; suspended_by: string | null; user_id: string }
-        Insert: { suspended_at?: string; suspended_by?: string | null; user_id: string }
-        Update: { suspended_at?: string; suspended_by?: string | null; user_id?: string }
-        Relationships: []
-      }
     }
     Views: {
       company_options: {
@@ -567,73 +1155,108 @@ export type Database = {
         }
         Relationships: []
       }
+      dwaar_admin_chat_flags: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          id: number | null
+          job_title: string | null
+          message_body: string | null
+          message_id: number | null
+          reason: string | null
+          request_id: string | null
+          reviewed_at: string | null
+          sender_id: string | null
+          sender_name: string | null
+          sender_suspended: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dwaar_message_flags_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: true
+            referencedRelation: "dwaar_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_message_flags_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_admin_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dwaar_message_flags_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "dwaar_referral_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dwaar_admin_overview: {
+        Row: {
+          boosts_paid: number | null
+          candidates: number | null
+          chat_flags: number | null
+          jobs_active: number | null
+          jobs_last_fetched_at: string | null
+          plans_active: number | null
+          providers: number | null
+          providers_verified: number | null
+          requests_accepted: number | null
+          requests_cancelled: number | null
+          requests_open: number | null
+          requests_total: number | null
+          users_total: number | null
+        }
+        Relationships: []
+      }
+      dwaar_admin_requests: {
+        Row: {
+          accepted_at: string | null
+          company_name: string | null
+          created_at: string | null
+          id: string | null
+          job_title: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
+      dwaar_admin_users: {
+        Row: {
+          boosts_paid: number | null
+          company_name: string | null
+          consent_accepted_at: string | null
+          consent_version: string | null
+          created_at: string | null
+          credits_balance: number | null
+          credits_earned: number | null
+          display_name: string | null
+          email: string | null
+          is_candidate: boolean | null
+          is_provider: boolean | null
+          last_sign_in_at: string | null
+          plan_active: boolean | null
+          referrals_given: number | null
+          requests_accepted: number | null
+          requests_made: number | null
+          suspended: boolean | null
+          user_id: string | null
+          work_email_verified: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       dwaar_analyses_used_today: { Args: never; Returns: number }
-      dwaar_role_searches_used_today: { Args: never; Returns: number }
-      dwaar_role_search_status: {
-        Args: never
-        Returns: { out_used: number; out_today: number; out_free: number; out_max: number; out_cost: number; out_credits: number }[]
+      dwaar_answer_contact: {
+        Args: { p_kind: string; p_request_id: string; p_share: boolean }
+        Returns: string
       }
-      dwaar_record_role_search: { Args: { p_secret: string }; Returns: boolean }
-      dwaar_upsert_jobs: { Args: { p_secret: string; p_jobs: Json }; Returns: number }
-      dwaar_use_plus_ai: { Args: { p_secret: string; p_kind: string }; Returns: number }
-      dwaar_my_job_alert: { Args: never; Returns: { out_keywords: string; out_is_active: boolean }[] }
-      dwaar_set_job_alert: { Args: { p_keywords: string; p_active: boolean }; Returns: boolean }
-      dwaar_claim_job_alerts: {
-        Args: { p_secret: string; p_limit?: number }
-        Returns: { out_user_id: string; out_email: string; out_name: string; out_keywords: string; out_jobs: Json }[]
-      }
-      dwaar_report_outcome: { Args: { p_request_id: string; p_outcome: string }; Returns: boolean }
-      dwaar_request_outcome: { Args: { p_request_id: string }; Returns: string }
-      dwaar_my_earnings: {
-        Args: never
-        Returns: { out_accept_credits: number; out_outcome_credits: number; out_accepted: number; out_interviews: number; out_offers: number }[]
-      }
-      dwaar_latest_jobs: {
-        Args: { p_query?: string | null; p_limit?: number }
-        Returns: {
-          out_id: string
-          out_title: string
-          out_company: string
-          out_location: string
-          out_description: string
-          out_url: string
-          out_source: string
-          out_posted_at: string | null
-        }[]
-      }
-      dwaar_companies_with_referrers: {
-        Args: never
-        Returns: {
-          out_company_id: string
-          out_company_name: string
-          out_referrers: number
-        }[]
-      }
-      dwaar_find_check: {
-        Args: { p_hash: string; p_secret: string }
-        Returns: {
-          out_gaps: Json
-          out_model: string
-          out_score: number
-          out_strengths: Json
-          out_summary: string
-          out_tips: Json
-        }[]
-      }
-      dwaar_record_check: {
-        Args: {
-          p_gaps: Json
-          p_hash: string
-          p_model: string
-          p_score: number
-          p_secret: string
-          p_strengths: Json
-          p_summary: string
-          p_tips: Json
-        }
-        Returns: boolean
+      dwaar_ask_contact: {
+        Args: { p_kind: string; p_request_id: string }
+        Returns: string
       }
       dwaar_attach_gateway_order: {
         Args: {
@@ -643,7 +1266,94 @@ export type Database = {
         }
         Returns: boolean
       }
+      dwaar_attach_plan_order: {
+        Args: {
+          p_gateway_order_id: string
+          p_pass_id: string
+          p_secret: string
+        }
+        Returns: boolean
+      }
       dwaar_cancel_request: { Args: { p_request_id: string }; Returns: boolean }
+      dwaar_candidate_extras: {
+        Args: { p_request_ids: string[] }
+        Returns: {
+          out_linkedin_url: string
+          out_other_links: string[]
+          out_request_id: string
+          out_skills: string[]
+        }[]
+      }
+      dwaar_candidate_matches: {
+        Args: { p_request_ids: string[] }
+        Returns: {
+          out_gaps: Json
+          out_request_id: string
+          out_score: number
+          out_strengths: Json
+          out_summary: string
+        }[]
+      }
+      dwaar_chat_info: {
+        Args: { p_request_id: string }
+        Returns: {
+          out_can_send: boolean
+          out_company_name: string
+          out_is_candidate: boolean
+          out_job_title: string
+          out_other_name: string
+        }[]
+      }
+      dwaar_chat_messages: {
+        Args: { p_request_id: string }
+        Returns: {
+          out_body: string
+          out_created_at: string
+          out_id: number
+          out_mine: boolean
+        }[]
+      }
+      dwaar_chat_resume: {
+        Args: { p_request_id: string }
+        Returns: {
+          out_has_resume: boolean
+          out_is_candidate: boolean
+          out_path: string
+          out_shared: boolean
+        }[]
+      }
+      dwaar_claim_email_events: {
+        Args: { p_secret: string }
+        Returns: {
+          out_company_name: string
+          out_job_title: string
+          out_kind: string
+          out_other_name: string
+          out_request_id: string
+          out_to_email: string
+          out_to_name: string
+        }[]
+      }
+      dwaar_claim_expired_notices: {
+        Args: { p_limit?: number; p_secret: string }
+        Returns: {
+          out_company_name: string
+          out_job_title: string
+          out_request_id: string
+          out_to_email: string
+          out_to_name: string
+        }[]
+      }
+      dwaar_claim_job_alerts: {
+        Args: { p_limit?: number; p_secret: string }
+        Returns: {
+          out_email: string
+          out_jobs: Json
+          out_keywords: string
+          out_name: string
+          out_user_id: string
+        }[]
+      }
       dwaar_claim_provider_notifications: {
         Args: { p_request_id: string; p_secret: string }
         Returns: {
@@ -653,16 +1363,35 @@ export type Database = {
           out_work_email: string
         }[]
       }
-      dwaar_offer_next_wave: {
-        Args: { p_request_id: string; p_secret: string }
+      dwaar_close_chat: { Args: { p_request_id: string }; Returns: boolean }
+      dwaar_closed_chats: { Args: never; Returns: string[] }
+      dwaar_companies_with_referrers: {
+        Args: never
         Returns: {
+          out_company_id: string
           out_company_name: string
-          out_job_title: string
-          out_name: string
-          out_work_email: string
+          out_referrers: number
         }[]
       }
       dwaar_confirm_work_email: { Args: { p_code: string }; Returns: boolean }
+      dwaar_contact_state: {
+        Args: { p_request_id: string }
+        Returns: {
+          out_is_candidate: boolean
+          out_kind: string
+          out_status: string
+          out_value: string
+        }[]
+      }
+      dwaar_contact_timeline: {
+        Args: { p_request_id: string }
+        Returns: {
+          out_answered_at: string
+          out_asked_at: string
+          out_kind: string
+          out_status: string
+        }[]
+      }
       dwaar_create_request: {
         Args: {
           p_company_id: string
@@ -676,13 +1405,25 @@ export type Database = {
         }
         Returns: string
       }
-      dwaar_close_chat: {
-        Args: { p_request_id: string }
+      dwaar_credit_balance: { Args: never; Returns: number }
+      dwaar_employee_can_read_resume: {
+        Args: { p_path: string }
         Returns: boolean
       }
-      dwaar_closed_chats: {
-        Args: never
-        Returns: string[]
+      dwaar_find_check: {
+        Args: { p_hash: string; p_secret: string }
+        Returns: {
+          out_gaps: Json
+          out_model: string
+          out_score: number
+          out_strengths: Json
+          out_summary: string
+          out_tips: Json
+        }[]
+      }
+      dwaar_flag_message: {
+        Args: { p_reason: string; p_request_id: string; p_secret: string }
+        Returns: boolean
       }
       dwaar_forget_my_requests: {
         Args: { p_request_id?: string }
@@ -704,7 +1445,29 @@ export type Database = {
           out_work_email: string
         }[]
       }
+      dwaar_latest_jobs: {
+        Args: { p_limit?: number; p_query?: string }
+        Returns: {
+          out_company: string
+          out_description: string
+          out_id: string
+          out_location: string
+          out_posted_at: string
+          out_source: string
+          out_title: string
+          out_url: string
+        }[]
+      }
       dwaar_mark_boost_paid: {
+        Args: {
+          p_gateway_order_id: string
+          p_gateway_payment_id: string
+          p_secret: string
+        }
+        Returns: boolean
+      }
+      dwaar_mark_chat_read: { Args: { p_request_id: string }; Returns: boolean }
+      dwaar_mark_plan_paid: {
         Args: {
           p_gateway_order_id: string
           p_gateway_payment_id: string
@@ -716,69 +1479,6 @@ export type Database = {
         Args: { p_request_ids: string[]; p_secret: string }
         Returns: number
       }
-      dwaar_chat_info: {
-        Args: { p_request_id: string }
-        Returns: {
-          out_can_send: boolean
-          out_company_name: string
-          out_is_candidate: boolean
-          out_job_title: string
-          out_other_name: string
-        }[]
-      }
-      dwaar_chat_messages: {
-        Args: { p_request_id: string }
-        Returns: {
-          out_body: string
-          out_created_at: string
-          out_id: number
-          out_mine: boolean
-        }[]
-      }
-      dwaar_replace_my_resume: {
-        Args: { p_new_path: string; p_request_id: string; p_secret: string }
-        Returns: string
-      }
-      dwaar_send_message: { Args: { p_body: string; p_request_id: string }; Returns: string }
-      dwaar_credit_balance: { Args: never; Returns: number }
-      dwaar_ask_contact: { Args: { p_kind: string; p_request_id: string }; Returns: string }
-      dwaar_answer_contact: { Args: { p_kind: string; p_request_id: string; p_share: boolean }; Returns: string }
-      dwaar_contact_state: {
-        Args: { p_request_id: string }
-        Returns: { out_is_candidate: boolean; out_kind: string; out_status: string; out_value: string }[]
-      }
-      dwaar_candidate_extras: {
-        Args: { p_request_ids: string[] }
-        Returns: { out_linkedin_url: string; out_other_links: string[]; out_request_id: string; out_skills: string[] }[]
-      }
-      dwaar_flag_message: { Args: { p_reason: string; p_request_id: string; p_secret: string }; Returns: boolean }
-      dwaar_opening_searches_used_today: { Args: never; Returns: number }
-      dwaar_record_opening_search: { Args: { p_secret: string }; Returns: boolean }
-      dwaar_claim_email_events: {
-        Args: { p_secret: string }
-        Returns: {
-          out_company_name: string
-          out_job_title: string
-          out_kind: string
-          out_other_name: string
-          out_request_id: string
-          out_to_email: string
-          out_to_name: string
-        }[]
-      }
-      dwaar_my_plan: {
-        Args: never
-        Returns: { out_active: boolean; out_daily_checks: number; out_ends_at: string | null }[]
-      }
-      dwaar_start_plan: {
-        Args: never
-        Returns: { out_amount_paise: number; out_currency: string; out_gateway_order_id: string | null; out_pass_id: string }[]
-      }
-      dwaar_attach_plan_order: { Args: { p_gateway_order_id: string; p_pass_id: string; p_secret: string }; Returns: boolean }
-      dwaar_mark_plan_paid: { Args: { p_gateway_order_id: string; p_gateway_payment_id: string; p_secret: string }; Returns: boolean }
-      dwaar_spend_credits_on_boost: { Args: { p_request_id: string }; Returns: string }
-      dwaar_my_invite_code: { Args: never; Returns: string }
-      dwaar_use_invite: { Args: { p_code: string }; Returns: string }
       dwaar_my_accepted_requests: {
         Args: never
         Returns: {
@@ -790,6 +1490,48 @@ export type Database = {
           out_job_title: string
           out_job_url: string
           out_my_replies: number
+        }[]
+      }
+      dwaar_my_chats: {
+        Args: never
+        Returns: {
+          out_accepted_at: string
+          out_company_name: string
+          out_is_candidate: boolean
+          out_job_title: string
+          out_last_at: string
+          out_last_body: string
+          out_last_mine: boolean
+          out_message_count: number
+          out_other_name: string
+          out_request_id: string
+          out_unread: number
+        }[]
+      }
+      dwaar_my_earnings: {
+        Args: never
+        Returns: {
+          out_accept_credits: number
+          out_accepted: number
+          out_interviews: number
+          out_offers: number
+          out_outcome_credits: number
+        }[]
+      }
+      dwaar_my_invite_code: { Args: never; Returns: string }
+      dwaar_my_job_alert: {
+        Args: never
+        Returns: {
+          out_is_active: boolean
+          out_keywords: string
+        }[]
+      }
+      dwaar_my_plan: {
+        Args: never
+        Returns: {
+          out_active: boolean
+          out_daily_checks: number
+          out_ends_at: string
         }[]
       }
       dwaar_my_requests: {
@@ -811,45 +1553,22 @@ export type Database = {
           out_status: string
         }[]
       }
-      dwaar_my_chats: {
-        Args: never
-        Returns: {
-          out_request_id: string
-          out_job_title: string
-          out_company_name: string
-          out_other_name: string
-          out_is_candidate: boolean
-          out_last_body: string | null
-          out_last_at: string | null
-          out_last_mine: boolean | null
-          out_message_count: number
-          out_accepted_at: string
-          out_unread: number
-        }[]
-      }
-      dwaar_mark_chat_read: {
-        Args: { p_request_id: string }
-        Returns: boolean
-      }
       dwaar_notification_counts: {
         Args: never
-        Returns: { out_unread: number; out_unread_chats: number; out_waiting_requests: number }[]
+        Returns: {
+          out_unread: number
+          out_unread_chats: number
+          out_waiting_requests: number
+        }[]
       }
-      dwaar_contact_timeline: {
-        Args: { p_request_id: string }
-        Returns: { out_kind: string; out_status: string; out_asked_at: string; out_answered_at: string | null }[]
-      }
-      dwaar_set_resume_shared: {
-        Args: { p_request_id: string; p_shared: boolean }
-        Returns: boolean
-      }
-      dwaar_chat_resume: {
-        Args: { p_request_id: string }
-        Returns: { out_is_candidate: boolean; out_shared: boolean; out_has_resume: boolean; out_path: string | null }[]
-      }
-      dwaar_candidate_matches: {
-        Args: { p_request_ids: string[] }
-        Returns: { out_request_id: string; out_score: number; out_summary: string; out_strengths: Json; out_gaps: Json }[]
+      dwaar_offer_next_wave: {
+        Args: { p_request_id: string; p_secret: string }
+        Returns: {
+          out_company_name: string
+          out_job_title: string
+          out_name: string
+          out_work_email: string
+        }[]
       }
       dwaar_open_requests_for_provider: {
         Args: never
@@ -864,6 +1583,34 @@ export type Database = {
           out_note: string
         }[]
       }
+      dwaar_opening_searches_used_today: { Args: never; Returns: number }
+      dwaar_record_check: {
+        Args: {
+          p_gaps: Json
+          p_hash: string
+          p_model: string
+          p_score: number
+          p_secret: string
+          p_strengths: Json
+          p_summary: string
+          p_tips: Json
+        }
+        Returns: boolean
+      }
+      dwaar_record_opening_search: {
+        Args: { p_secret: string }
+        Returns: boolean
+      }
+      dwaar_record_role_search: { Args: { p_secret: string }; Returns: boolean }
+      dwaar_replace_my_resume: {
+        Args: { p_new_path: string; p_request_id: string; p_secret: string }
+        Returns: string
+      }
+      dwaar_report_outcome: {
+        Args: { p_outcome: string; p_request_id: string }
+        Returns: boolean
+      }
+      dwaar_request_outcome: { Args: { p_request_id: string }; Returns: string }
       dwaar_respond_to_request: {
         Args: { p_accept: boolean; p_request_id: string }
         Returns: string
@@ -875,6 +1622,18 @@ export type Database = {
           out_resume_path: string
         }[]
       }
+      dwaar_role_search_status: {
+        Args: never
+        Returns: {
+          out_cost: number
+          out_credits: number
+          out_free: number
+          out_max: number
+          out_today: number
+          out_used: number
+        }[]
+      }
+      dwaar_role_searches_used_today: { Args: never; Returns: number }
       dwaar_save_analysis: {
         Args: {
           p_gaps: Json
@@ -902,6 +1661,22 @@ export type Database = {
         }
         Returns: boolean
       }
+      dwaar_send_message: {
+        Args: { p_body: string; p_request_id: string }
+        Returns: string
+      }
+      dwaar_set_job_alert: {
+        Args: { p_active: boolean; p_keywords: string }
+        Returns: boolean
+      }
+      dwaar_set_resume_shared: {
+        Args: { p_request_id: string; p_shared: boolean }
+        Returns: boolean
+      }
+      dwaar_spend_credits_on_boost: {
+        Args: { p_request_id: string }
+        Returns: string
+      }
       dwaar_start_boost: {
         Args: { p_request_id: string }
         Returns: {
@@ -912,6 +1687,26 @@ export type Database = {
           out_status: string
         }[]
       }
+      dwaar_start_plan: {
+        Args: never
+        Returns: {
+          out_amount_paise: number
+          out_currency: string
+          out_gateway_order_id: string
+          out_pass_id: string
+        }[]
+      }
+      dwaar_upsert_jobs: {
+        Args: { p_jobs: Json; p_secret: string }
+        Returns: number
+      }
+      dwaar_use_invite: { Args: { p_code: string }; Returns: string }
+      dwaar_use_plus_ai: {
+        Args: { p_kind: string; p_secret: string }
+        Returns: number
+      }
+      dwaar_valid_links: { Args: { p_links: string[] }; Returns: boolean }
+      dwaar_valid_skills: { Args: { p_skills: string[] }; Returns: boolean }
       email_matches_company: {
         Args: { p_company_id: string; p_email: string }
         Returns: boolean
