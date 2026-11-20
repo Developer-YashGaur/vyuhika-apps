@@ -3,19 +3,24 @@ import { Suspense } from "react";
 import DwaarAccount from "@/components/dwaar/DwaarAccount";
 import DwaarMark from "@/components/dwaar/DwaarMark";
 import DwaarNav, { type NavLink } from "@/components/dwaar/DwaarNav";
+import { jobsFeedEnabled } from "@/lib/dwaar/features";
 
-const LINKS: NavLink[] = [
+function links(): NavLink[] {
+  return [
   { href: "/apps/dwaar#how", label: "How it works" },
   { href: "/apps/dwaar/find", label: "Find jobs" },
+  ...(jobsFeedEnabled() ? [{ href: "/apps/dwaar/jobs", label: "Latest jobs" }] : []),
   { href: "/apps/dwaar/requests", label: "My requests" },
   { href: "/apps/dwaar/chats", label: "Chats", badge: "unread" },
   { href: "/apps/dwaar/inbox", label: "Employee desk", badge: "waiting" },
   { href: "/apps/dwaar/credits", label: "Credits" },
   { href: "/apps/dwaar/profile", label: "Profile" },
-];
+  ];
+}
 
 // Dwaar's own top bar. The account area (sign in / credits) loads in its own <Suspense>, so the page never waits for it.
 export default function DwaarHeader() {
+  const LINKS = links();
   return (
     <header className="dw-header">
       <div className="dw-wrap dw-header-inner">

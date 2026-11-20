@@ -298,3 +298,16 @@ textarea.dw-input { min-height: 120px; resize: vertical; }
 .dw-plan-plus [role="status"] { color: #fff; }
 .dw-plan-plus .dw-btn-primary { background: #fff; color: #0b1220; }
 .dw-plan-plus .dw-btn-primary:hover:not(:disabled) { background: #eef1ff; }
+
+/* Latest jobs */
+.dw-jobsearch { display: flex; flex-wrap: wrap; gap: 10px; max-width: 720px; }
+.dw-jobsearch .dw-input { flex: 1 1 260px; width: auto; }
+.dw-jobs { display: grid; gap: 16px; }
+.dw-job { background: var(--dw-surface); border: 1px solid var(--dw-line); border-radius: 16px; padding: 22px; display: grid; gap: 12px; }
+.dw-job-head { display: flex; gap: 14px; align-items: center; }
+.dw-job-title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.dw-job-text { color: var(--dw-ink-2); font-size: 0.95rem; line-height: 1.55; }
+.dw-job-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.dw-strip { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.dw-strip-card { display: flex; gap: 12px; align-items: center; background: var(--dw-surface); border: 1px solid var(--dw-line); border-radius: 16px; padding: 18px; height: 100%; }
+.dw-strip-card:hover { border-color: var(--dw-primary); }

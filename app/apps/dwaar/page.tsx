@@ -4,6 +4,7 @@ import SampleMatchCard from "@/components/dwaar/art/SampleMatchCard";
 import EmployeeBand from "@/components/dwaar/EmployeeBand";
 import DwaarHome from "@/components/dwaar/DwaarHome";
 import DwaarFaq from "@/components/dwaar/DwaarFaq";
+import LatestJobsStrip from "@/components/dwaar/LatestJobsStrip";
 import HowItWorks from "@/components/dwaar/HowItWorks";
 import JsonLd from "@/components/JsonLd";
 import { dwaarPublicMetadata } from "@/lib/dwaar/metadata";
@@ -54,6 +55,10 @@ export default function DwaarPage({ searchParams }: { searchParams: Promise<{ er
           <DwaarHome searchParams={searchParams} />
         </Suspense>
       </section>
+
+      <Suspense fallback={null}>
+        <LatestJobsStrip />
+      </Suspense>
 
       <HowItWorks />
       <EmployeeBand />

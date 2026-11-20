@@ -16,3 +16,8 @@ export function inviteRewardsEnabled(env: Record<string, string | undefined> = p
 export function planPaymentsEnabled(env: Record<string, string | undefined> = process.env): boolean {
   return env.DWAAR_PLAN_ENABLED?.trim().toLowerCase() === "true";
 }
+
+// The "Latest jobs" feed and page are OFF until you switch them on. Turn on with DWAAR_JOBS_ENABLED=true.
+export function jobsFeedEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env.DWAAR_JOBS_ENABLED?.trim().toLowerCase() === "true";
+}
