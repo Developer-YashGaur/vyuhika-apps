@@ -2,18 +2,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { createRazorpayOrder, verifyPaymentSignature, type RazorpayKeys } from "@/lib/dwaar/razorpay";
 
-// The Plus pass: 30 days of more resume checks, plus a few credits. A one-time payment, never an automatic renewal.
+// The Plus pass: 30 days of more resume checks, AI tools (cover letter, interview practice), job alerts, plus a few credits. A one-time payment, never an automatic renewal.
 // The database decides the price and the benefits; this code creates the matching Razorpay order and checks the
 // signed receipt. The numbers below are only for showing on the page: keep them in step with private.dwaar_config.
 
 type Db = SupabaseClient<Database>;
 
-export const PLAN_PRICE_RUPEES = 199;
+export const PLAN_PRICE_RUPEES = 299;
 export const PLAN_DAYS = 30;
 export const PLAN_CREDITS = 50;
 export const PLAN_DAILY_CHECKS = 20;
 export const FREE_DAILY_CHECKS = 5;
-export const PLAN_DESCRIPTION = "Dwaar Plus: 30 days of more resume checks, plus 50 credits";
+export const PLAN_DESCRIPTION = "Dwaar Plus: 30 days of more resume checks, AI tools and job alerts, plus 50 credits";
 
 export type MyPlan = { active: boolean; endsAt: string | null; dailyChecks: number };
 
@@ -102,4 +102,10 @@ export async function confirmPlanPayment({ supabase, secret, keys }: Deps, recei
     return { kind: "failed" };
   }
   return { kind: "paid" };
+}
+
+// Whole days left until a pass ends (rounded up, never below 0). Used for the "renew soon" note.
+export function daysLeft(endsAt: string | null, now: number = Date.now()): number | null {
+  if (!endsAt) return null;
+  return Math.max(0, Math.ceil((new Date(endsAt).getTime() - now) / 86_400_000));
 }

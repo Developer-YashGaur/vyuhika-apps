@@ -22,6 +22,9 @@ import { respondToRequest } from "@/lib/dwaar/inbox";
 import { notifyProviders } from "@/lib/dwaar/notify";
 import { sendRequestSentEmail, sendStatusEmails } from "@/lib/dwaar/notify-status";
 import { ROLE_MESSAGES, findRoles, type RoleSuggestion } from "@/lib/dwaar/role-finder";
+import { ALERT_MESSAGES, saveMyAlert } from "@/lib/dwaar/job-alerts";
+import { OUTCOME_MESSAGES, reportOutcome, type Outcome } from "@/lib/dwaar/earnings";
+import { INTERVIEW_MESSAGES, practiceFeedback, practiceQuestions, type Feedback } from "@/lib/dwaar/interview";
 import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
 import { loadBoostResume, scoreResume } from "@/lib/dwaar/boost-resume";
@@ -571,4 +574,62 @@ export async function answerContactAction(requestId: string, kind: string, share
   if (result.ok) emailStatusChanges(supabase);
   revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
   return result;
+}
+
+// ---- Plus: interview practice ----
+
+export type PracticeQuestionsState = { message: string | null; role: string; questions: string[] };
+export type PracticeFeedbackState = { message: string | null; feedback: Feedback | null };
+
+async function signedInSupabase() {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  return supabase;
+}
+
+export async function practiceQuestionsAction(_previous: PracticeQuestionsState, formData: FormData): Promise<PracticeQuestionsState> {
+  const supabase = await signedInSupabase();
+  const role = String(formData.get("role") ?? "").trim().slice(0, 80);
+  const description = String(formData.get("description") ?? "").trim().slice(0, 3000);
+  if (role.length < 2) return { message: INTERVIEW_MESSAGES.role, role: "", questions: [] };
+  const outcome = await practiceQuestions({ supabase, secret: serverSecret(), generate: createGeminiGenerate() }, role, description);
+  if (outcome.kind !== "done") return { message: INTERVIEW_MESSAGES[outcome.kind], role, questions: [] };
+  return { message: null, role, questions: outcome.value };
+}
+
+export async function practiceFeedbackAction(role: string, question: string, _previous: PracticeFeedbackState, formData: FormData): Promise<PracticeFeedbackState> {
+  const supabase = await signedInSupabase();
+  const answer = String(formData.get("answer") ?? "").trim().slice(0, 2000);
+  if (answer.length < 40) return { message: INTERVIEW_MESSAGES.short, feedback: null };
+  const outcome = await practiceFeedback({ supabase, secret: serverSecret(), generate: createGeminiGenerate() }, role.slice(0, 80), question.slice(0, 250), answer);
+  if (outcome.kind !== "done") return { message: INTERVIEW_MESSAGES[outcome.kind], feedback: null };
+  return { message: null, feedback: outcome.value };
+}
+
+// ---- Plus: job alerts ----
+
+export type JobAlertState = { message: string | null; ok: boolean };
+
+export async function saveJobAlertAction(_previous: JobAlertState, formData: FormData): Promise<JobAlertState> {
+  const supabase = await signedInSupabase();
+  const active = formData.get("intent") !== "off";
+  const keywords = String(formData.get("keywords") ?? "").trim().slice(0, 100);
+  const result = await saveMyAlert(supabase, keywords, active);
+  revalidatePath("/apps/dwaar/jobs");
+  return { message: ALERT_MESSAGES[result], ok: result === "saved" || result === "off" };
+}
+
+// ---- Candidate says how a referral went (the employee earns credits) ----
+
+export type OutcomeState = { message: string | null; outcome: Outcome };
+
+export async function reportOutcomeAction(requestId: string, _previous: OutcomeState, formData: FormData): Promise<OutcomeState> {
+  const supabase = await signedInSupabase();
+  if (!UUID.test(requestId)) return { message: OUTCOME_MESSAGES.failed, outcome: "" };
+  const outcome = String(formData.get("outcome") ?? "");
+  const result = await reportOutcome(supabase, requestId, outcome);
+  revalidatePath("/apps/dwaar/requests");
+  return { message: OUTCOME_MESSAGES[result], outcome: result === "failed" ? _previous.outcome : (outcome as Outcome) };
 }

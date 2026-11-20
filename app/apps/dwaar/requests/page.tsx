@@ -6,7 +6,9 @@ import { cancelRequestAction } from "@/app/apps/dwaar/actions";
 import BoostButton from "@/components/dwaar/BoostButton";
 import CreditBoostButton from "@/components/dwaar/CreditBoostButton";
 import BoostForm from "@/components/dwaar/BoostForm";
+import OutcomeButtons from "@/components/dwaar/OutcomeButtons";
 import RequestCard from "@/components/dwaar/RequestCard";
+import { getOutcome, type Outcome } from "@/lib/dwaar/earnings";
 import ScoreCard from "@/components/dwaar/ScoreCard";
 import { listMyBoosts, type MyBoost } from "@/lib/dwaar/boost";
 import { listBoostScores } from "@/lib/dwaar/boost-resume";
@@ -72,6 +74,9 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
     });
   }
   const analysisById = new Map(analyses.map((a) => [a.requestId, a]));
+  // What the candidate already said about each accepted request (a few small reads).
+  const acceptedIds = requests.filter((r) => r.out_status === "accepted").map((r) => r.out_id);
+  const outcomes = new Map<string, Outcome>(await Promise.all(acceptedIds.map(async (id) => [id, await getOutcome(supabase, id)] as const)));
   const boostOn = boostPaymentsEnabled();
   const credits = inviteRewardsEnabled() ? await getCreditBalance(supabase) : 0;
   const checkNote: Record<string, string> = {
@@ -108,7 +113,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
         <ul className="dw-grid">
           {requests.map((r) => (
             <li key={r.out_id}>
-              <RequestItem request={r} analysis={analysisById.get(r.out_id)} boost={boosts.get(r.out_id)} boostScore={boostScores.get(r.out_id) ?? null} boostOn={boostOn} credits={credits} />
+              <RequestItem request={r} analysis={analysisById.get(r.out_id)} boost={boosts.get(r.out_id)} boostScore={boostScores.get(r.out_id) ?? null} boostOn={boostOn} credits={credits} outcome={outcomes.get(r.out_id) ?? ""} />
             </li>
           ))}
         </ul>
@@ -117,7 +122,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   );
 }
 
-function RequestItem({ request: r, analysis, boost, boostScore, boostOn, credits }: { request: MyRequest; analysis?: Analysis; boost?: MyBoost; boostScore: number | null; boostOn: boolean; credits: number }) {
+function RequestItem({ request: r, analysis, boost, boostScore, boostOn, credits, outcome }: { request: MyRequest; analysis?: Analysis; boost?: MyBoost; boostScore: number | null; boostOn: boolean; credits: number; outcome: Outcome }) {
   const stamp = statusStamp(r.out_status);
   return (
     <RequestCard
@@ -146,6 +151,7 @@ function RequestItem({ request: r, analysis, boost, boostScore, boostOn, credits
           </Link>
         </p>
       )}
+      {r.out_status === "accepted" && <OutcomeButtons requestId={r.out_id} initial={outcome} />}
       {boost?.status === "delivered" ? (
         <p className="text-sm">
           <strong>Your Boost is ready.</strong>{" "}

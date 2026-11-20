@@ -1,3 +1,4 @@
+import { EARN_ACCEPT, EARN_INTERVIEW, EARN_OFFER, getMyEarnings } from "@/lib/dwaar/earnings";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -79,7 +80,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
     );
   }
 
-  const [inbox, accepted, companies] = await Promise.all([listInbox(supabase), listAccepted(supabase), listCompanyOptions(supabase)]);
+  const [inbox, accepted, companies, earnings] = await Promise.all([listInbox(supabase), listAccepted(supabase), listCompanyOptions(supabase), getMyEarnings(supabase)]);
   const requestIds = [...inbox.map((r) => r.out_id), ...accepted.map((r) => r.out_id)];
   const [extras, matches] = await Promise.all([getCandidateExtras(supabase, requestIds), getCandidateMatches(supabase, requestIds)]);
   const company = companies.find((c) => c.id === profile.provider_company_id)?.name ?? "your company";
@@ -104,6 +105,22 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
         >
           {note}
         </p>
+      )}
+
+      {earnings && (
+        <section className="dw-card mb-8" aria-labelledby="dw-earn">
+          <h2 id="dw-earn" className="dw-display text-xl">
+            Your credits from referring
+          </h2>
+          <p className="mt-2 text-3xl font-semibold">{earnings.acceptCredits + earnings.outcomeCredits}</p>
+          <p className="dw-muted mt-1 text-sm">
+            {earnings.accepted} accepted · {earnings.interviews} interviews · {earnings.offers} offers
+          </p>
+          <p className="dw-muted mt-3 text-sm">
+            You earn {EARN_ACCEPT} credits for each request you accept, {EARN_INTERVIEW} when the candidate reports an interview and{" "}
+            {EARN_OFFER} for an offer. Use credits for your own Resume Boosts. Credits are not money and cannot be cashed out.
+          </p>
+        </section>
       )}
 
       <h2 className="dw-display text-xl">Waiting for you</h2>
