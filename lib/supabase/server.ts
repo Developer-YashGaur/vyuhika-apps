@@ -23,8 +23,18 @@ export const createClient = cache(async () => {
       },
     },
   });
-  const askWhoIsSignedIn = client.auth.getUser.bind(client.auth);
-  let answer: ReturnType<typeof askWhoIsSignedIn> | null = null;
-  client.auth.getUser = (jwt?: string) => (jwt ? askWhoIsSignedIn(jwt) : (answer ??= askWhoIsSignedIn()));
+  // "Who is signed in?" is answered from the signed login token on the server (getClaims checks its signature, no trip to Supabase's
+  // auth server). If that cannot be done (for example an old-style key), it falls back to asking Supabase. Asked once per request.
+  const askSupabase = client.auth.getUser.bind(client.auth);
+  type Answer = Awaited<ReturnType<typeof askSupabase>>;
+  const work = async (): Promise<Answer> => {
+    const { data } = await client.auth.getClaims();
+    const claims = data?.claims;
+    if (!claims?.sub) return askSupabase();
+    const user = { id: claims.sub, email: claims.email, aud: "authenticated", app_metadata: claims.app_metadata ?? {}, user_metadata: claims.user_metadata ?? {}, created_at: "" };
+    return { data: { user }, error: null } as unknown as Answer;
+  };
+  let answer: Promise<Answer> | null = null;
+  client.auth.getUser = (jwt?: string) => (jwt ? askSupabase(jwt) : (answer ??= work()));
   return client;
 });
