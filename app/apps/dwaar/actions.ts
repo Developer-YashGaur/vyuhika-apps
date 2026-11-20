@@ -9,7 +9,7 @@ import { deleteMyProfile, getMyProfile, listCompanyOptions, saveMyProfile } from
 import { candidateDetailsComplete } from "@/lib/dwaar/profile-details";
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
-import { getChat, sendMessage } from "@/lib/dwaar/chat";
+import { getChat, sendMessage, toMessageViews, type ChatMessageView } from "@/lib/dwaar/chat";
 import { monitorMessage } from "@/lib/dwaar/chat-monitor";
 import { answerContact, askContact } from "@/lib/dwaar/contact";
 import { redeemInvite } from "@/lib/dwaar/invites";
@@ -206,7 +206,10 @@ export async function createRequestAction(_previous: RequestFormState, formData:
     return { errors: {}, message: created.message, check: view };
   }
 
-  // 5. Keep the score with the request, and tell the first wave of employees. Neither blocks or fails the request.
+  // 5. The candidate agreed that the employee who accepts may see their resume (they can switch it off in the chat).
+  await supabase.rpc("dwaar_set_resume_shared", { p_request_id: created.data, p_shared: true });
+
+  // 6. Keep the score with the request, and tell the first wave of employees. Neither blocks or fails the request.
   if (secret) await saveCheckedScore(supabase, secret, created.data, outcome.result);
   const settings = getEmailSettings();
   const send = createResendSender();
@@ -344,7 +347,22 @@ export async function checkBoostScoreAction(formData: FormData): Promise<void> {
 
 // ---- The chat after a request is accepted ----
 
-export type ChatFormState = { message: string | null; sent: boolean };
+export type ChatFormState = { message: string | null; sent: boolean; messages?: ChatMessageView[] };
+export type ChatPollState = { messages: ChatMessageView[]; canSend: boolean } | null;
+
+// Live updates: the chat page asks for the messages every few seconds. Only the two people in the chat get anything.
+export async function loadChatAction(requestId: string): Promise<ChatPollState> {
+  if (!supabaseConfigured() || typeof requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(requestId)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) return null;
+  try {
+    const chat = await getChat(supabase, requestId);
+    return chat ? { messages: toMessageViews(chat.messages), canSend: chat.info.out_can_send } : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function sendMessageAction(requestId: string, _previous: ChatFormState, formData: FormData): Promise<ChatFormState> {
   if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
@@ -356,13 +374,25 @@ export async function sendMessageAction(requestId: string, _previous: ChatFormSt
   const body = formData.get("body");
   const result = await sendMessage(supabase, requestId, body);
   if (!result.ok) return { message: result.message, sent: false };
-  emailStatusChanges(supabase);
-  // After the reply is sent, an AI checks that the message is about the referral. It never delays or blocks anyone.
+  // No email is sent for chat messages. People see them live in the chat. An AI checks that the message is about the
+  // referral. It never delays or blocks anyone.
   const secret = serverSecret();
   const generate = createGeminiGenerate();
   if (typeof body === "string") after(async () => { await monitorMessage({ supabase, secret, generate }, requestId, body); });
+  const chat = await getChat(supabase, requestId).catch(() => null);
+  return { message: null, sent: true, messages: chat ? toMessageViews(chat.messages) : undefined };
+}
+
+// The candidate switches sharing of their resume with the employee on or off.
+export async function setResumeSharedAction(formData: FormData): Promise<void> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  const requestId = formData.get("requestId");
+  if (typeof requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(requestId)) redirect("/apps/dwaar/requests");
+  await supabase.rpc("dwaar_set_resume_shared", { p_request_id: requestId, p_shared: formData.get("shared") === "on" });
   revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
-  return { message: null, sent: true };
 }
 
 // ---- Plus pass ----

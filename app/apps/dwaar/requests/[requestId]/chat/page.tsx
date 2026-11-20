@@ -3,13 +3,15 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import ContactPanel from "@/components/dwaar/ContactPanel";
-import ChatForm from "@/components/dwaar/ChatForm";
+import LiveChat from "@/components/dwaar/LiveChat";
+import MatchSummary from "@/components/dwaar/MatchSummary";
+import { setResumeSharedAction } from "@/app/apps/dwaar/actions";
+import { getCandidateMatches } from "@/lib/dwaar/candidate-match";
 import { CHAT_NOTICE } from "@/lib/dwaar/chat-monitor";
 import CandidateDetails from "@/components/dwaar/CandidateDetails";
 import { getCandidateExtras } from "@/lib/dwaar/candidate-extras";
 import { getContactState } from "@/lib/dwaar/contact";
-import { getChat } from "@/lib/dwaar/chat";
-import { timeAgo } from "@/lib/dwaar/format";
+import { getChat, getChatResume, toMessageViews } from "@/lib/dwaar/chat";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -43,21 +45,13 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
   const chat = await getChat(supabase, requestId);
   if (!chat) notFound();
   const { info, messages } = chat;
-  const [contacts, extras] = await Promise.all([
+  const [contacts, extras, matches, resume] = await Promise.all([
     getContactState(supabase, requestId),
     info.out_is_candidate ? Promise.resolve(null) : getCandidateExtras(supabase, [requestId]),
+    info.out_is_candidate ? Promise.resolve(null) : getCandidateMatches(supabase, [requestId]),
+    getChatResume(supabase, requestId),
   ]);
   const backHref = info.out_is_candidate ? "/apps/dwaar/requests" : "/apps/dwaar/inbox";
-
-  const hint = info.out_is_candidate
-    ? "You can send one message. Say who you are and why you fit the job. Please do not type emails or phone numbers. Use the buttons below to ask for or share them."
-    : "Reply to the candidate. You can send up to 3 replies. Please do not type emails or phone numbers. Use the buttons below to ask for or share them.";
-
-  let waiting: string | null = null;
-  if (!info.out_can_send) {
-    if (info.out_is_candidate) waiting = messages.length > 0 ? `Your message was sent. ${info.out_other_name} can reply here.` : null;
-    else waiting = messages.length === 0 ? `Waiting for ${info.out_other_name} to write first.` : "You have sent all your replies.";
-  }
 
   return (
     <>
@@ -72,33 +66,41 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
       <p role="note" className="dw-alert dw-alert-info mt-4 text-sm">{CHAT_NOTICE}</p>
       {extras && <div className="mt-4"><CandidateDetails extras={extras.get(requestId)} /></div>}
 
-      <ul className="mt-8 flex flex-col gap-4" aria-label="Messages">
-        {messages.length === 0 && <li className="dw-muted">No messages yet.</li>}
-        {messages.map((m) => (
-          <li key={m.out_id} className={m.out_mine ? "self-end" : "self-start"}>
-            <div className={`dw-card max-w-[34rem] ${m.out_mine ? "dw-panel" : ""}`}>
-              <p className="whitespace-pre-wrap break-words">{m.out_body}</p>
-              <p className="mt-2 text-xs dw-muted">
-                {m.out_mine ? "You" : info.out_other_name}, {timeAgo(m.out_created_at)}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {!info.out_is_candidate && (
+        <div className="mt-4">
+          <MatchSummary match={matches?.get(requestId)} />
+          <p className="text-sm">
+            {resume?.path ? (
+              <a href={`/apps/dwaar/requests/${requestId}/resume`} target="_blank" rel="noopener noreferrer" className="dw-btn dw-btn-quiet">
+                View resume<span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            ) : (
+              <span className="dw-muted">
+                {resume?.hasResume ? `${info.out_other_name} has not shared their resume with you.` : "There is no resume to show for this request."}
+              </span>
+            )}
+          </p>
+        </div>
+      )}
+      {info.out_is_candidate && resume?.hasResume && (
+        <form action={setResumeSharedAction} className="dw-card mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <input type="hidden" name="requestId" value={requestId} />
+          <label className="flex items-center gap-3">
+            <input type="checkbox" name="shared" defaultChecked={resume.shared} className="h-4 w-4" />
+            <span>Let {info.out_other_name} see my resume</span>
+          </label>
+          <button type="submit" className="dw-btn dw-btn-quiet">
+            Save
+          </button>
+        </form>
+      )}
+
+      <div className="mt-8">
+        <LiveChat requestId={requestId} otherName={info.out_other_name} initialMessages={toMessageViews(messages)} initialCanSend={info.out_can_send} />
+      </div>
 
       <ContactPanel requestId={requestId} isCandidate={info.out_is_candidate} otherName={info.out_other_name} items={contacts} />
 
-      <div className="mt-8">
-        {info.out_can_send ? (
-          <ChatForm requestId={requestId} hint={hint} />
-        ) : (
-          waiting && (
-            <p role="status" className="dw-alert dw-alert-info">
-              {waiting}
-            </p>
-          )
-        )}
-      </div>
     </>
   );
 }

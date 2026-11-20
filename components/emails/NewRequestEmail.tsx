@@ -71,7 +71,7 @@ export default function NewRequestEmail({ jobTitle, company, assetBaseUrl }: Pro
       </Section>
 
       <Text style={{ margin: "22px 0 0", fontSize: "15px", lineHeight: "24px", color: colors.mist }}>
-        You decide whether to accept. If you accept, the candidate can send you one message inside Dwaar and you can reply there. Email addresses are never shared.
+        You decide whether to accept. If you accept, you can chat live with the candidate inside Dwaar and see their resume. Email addresses are never shared.
       </Text>
     </EmailLayout>
   );

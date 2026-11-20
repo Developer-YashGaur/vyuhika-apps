@@ -86,10 +86,10 @@ export default function DwaarPrivacyPage() {
               Your request is shown to a few employees at a time (5 at first, and 5 more after 24 hours if nobody has accepted),
               only those who work at the company you asked, confirmed their work email and chose to receive requests. They can
               see your name, your headline, your LinkedIn link, your other links, your skills, the job title, the job ID, the job link
-              and your note. They also see your match score for this job (0 to 100), one short sentence and the skills that matched or are missing. They cannot see your resume or the job description. Your phone number and email address are
+              and your note. They also see your match score for this job (0 to 100), one short sentence and the skills that matched or are missing. They cannot see your resume or the job description. When an employee accepts your request, that employee can open your resume file from the chat. You agree to this when you send the request, and you can switch it off at any time in the chat. Your phone number and email address are
               hidden from them. After an employee accepts, they can ask you in the chat for your phone number or email. Nothing is
               shown unless you choose Share for that question, and you can decline. After one employee accepts, you can
-              send that person one message inside Dwaar and they can reply. Emails and phone numbers are not allowed in
+              chat live with that person inside Dwaar. Emails and phone numbers are not allowed in
               messages; use the phone and email buttons in the chat. After each message, an AI service reads it to check that it
               is about the referral. A message that is not may be flagged so our staff can review it. Messages are deleted when the request is deleted.
               People cannot ask for a referral at the company they work at, and employees never see their own requests.

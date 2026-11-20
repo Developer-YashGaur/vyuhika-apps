@@ -73,19 +73,19 @@ describe("StatusEmail template", () => {
 });
 
 describe("sendStatusEmails", () => {
-  it("sends one email per note, to the address the database gave, using the secret", async () => {
+  it("emails only the accepted note, to the address the database gave, using the secret; chat messages send no email", async () => {
     const { supabase, calls } = fakeDb({ data: [row("accepted", "cand@example.com"), row("message", "e@acme.com")], error: null });
     const send = vi.fn(async (email: EmailMessage) => email.to.length > 0);
-    expect(await sendStatusEmails(supabase, { secret: "s", send, settings })).toEqual({ sent: 2, failed: 0 });
+    expect(await sendStatusEmails(supabase, { secret: "s", send, settings })).toEqual({ sent: 1, failed: 0 });
     expect(calls[0]).toEqual({ name: "dwaar_claim_email_events", args: { p_secret: "s" } });
     // The emails are built at the same time, so which one is handed over first can vary.
-    expect(send.mock.calls.map((c) => c[0].to).sort()).toEqual(["cand@example.com", "e@acme.com"]);
+    expect(send.mock.calls.map((c) => c[0].to)).toEqual(["cand@example.com"]);
     const accepted = send.mock.calls.map((c) => c[0]).find((m) => m.to === "cand@example.com");
     expect(accepted?.from).toBe(settings.from);
     expect(accepted?.html).toContain("Your request was accepted");
   });
   it("counts failures and does not throw", async () => {
-    const { supabase } = fakeDb({ data: [row("reply", "cand@example.com")], error: null });
+    const { supabase } = fakeDb({ data: [row("accepted", "cand@example.com")], error: null });
     const send = vi.fn(async () => false);
     expect(await sendStatusEmails(supabase, { secret: "s", send, settings })).toEqual({ sent: 0, failed: 1 });
   });

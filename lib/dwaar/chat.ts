@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 
-// The small chat after an employee accepts a request. The candidate sends ONE message, then the employee replies
-// (up to 3 times). The database decides who may read or write; this code checks the text and words the answers.
+// The live chat after an employee accepts a request. Either person can write at any time, as often as they like (the
+// database keeps a safety limit). The database decides who may read or write; this code checks the text and words the answers.
 // Contact details (emails and phone numbers) are not allowed: Dwaar keeps people's details private.
 
 type Db = SupabaseClient<Database>;
@@ -19,7 +19,7 @@ export const CHAT_MESSAGES = {
   contact: "Please do not type emails or phone numbers here. Use the phone and email buttons under the chat instead.",
   not_allowed: "You cannot write in this chat.",
   not_yet: "Please wait for the candidate to write first.",
-  limit: "You have used all the messages you can send in this chat.",
+  limit: "You are sending messages very fast, or this chat is full. Please wait a minute and try again.",
   failed: "Something went wrong. Please try again in a moment.",
 } as const;
 
@@ -57,4 +57,22 @@ export async function getChat(supabase: Db, requestId: string): Promise<{ info: 
   if (info.error || messages.error) throw new Error("Could not load the chat.");
   const first = info.data?.[0];
   return first ? { info: first, messages: messages.data ?? [] } : null;
+}
+
+// What the chat page and the live updates send to the browser (plain data).
+export type ChatMessageView = { id: number; mine: boolean; body: string; at: string };
+export const toMessageViews = (messages: ChatMessage[]): ChatMessageView[] =>
+  messages.map((m) => ({ id: m.out_id, mine: m.out_mine, body: m.out_body, at: m.out_created_at }));
+
+// Resume sharing for this chat: whether the candidate shares it, and (for the employee) whether there is a file to open.
+export type ChatResume = { isCandidate: boolean; shared: boolean; hasResume: boolean; path: string | null };
+
+export async function getChatResume(supabase: Db, requestId: string): Promise<ChatResume | null> {
+  const { data, error } = await supabase.rpc("dwaar_chat_resume", { p_request_id: requestId });
+  if (error) {
+    console.error("[dwaar] could not load resume sharing", { code: error.code });
+    return null;
+  }
+  const row = data?.[0];
+  return row ? { isCandidate: row.out_is_candidate, shared: row.out_shared, hasResume: row.out_has_resume, path: row.out_path } : null;
 }

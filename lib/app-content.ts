@@ -158,7 +158,7 @@ export const appContent: Record<string, AppContent> = {
       {
         question: "Who can see my request and my details?",
         answer:
-          "Only employees at the company you chose who confirmed their work email and chose to receive requests. They see your name, headline, LinkedIn link, other links, skills, the job and your note. They also see your match score for the job and which skills matched, but never your resume. Your phone number and email stay hidden unless you choose to share them in the chat.",
+          "Only employees at the company you chose who confirmed their work email and chose to receive requests. They see your name, headline, LinkedIn link, other links, skills, the job and your note. They also see your match score for the job and which skills matched. They do not see your resume until one of them accepts your request: that employee can then open it, and you can switch this off in the chat. Your phone number and email stay hidden unless you choose to share them in the chat.",
       },
       {
         question: "What happens to my resume?",
