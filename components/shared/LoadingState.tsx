@@ -19,7 +19,7 @@ export default function LoadingState({ lines }: { lines: string[] }) {
     <div role="status" className="glass-panel glow-cyan flex flex-col items-center px-6 py-16 text-center sm:py-20">
       {/* The logo gently breathes while the AI works (still for reduced motion). */}
       <div className="logo-pulse">
-        <Logo variant="icon" size={128} decorative className="h-28 w-28 sm:h-32 sm:w-32" />
+        <Logo variant="icon" size={128} decorative priority className="h-28 w-28 sm:h-32 sm:w-32" />
       </div>
 
       {/* Each line slides up and out as the next slides in, like a ticker.
