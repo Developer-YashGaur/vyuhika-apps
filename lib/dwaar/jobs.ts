@@ -18,7 +18,7 @@ export type JobView = {
 
 // The jobs shown on the site. The search text is matched as plain text by the database (never as a pattern).
 export async function listLatestJobs(supabase: Db, query: string | null, limit = 20): Promise<JobView[]> {
-  const q = query?.trim().slice(0, 80) || null;
+  const q = query?.trim().slice(0, 80) || undefined;
   const { data, error } = await supabase.rpc("dwaar_latest_jobs", { p_query: q, p_limit: limit });
   if (error || !data) return [];
   return data.map((r) => ({
