@@ -162,7 +162,7 @@ export default function LiveChat({ requestId, otherName, isCandidate, initialMes
           <textarea
             id="body"
             name="body"
-            rows={3}
+            rows={2}
             maxLength={MESSAGE_MAX}
             value={text}
             placeholder="Write a message. Press Enter to send, Shift+Enter for a new line."
