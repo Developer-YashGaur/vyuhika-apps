@@ -21,7 +21,7 @@ export default function PlusPage() {
         </svg>
         Dwaar
       </Link>
-      <h1 className="dw-title dw-display mt-8 mb-3">Dwaar Plus</h1>
+      <h1 className="dw-title dw-display mt-8 mb-3">Plans</h1>
       <p className="mb-10 max-w-2xl text-lg leading-relaxed dw-muted">
         More tools for your job search. Asking for referrals stays free, and Plus never decides whether you get one.
       </p>
@@ -45,31 +45,57 @@ async function PlusContent() {
   const plan = on ? await getMyPlan(supabase) : null;
   const endsOn = plan?.endsAt ? new Date(plan.endsAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : null;
 
+  const check = (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5 12l5 5 9-10" />
+    </svg>
+  );
+
   return (
-    <section className="dw-card dw-split" aria-labelledby="dw-plus-title">
-      <div>
-        <h2 id="dw-plus-title" className="dw-display text-2xl font-medium">
-          ₹{PLAN_PRICE_RUPEES} for {PLAN_DAYS} days
-        </h2>
-        <ul className="mt-5 flex list-disc flex-col gap-2 pl-5 leading-relaxed">
-          <li>{PLAN_DAILY_CHECKS} resume checks a day, instead of {FREE_DAILY_CHECKS}.</li>
-          <li>{PLAN_CREDITS} credits when you buy it. Credits pay for a Boost: a better resume, profile and LinkedIn tips.</li>
-        </ul>
-        <p className="mt-5 text-sm leading-relaxed dw-muted">
-          One payment, no automatic renewal. If you buy again while your pass is active, the new days start when it ends. Plus is a
-          fee for tools only. It does not promise a referral, an interview or a job.
-        </p>
+    <>
+      <div className="dw-plans">
+        <section className="dw-plan" aria-labelledby="dw-free-title">
+          <h2 id="dw-free-title" className="text-xl font-semibold">Free</h2>
+          <p className="dw-muted mt-1">Everything you need to ask for a referral.</p>
+          <p className="dw-plan-price">₹0</p>
+          <ul className="dw-plan-list">
+            <li>{check}{FREE_DAILY_CHECKS} resume checks a day</li>
+            <li>{check}Referral requests and live chat</li>
+            <li>{check}Boost a resume with credits</li>
+          </ul>
+        </section>
+
+        <section className="dw-plan dw-plan-plus" aria-labelledby="dw-plus-title">
+          <div className="dw-plan-glow" aria-hidden="true" />
+          <div className="relative flex h-full flex-col">
+            <h2 id="dw-plus-title" className="text-xl font-semibold">Dwaar Plus</h2>
+            <p className="mt-1" style={{ color: "#c3cbe6" }}>More tools for your job search.</p>
+            <p className="dw-plan-price">
+              ₹{PLAN_PRICE_RUPEES}
+              <span> for {PLAN_DAYS} days</span>
+            </p>
+            <ul className="dw-plan-list">
+              <li>{check}{PLAN_DAILY_CHECKS} resume checks a day, instead of {FREE_DAILY_CHECKS}</li>
+              <li>{check}{PLAN_CREDITS} credits when you buy it, for a Boost</li>
+              <li>{check}One payment, no automatic renewal</li>
+            </ul>
+            <div className="mt-auto pt-6">
+              {!on ? (
+                <p className="dw-alert dw-alert-info">Dwaar Plus is not open yet. Please check back soon.</p>
+              ) : (
+                <>
+                  {plan?.active && endsOn && <p className="dw-alert dw-alert-info mb-3">Your Plus pass is active until {endsOn}.</p>}
+                  <PlanButton label={plan?.active ? `Add ${PLAN_DAYS} more days · ₹${PLAN_PRICE_RUPEES}` : `Get Plus · ₹${PLAN_PRICE_RUPEES}`} />
+                </>
+              )}
+            </div>
+          </div>
+        </section>
       </div>
-      <div className="dw-actions">
-        {!on ? (
-          <p className="dw-alert dw-alert-info">Dwaar Plus is not open yet. Please check back soon.</p>
-        ) : (
-          <>
-            {plan?.active && endsOn && <p className="dw-alert dw-alert-info">Your Plus pass is active until {endsOn}.</p>}
-            <PlanButton label={plan?.active ? `Add ${PLAN_DAYS} more days · ₹${PLAN_PRICE_RUPEES}` : `Get Plus · ₹${PLAN_PRICE_RUPEES}`} />
-          </>
-        )}
-      </div>
-    </section>
+      <p className="mt-6 max-w-2xl text-sm leading-relaxed dw-muted">
+        If you buy again while your pass is active, the new days start when it ends. Plus is a fee for tools only. It does not
+        promise a referral, an interview or a job, and it never changes who sees your request.
+      </p>
+    </>
   );
 }
