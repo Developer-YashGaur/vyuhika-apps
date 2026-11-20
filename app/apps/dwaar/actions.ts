@@ -371,10 +371,15 @@ export async function replaceResumeAction(formData: FormData): Promise<void> {
   const upload = await supabase.storage.from(RESUME_BUCKET).upload(path, bytes, { contentType: "application/pdf", upsert: false });
   if (upload.error) redirect(`${back}?replaced=failed`);
 
-  const swapped = await supabase.rpc("dwaar_replace_my_resume", { p_request_id: requestId, p_new_path: path });
+  const secret = serverSecret();
+  if (!secret) {
+    await supabase.storage.from(RESUME_BUCKET).remove([path]);
+    redirect(`${back}?replaced=failed`);
+  }
+  const swapped = await supabase.rpc("dwaar_replace_my_resume", { p_request_id: requestId, p_new_path: path, p_secret: secret });
   if (swapped.error) {
     await supabase.storage.from(RESUME_BUCKET).remove([path]); // nothing points at the new file, so do not keep it
-    redirect(`${back}?replaced=${swapped.error.code === "DW051" ? "closed" : "failed"}`);
+    redirect(`${back}?replaced=${swapped.error.code === "DW052" ? "locked" : swapped.error.code === "DW051" ? "closed" : "failed"}`);
   }
   const oldPath = swapped.data;
   if (oldPath && oldPath !== path) await supabase.storage.from(RESUME_BUCKET).remove([oldPath]);

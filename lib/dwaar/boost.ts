@@ -68,13 +68,31 @@ export function boostMessage(kind: Exclude<BoostStart["kind"], "ready">): string
   }
 }
 
-// My paid Boosts by request: waiting for the resume ("paid") or finished ("delivered"). RLS returns only my own orders.
-export type MyBoost = { orderId: string; status: "paid" | "delivered" };
+// My Boosts by request. "paid" = a Boost is waiting for the resume to be chosen (it comes first, it is the one to finish); "delivered" = the latest
+// finished one. "count" is how many finished Boosts the request has had. RLS returns only my own orders.
+export type MyBoost = { orderId: string; status: "paid" | "delivered"; count: number };
 
 export async function listMyBoosts(supabase: Db): Promise<Map<string, MyBoost>> {
-  const { data, error } = await supabase.from("dwaar_boost_orders").select("id, request_id, status").in("status", ["paid", "delivered"]);
+  const { data, error } = await supabase
+    .from("dwaar_boost_orders")
+    .select("id, request_id, status, created_at")
+    .in("status", ["paid", "delivered"])
+    .order("created_at", { ascending: false });
   if (error) throw new Error("Could not load your Boost orders.");
-  return new Map((data ?? []).map((row) => [row.request_id, { orderId: row.id, status: row.status === "delivered" ? "delivered" : "paid" } as MyBoost]));
+  const boosts = new Map<string, MyBoost>();
+  for (const row of data ?? []) {
+    const done = row.status === "delivered" ? 1 : 0;
+    const old = boosts.get(row.request_id);
+    if (!old) boosts.set(row.request_id, { orderId: row.id, status: row.status === "delivered" ? "delivered" : "paid", count: done });
+    else {
+      old.count += done;
+      if (row.status === "paid") {
+        old.orderId = row.id;
+        old.status = "paid";
+      }
+    }
+  }
+  return boosts;
 }
 
 export type PaymentReceipt = { orderId: string; paymentId: string; signature: string };

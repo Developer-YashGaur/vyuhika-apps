@@ -29,6 +29,8 @@ export function friendlyRequestError(code: string | undefined): string {
       return "Please check your resume match first. A request needs a match score of 60 or more.";
     case "DW014":
       return "Please check the job title and link, then try again.";
+    case "DW060":
+      return "Your Dwaar account is suspended, so you cannot do this. Write to support@vyuhika.com if you think this is a mistake.";
     case "42501":
       return "You are not allowed to do that. Please sign in again.";
     default:

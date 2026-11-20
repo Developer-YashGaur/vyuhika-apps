@@ -13,6 +13,7 @@ export type RespondResult = { ok: true; answer: Answer } | { ok: false; message:
 
 export function friendlyRespondError(code: string | undefined): string {
   if (code === "DW020") return "Confirm your work email first. Only confirmed employees can answer requests.";
+  if (code === "DW060") return "Your Dwaar account is suspended, so you cannot do this. Write to support@vyuhika.com if you think this is a mistake.";
   if (code === "42501") return "You are not allowed to do that. Please sign in again.";
   return "Something went wrong. Please try again in a moment.";
 }

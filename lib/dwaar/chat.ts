@@ -21,6 +21,7 @@ export const CHAT_MESSAGES = {
   not_yet: "Please wait for the candidate to write first.",
   closed: "This chat was closed, so no new messages can be sent.",
   limit: "You are sending messages very fast, or this chat is full. Please wait a minute and try again.",
+  suspended: "Your Dwaar account is suspended, so you cannot do this. Write to support@vyuhika.com if you think this is a mistake.",
   failed: "Something went wrong. Please try again in a moment.",
 } as const;
 
@@ -43,7 +44,7 @@ export async function sendMessage(supabase: Db, requestId: string, raw: unknown)
   const checked = checkMessage(raw);
   if (!checked.ok) return checked;
   const { data, error } = await supabase.rpc("dwaar_send_message", { p_request_id: requestId, p_body: checked.text });
-  if (error) return { ok: false, message: error.code === "DW040" ? CHAT_MESSAGES.tooLong : CHAT_MESSAGES.failed };
+  if (error) return { ok: false, message: error.code === "DW040" ? CHAT_MESSAGES.tooLong : error.code === "DW060" ? CHAT_MESSAGES.suspended : CHAT_MESSAGES.failed };
   if (data === "sent") return { ok: true };
   if (data === "not_allowed" || data === "not_yet" || data === "limit" || data === "closed") return { ok: false, message: CHAT_MESSAGES[data] };
   return { ok: false, message: CHAT_MESSAGES.failed };

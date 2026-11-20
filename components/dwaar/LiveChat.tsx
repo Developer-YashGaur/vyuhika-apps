@@ -106,8 +106,8 @@ export default function LiveChat({ requestId, otherName, isCandidate, initialMes
   const askable = isCandidate ? [] : askableKinds(contacts);
 
   return (
-    <div>
-      <ul ref={list} className="flex h-[min(60dvh,34rem)] min-h-[16rem] flex-col gap-3 overflow-y-auto overscroll-contain pr-1" aria-label="Messages" role="log" aria-live="polite" tabIndex={0}>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ul ref={list} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pr-1" aria-label="Messages" role="log" aria-live="polite" tabIndex={0}>
         {timeline.length === 0 && <li className="dw-muted">No messages yet. Say hello.</li>}
         {timeline.map((e) =>
           e.type === "message" ? (
@@ -154,7 +154,7 @@ export default function LiveChat({ requestId, otherName, isCandidate, initialMes
 
       {canSend ? (
         <form
-          className="dw-card sticky bottom-0 z-10 mt-4 flex flex-col gap-3 shadow-lg"
+          className="dw-card mt-3 flex shrink-0 flex-col gap-2"
           action={(formData) => {
             formAction(formData);
             setText("");

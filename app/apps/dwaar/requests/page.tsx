@@ -160,12 +160,21 @@ function RequestItem({ request: r, analysis, boost, boostScore, boostOn, credits
       )}
       {r.out_status === "accepted" && <OutcomeButtons requestId={r.out_id} initial={outcome} />}
       {boost?.status === "delivered" ? (
-        <p className="text-sm">
-          <strong>Your Boost is ready.</strong>{" "}
-          <Link href={`/apps/dwaar/requests/${r.out_id}/boost`} className="dw-link">
-            Open it
-          </Link>
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="text-sm">
+            <strong>Your Boost is ready</strong>
+            {boost.count > 1 ? ` (Boost ${boost.count})` : ""}.{" "}
+            <Link href={`/apps/dwaar/requests/${r.out_id}/boost`} className="dw-link">
+              Open it
+            </Link>
+          </p>
+          {r.out_status !== "cancelled" && boost.count < 5 && credits >= BOOST_CREDIT_COST && (
+            <div className="dw-boost-box">
+              <p className="text-sm">Want a better score? You can Boost again with credits.{r.out_status === "open" ? " Until an employee accepts, you can put the new resume on this request." : ""}</p>
+              <CreditBoostButton requestId={r.out_id} credits={credits} />
+            </div>
+          )}
+        </div>
       ) : boost?.status === "paid" ? (
         <BoostForm orderId={boost.orderId} />
       ) : (

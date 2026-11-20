@@ -544,6 +544,12 @@ export type Database = {
         }
         Relationships: []
       }
+      dwaar_suspensions: {
+        Row: { suspended_at: string; suspended_by: string | null; user_id: string }
+        Insert: { suspended_at?: string; suspended_by?: string | null; user_id: string }
+        Update: { suspended_at?: string; suspended_by?: string | null; user_id?: string }
+        Relationships: []
+      }
     }
     Views: {
       company_options: {
@@ -730,7 +736,7 @@ export type Database = {
         }[]
       }
       dwaar_replace_my_resume: {
-        Args: { p_new_path: string; p_request_id: string }
+        Args: { p_new_path: string; p_request_id: string; p_secret: string }
         Returns: string
       }
       dwaar_send_message: { Args: { p_body: string; p_request_id: string }; Returns: string }
