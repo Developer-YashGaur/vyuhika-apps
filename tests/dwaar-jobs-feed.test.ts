@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chooseProvider, cleanText, fetchLatestJobs, normalizeAdzuna, normalizeRemotive, pickLatest, type FeedJob } from "@/lib/dwaar/jobs-feed";
+import { chooseProvider, cleanText, fetchLatestJobs, normalizeAdzuna, isTechTitle, normalizeRemotive, pickLatest, type FeedJob } from "@/lib/dwaar/jobs-feed";
 
 const adz = (over: Record<string, unknown> = {}) => ({
   id: "123",
@@ -88,5 +88,14 @@ describe("provider choice and fetching", () => {
       failed = true;
     }
     expect(failed).toBe(true);
+  });
+});
+
+describe("isTechTitle", () => {
+  it("keeps tech roles and drops the rest", () => {
+    expect(isTechTitle("Senior Back-end Developer")).toBe(true);
+    expect(isTechTitle("Data Engineer")).toBe(true);
+    expect(isTechTitle("Freelance Copywriter")).toBe(false);
+    expect(isTechTitle("Customer Service Representative")).toBe(false);
   });
 });

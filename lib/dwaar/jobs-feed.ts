@@ -82,6 +82,12 @@ export function normalizeRemotive(payload: unknown): FeedJob[] {
     .filter((j): j is FeedJob => j !== null);
 }
 
+// Remotive does not always keep to the category we ask for, so we also keep only tech-looking titles.
+const TECH_WORDS = /\b(developer|engineer|devops|sre|programmer|software|backend|back-end|frontend|front-end|full[- ]?stack|data|analyst|machine learning|ml|ai|python|java|node|react|rails|golang|qa|tester|security|cloud|architect|tech lead|android|ios|mobile|platform|database|dba|scientist)\b/i;
+export function isTechTitle(title: string): boolean {
+  return TECH_WORDS.test(title);
+}
+
 // Same job twice (same source and id) is kept once; newest first; at most FEED_SIZE.
 export function pickLatest(jobs: FeedJob[], size = FEED_SIZE): FeedJob[] {
   const seen = new Set<string>();
@@ -119,9 +125,9 @@ export async function fetchLatestJobs(env: Env, fetchFn: FetchFn = fetch): Promi
     if (!res.ok) throw new Error(`Adzuna answered ${res.status}`);
     return pickLatest(normalizeAdzuna(await res.json()));
   }
-  const res = await fetchFn(`https://remotive.com/api/remote-jobs?category=software-dev&limit=${FEED_SIZE}`, { signal, headers: { Accept: "application/json" } });
+  const res = await fetchFn(`https://remotive.com/api/remote-jobs?category=software-dev&limit=100`, { signal, headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`Remotive answered ${res.status}`);
-  return pickLatest(normalizeRemotive(await res.json()));
+  return pickLatest(normalizeRemotive(await res.json()).filter((j) => isTechTitle(j.title)));
 }
 
 // The text shown under the jobs, as the sources require.

@@ -6,11 +6,11 @@ import JobCard from "@/components/dwaar/JobCard";
 import { jobsFeedEnabled } from "@/lib/dwaar/features";
 import { feedCredit } from "@/lib/dwaar/jobs-feed";
 import { listLatestJobs } from "@/lib/dwaar/jobs";
-import { dwaarPublicMetadata } from "@/lib/dwaar/metadata";
+import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata = dwaarPublicMetadata;
+export const metadata = dwaarMetadata;
 
 export default function JobsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   return (
