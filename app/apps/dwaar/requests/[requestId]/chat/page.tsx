@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import LiveChat from "@/components/dwaar/LiveChat";
 import MatchSummary from "@/components/dwaar/MatchSummary";
-import { setResumeSharedAction } from "@/app/apps/dwaar/actions";
+import { closeChatAction, setResumeSharedAction } from "@/app/apps/dwaar/actions";
 import { getCandidateMatches } from "@/lib/dwaar/candidate-match";
 import { CHAT_NOTICE } from "@/lib/dwaar/chat-monitor";
 import CandidateDetails from "@/components/dwaar/CandidateDetails";
@@ -44,7 +44,7 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
   // The database only returns a chat to the candidate and the employee who accepted.
   const chat = await getChat(supabase, requestId);
   if (!chat) notFound();
-  const { info, messages } = chat;
+  const { info, messages, closed } = chat;
   const [contacts, extras, matches, resume] = await Promise.all([
     getContactViews(supabase, requestId),
     info.out_is_candidate ? Promise.resolve(null) : getCandidateExtras(supabase, [requestId]),
@@ -97,10 +97,17 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
       )}
 
       <div className="mt-8">
-        <LiveChat requestId={requestId} otherName={info.out_other_name} isCandidate={info.out_is_candidate} initialMessages={toMessageViews(messages)} initialContacts={contacts} initialCanSend={info.out_can_send} />
+        <LiveChat requestId={requestId} otherName={info.out_other_name} isCandidate={info.out_is_candidate} initialMessages={toMessageViews(messages)} initialContacts={contacts} initialCanSend={info.out_can_send} initialClosed={closed} />
       </div>
-
-
+      {!info.out_is_candidate && !closed && (
+        <form action={closeChatAction} className="dw-card mt-6 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <input type="hidden" name="requestId" value={requestId} />
+          <span>Finished helping? Closing the chat stops new messages. You both can still read it, and it cannot be re-opened.</span>
+          <button type="submit" className="dw-btn dw-btn-quiet">
+            Close this chat
+          </button>
+        </form>
+      )}
     </>
   );
 }

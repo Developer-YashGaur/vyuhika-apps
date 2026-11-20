@@ -1,11 +1,11 @@
-import Link from "next/link";
+import AskForReferralLink from "@/components/dwaar/AskForReferralLink";
 import CompanyMonogram from "@/components/dwaar/CompanyMonogram";
 import { timeAgo } from "@/lib/dwaar/format";
 import type { JobView } from "@/lib/dwaar/jobs";
 
 // One job from the Latest jobs feed. "Ask for a referral" opens the request form with the job already filled in.
-export default function JobCard({ job }: { job: JobView }) {
-  const ask = `/apps/dwaar/requests/new?${new URLSearchParams({ title: job.title.slice(0, 120), url: job.url })}`;
+export default function JobCard({ job, companyId = "" }: { job: JobView; companyId?: string }) {
+  const ask = `/apps/dwaar/requests/new?${new URLSearchParams({ ...(companyId ? { company: companyId } : {}), title: job.title.slice(0, 120), url: job.url })}`;
   return (
     <article className="dw-job">
       <div className="dw-job-head">
@@ -21,9 +21,7 @@ export default function JobCard({ job }: { job: JobView }) {
       </div>
       {job.description && <p className="dw-job-text">{job.description}</p>}
       <div className="dw-job-actions">
-        <Link href={ask} className="dw-btn dw-btn-primary dw-btn-sm">
-          Ask for a referral
-        </Link>
+        <AskForReferralLink href={ask} url={job.url} description={job.description} />
         <a href={job.url} target="_blank" rel="noopener noreferrer nofollow" className="dw-btn dw-btn-quiet dw-btn-sm">
           View original posting
         </a>

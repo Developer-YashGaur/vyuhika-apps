@@ -43,7 +43,8 @@ describe("Dwaar conventions", () => {
     expect(names.length).toBeGreaterThanOrEqual(7);
     for (const name of names) {
       const body = actions.slice(actions.indexOf(`function ${name}`));
-      expect(body.slice(0, 700), name).toContain("auth.getUser()");
+      // signedInSupabase() is our helper that does the same check (and sends signed-out people to sign in).
+      expect(body.slice(0, 700), name).toMatch(/auth\.getUser\(\)|signedInSupabase\(\)/);
     }
   });
 

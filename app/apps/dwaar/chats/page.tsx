@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import AlertsButton from "@/components/dwaar/AlertsButton";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
+import { listClosedChatIds } from "@/lib/dwaar/chat";
 import { chatPreview, listMyChats } from "@/lib/dwaar/my-chats";
 import { timeAgo } from "@/lib/dwaar/format";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -36,7 +37,7 @@ async function ChatsContent() {
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/apps/dwaar");
 
-  const chats = await listMyChats(supabase);
+  const [chats, closedIds] = await Promise.all([listMyChats(supabase), listClosedChatIds(supabase)]);
   if (chats.length === 0) {
     return (
       <section className="dw-card">
@@ -62,6 +63,7 @@ async function ChatsContent() {
             <p className="flex flex-wrap items-center justify-between gap-2">
               <span className="dw-display text-lg">
                 {c.otherName}
+                {closedIds.has(c.requestId) && <span className="dw-status dw-status-closed ml-2">Closed</span>}
                 {c.unread > 0 && (
                   <span className="dw-badge" aria-label={`${c.unread} new`}>
                     {c.unread > 9 ? "9+" : c.unread}

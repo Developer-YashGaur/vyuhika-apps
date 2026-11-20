@@ -371,6 +371,7 @@ export type Database = {
       }
       dwaar_referral_requests: {
         Row: {
+          chat_closed_at: string | null
           accepted_at: string | null
           accepted_by: string | null
           candidate_id: string
@@ -389,6 +390,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          chat_closed_at?: string | null
           accepted_at?: string | null
           accepted_by?: string | null
           candidate_id: string
@@ -407,6 +409,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          chat_closed_at?: string | null
           accepted_at?: string | null
           accepted_by?: string | null
           candidate_id?: string
@@ -667,6 +670,14 @@ export type Database = {
         }
         Returns: string
       }
+      dwaar_close_chat: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
+      dwaar_closed_chats: {
+        Args: never
+        Returns: string[]
+      }
       dwaar_forget_my_requests: {
         Args: { p_request_id?: string }
         Returns: number
@@ -717,6 +728,10 @@ export type Database = {
           out_id: number
           out_mine: boolean
         }[]
+      }
+      dwaar_replace_my_resume: {
+        Args: { p_new_path: string; p_request_id: string }
+        Returns: string
       }
       dwaar_send_message: { Args: { p_body: string; p_request_id: string }; Returns: string }
       dwaar_credit_balance: { Args: never; Returns: number }

@@ -49,6 +49,7 @@ async function ProfileContent({ searchParams }: { searchParams: Promise<Params> 
       </p>
     )}
     <ProfileForm
+      key={profile?.updated_at ?? "new"} // a fresh form after every save: Next.js keeps pages you left alive, and their old typed values would come back
       isNew={profile === null}
       accountEmail={data.user.email ?? ""}
       companies={companies}

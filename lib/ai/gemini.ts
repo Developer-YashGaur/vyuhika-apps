@@ -55,6 +55,7 @@ export function createGeminiGenerate(): GenerateFn | null {
         responseMimeType: "application/json",
         responseJsonSchema: jsonSchema,
         abortSignal: signal,
+        temperature: 0, // the same resume and job should get the same score every time
         ...(thinkingLevel && { thinkingConfig: { thinkingLevel } }),
       },
     });

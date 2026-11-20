@@ -37,6 +37,9 @@ Resume rewrite (resume): a proper, complete resume as structured fields, ready t
   (leave a field empty if the resume does not say). Write 2 to 6 short bullet lines per job. Start each with a strong verb.
   Use the job's own words only for things the person really did. Mention concrete details the resume gives: tools, projects, scale.
 - projects, education, certifications: include everything the resume shows, with its details. Leave a list empty if the resume has none.
+- Never drop anything: every skill, tool, technology, certification, project and job in the resume must still be in the rewrite.
+  Keep each skill and tool spelled exactly as the resume writes it, and also use the job's spelling when it means the same thing.
+  A rewrite that loses content scores lower, and that defeats the purpose.
 - No contact details of any kind. The app adds them from the person's profile.
 
 changes: 4 to 8 short sentences saying what you changed and why, in plain words.
@@ -59,7 +62,8 @@ export type BoostResult = z.infer<typeof boostResultSchema>;
 // What is saved: the resume as JSON text (the database column is text), plus the notes.
 export type FinalBoost = { improvedResume: string; summary: string; changes: string[]; profileTips: string[]; linkedinTips: string[] };
 
-export function buildBoostPrompt(args: { resume: string; jobTitle: string; company: string; jobDescription: string }): string {
+export function buildBoostPrompt(args: { resume: string; jobTitle: string; company: string; jobDescription: string; keepWords?: string[] }): string {
+  const keep = (args.keepWords ?? []).map(stripDelimiters).filter(Boolean);
   return [
     "Improve this resume for this job, and give profile and LinkedIn tips.",
     "",
@@ -73,6 +77,7 @@ export function buildBoostPrompt(args: { resume: string; jobTitle: string; compa
     "",
     stripDelimiters(args.jobDescription),
     JOB_END,
+    ...(keep.length ? ["", `The resume already shows these words the job asks for. Keep every one of them in the rewrite: ${keep.join(", ")}.`] : []),
   ].join("\n");
 }
 

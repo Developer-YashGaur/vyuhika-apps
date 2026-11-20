@@ -55,5 +55,6 @@ async function NewRequestContent({ searchParams }: { searchParams: Promise<Param
   const companyId = companies.some((c) => c.id === params.company) ? (params.company as string) : "";
   const jobTitle = typeof params.title === "string" ? params.title.trim().slice(0, 120) : "";
   const jobUrl = typeof params.url === "string" && isValidJobUrl(params.url) ? params.url : "";
-  return <RequestForm companies={companies} initial={{ companyId, jobTitle, jobUrl }} />;
+  // key: a new form for every different job. Next.js keeps pages you left alive, and a kept form would ignore the new job details.
+  return <RequestForm key={`${companyId}|${jobTitle}|${jobUrl}`} companies={companies} initial={{ companyId, jobTitle, jobUrl }} />;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CHAT_MESSAGES, MESSAGE_MAX, checkMessage, getChat, sendMessage } from "@/lib/dwaar/chat";
+import { CHAT_MESSAGES, MESSAGE_MAX, checkMessage, closeChat, getChat, listClosedChatIds, sendMessage } from "@/lib/dwaar/chat";
 
 function fakeDb(replies: Record<string, { data: unknown; error: { code?: string } | null }>) {
   const calls: { name: string; args: Record<string, unknown> }[] = [];
@@ -38,7 +38,7 @@ describe("sendMessage", () => {
     expect(calls).toHaveLength(0);
   });
   it("turns the database answers into sentences", async () => {
-    for (const status of ["not_yet", "limit", "not_allowed"] as const) {
+    for (const status of ["not_yet", "limit", "not_allowed", "closed"] as const) {
       const { db } = fakeDb({ dwaar_send_message: { data: status, error: null } });
       expect(await sendMessage(db, "r1", "hello")).toEqual({ ok: false, message: CHAT_MESSAGES[status] });
     }
@@ -49,15 +49,37 @@ describe("sendMessage", () => {
 
 describe("getChat", () => {
   it("returns null when the person has no access", async () => {
-    const { db } = fakeDb({ dwaar_chat_info: { data: [], error: null }, dwaar_chat_messages: { data: [], error: null } });
+    const { db } = fakeDb({ dwaar_chat_info: { data: [], error: null }, dwaar_chat_messages: { data: [], error: null }, dwaar_closed_chats: { data: [], error: null } });
     expect(await getChat(db, "r1")).toBeNull();
   });
   it("returns the header and the messages", async () => {
     const info = { out_job_title: "Dev", out_company_name: "Acme", out_other_name: "Meera", out_is_candidate: true, out_can_send: true };
-    const { db } = fakeDb({ dwaar_chat_info: { data: [info], error: null }, dwaar_chat_messages: { data: [{ out_id: 1, out_mine: true, out_body: "hi", out_created_at: "x" }], error: null } });
+    const { db } = fakeDb({ dwaar_chat_info: { data: [info], error: null }, dwaar_chat_messages: { data: [{ out_id: 1, out_mine: true, out_body: "hi", out_created_at: "x" }], error: null }, dwaar_closed_chats: { data: [], error: null } });
     const chat = await getChat(db, "r1");
     expect(chat?.info.out_other_name).toBe("Meera");
     expect(chat?.messages).toHaveLength(1);
+    expect(chat?.closed).toBe(false);
+    expect(chat?.info.out_can_send).toBe(true);
+  });
+  it("a closed chat can be read but not written in", async () => {
+    const info = { out_job_title: "Dev", out_company_name: "Acme", out_other_name: "Meera", out_is_candidate: true, out_can_send: true };
+    const { db } = fakeDb({ dwaar_chat_info: { data: [info], error: null }, dwaar_chat_messages: { data: [], error: null }, dwaar_closed_chats: { data: ["r1", "r2"], error: null } });
+    const chat = await getChat(db, "r1");
+    expect(chat?.closed).toBe(true);
+    expect(chat?.info.out_can_send).toBe(false);
+  });
+});
+
+describe("closing a chat", () => {
+  it("is true only when the database closed it", async () => {
+    expect(await closeChat(fakeDb({ dwaar_close_chat: { data: true, error: null } }).db, "r1")).toBe(true);
+    expect(await closeChat(fakeDb({ dwaar_close_chat: { data: false, error: null } }).db, "r1")).toBe(false);
+    expect(await closeChat(fakeDb({ dwaar_close_chat: { data: null, error: { code: "42501" } } }).db, "r1")).toBe(false);
+  });
+  it("lists the closed chat ids", async () => {
+    const ids = await listClosedChatIds(fakeDb({ dwaar_closed_chats: { data: ["a", "b"], error: null } }).db);
+    expect(ids.has("a")).toBe(true);
+    expect(ids.has("z")).toBe(false);
   });
 });
 

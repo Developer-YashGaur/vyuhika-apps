@@ -58,15 +58,25 @@ export async function deliverBoost({ supabase, secret, generate, model }: Deps, 
     });
 
   try {
-    const raw = await generateJson({
-      systemInstruction: BOOST_SYSTEM_INSTRUCTION,
-      prompt: buildBoostPrompt({ resume: resume.text, jobTitle: job.out_job_title, company: job.out_company_name, jobDescription: description.text }),
-      schema: boostResultSchema,
-      generate,
-      logLabel: "boost",
-    });
-    const written = finalizeBoostResult(raw, { resume: resume.text, jobDescription: description.text });
-    const result = await withNewScore(written, generate, description.text);
+    // Score the person's own resume first, the same way the improved one is scored, so "before" and "after" can be compared fairly.
+    const original = await scoreText(resume.text, description.text, generate);
+    // Write up to 2 drafts and keep the better one. A second draft is only tried when the first did not beat the original.
+    let best: { draft: FinalBoost; score: number | null } | null = null;
+    for (let attempt = 0; attempt < MAX_DRAFTS; attempt++) {
+      const raw = await generateJson({
+        systemInstruction: BOOST_SYSTEM_INSTRUCTION,
+        prompt: buildBoostPrompt({ resume: resume.text, jobTitle: job.out_job_title, company: job.out_company_name, jobDescription: description.text, keepWords: original?.matched }),
+        schema: boostResultSchema,
+        generate,
+        logLabel: "boost",
+      });
+      const written = finalizeBoostResult(raw, { resume: resume.text, jobDescription: description.text });
+      const scored = await withNewScore(written, generate, description.text);
+      best = pickBetterDraft(best, scored);
+      if (!shouldTryAgain(original?.score ?? null, best.score)) break;
+    }
+    const result = best ? withOriginalScore(best.draft, original?.score ?? null) : null;
+    if (!result) return { kind: "failed" };
     const saved = await save("done", result);
     if (saved.error || saved.data !== true) {
       console.error("[dwaar] saving the boost failed:", saved.error?.code);
@@ -80,20 +90,56 @@ export async function deliverBoost({ supabase, secret, generate, model }: Deps, 
   }
 }
 
-// Scores the improved resume for the same job, the same way the free check scores the original. This is part of the
-// Boost (no daily limit, nothing recorded). If scoring fails, the Boost is still delivered, just without a new score.
-async function withNewScore(written: FinalBoost, generate: GenerateFn, jobText: string): Promise<FinalBoost> {
+const MAX_DRAFTS = 2;
+
+// Scores a piece of resume text for the job, the same way the free check does. null if it cannot be scored.
+async function scoreText(resumeText: string, jobText: string, generate: GenerateFn): Promise<{ score: number; matched: string[] } | null> {
   try {
-    const doc = parseResumeDoc(written.improvedResume);
-    if (!doc) return written;
-    const text = prepareUntrustedText(resumeDocToText(doc, { name: doc.name, email: null, phone: null, linkedin: null, links: [] })).text;
+    const raw = await analyzeMatch(resumeText, jobText, generate);
+    const scored = finalizeMatchResult(raw, false);
+    return { score: scored.score, matched: scored.matchedKeywords.slice(0, 15) };
+  } catch (error) {
+    console.error("[dwaar] scoring a resume failed:", (error as Error)?.name, (error as { code?: string })?.code);
+    return null;
+  }
+}
+
+// Scores the improved resume for the same job. This is part of the Boost (no daily limit, nothing recorded).
+// If scoring fails, the draft is still usable, just without a new score.
+async function withNewScore(written: FinalBoost, generate: GenerateFn, jobText: string): Promise<{ draft: FinalBoost; score: number | null }> {
+  const doc = parseResumeDoc(written.improvedResume);
+  if (!doc) return { draft: written, score: null };
+  const text = prepareUntrustedText(resumeDocToText(doc, { name: doc.name, email: null, phone: null, linkedin: null, links: [] })).text;
+  try {
     const raw = await analyzeMatch(text, jobText, generate);
     const scored = finalizeMatchResult(raw, false);
-    return { ...written, improvedResume: JSON.stringify({ ...doc, matchScore: scored.score, stillMissing: scored.missingKeywords.slice(0, 8) }) };
+    return { draft: { ...written, improvedResume: JSON.stringify({ ...doc, matchScore: scored.score, stillMissing: scored.missingKeywords.slice(0, 8) }) }, score: scored.score };
   } catch (error) {
     console.error("[dwaar] scoring the improved resume failed:", (error as Error)?.name, (error as { code?: string })?.code);
-    return written;
+    return { draft: written, score: null };
   }
+}
+
+type Draft = { draft: FinalBoost; score: number | null };
+
+// The higher score wins. A draft with a score beats one without. On a tie the first draft stays.
+export function pickBetterDraft(current: Draft | null, next: Draft): Draft {
+  if (!current) return next;
+  if (next.score === null) return current;
+  if (current.score === null || next.score > current.score) return next;
+  return current;
+}
+
+// A second draft is worth trying only when we know both scores and the best draft is not higher than the original.
+export function shouldTryAgain(originalScore: number | null, bestScore: number | null): boolean {
+  return originalScore !== null && bestScore !== null && bestScore <= originalScore;
+}
+
+// Saves the original's score inside the resume, so the page can show "before" and "after" from the same kind of check.
+function withOriginalScore(draft: FinalBoost, originalScore: number | null): FinalBoost {
+  if (originalScore === null) return draft;
+  const doc = parseResumeDoc(draft.improvedResume);
+  return doc ? { ...draft, improvedResume: JSON.stringify({ ...doc, originalScore }) } : draft;
 }
 
 export function deliverMessage(kind: Exclude<DeliverOutcome["kind"], "delivered">): string {

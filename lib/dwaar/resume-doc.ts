@@ -24,6 +24,7 @@ export type ResumeDoc = z.infer<typeof resumeDocSchema>;
 // never by the writing AI). Both are optional, so Boosts saved earlier still open.
 export const savedResumeSchema = resumeDocSchema.extend({
   matchScore: z.number().int().min(0).max(100).nullable().optional(),
+  originalScore: z.number().int().min(0).max(100).nullable().optional(), // the person's own resume, scored the same way, in the same run
   stillMissing: z.array(line(60)).max(10).optional(),
 });
 export type SavedResume = z.infer<typeof savedResumeSchema>;
