@@ -25,7 +25,7 @@ export default function DwaarPrivacyPage() {
             <p className="mt-3">
               Dwaar is an early-access service from Vyuhika Apps. Candidates ask employees of a company for a referral for a
               job, and employees who work at that company can accept. Dwaar does not promise any job, interview or referral,
-              and nobody pays anything in this version.
+              and referral requests are free. Some extra tools are paid (see &ldquo;Payments, Plus pass and credits&rdquo;).
             </p>
           </section>
           <section>
@@ -45,7 +45,7 @@ export default function DwaarPrivacyPage() {
               If you can refer people, we email a 6-digit code to your work email to check that the address is yours. We keep
               only a scrambled copy of the code, for 15 minutes, together with how many codes you asked for, to prevent abuse.
             </p>
-            <p className="mt-3">We do not collect payment card details. Payments are handled by Razorpay.</p>
+            <p className="mt-3">We do not collect payment card details. Payments are handled by Razorpay (see below).</p>
           </section>
           <section>
             <h2 className="dw-display text-xl font-medium">Your resume and the match score</h2>
@@ -71,6 +71,44 @@ export default function DwaarPrivacyPage() {
             <p className="mt-3">
               When you cancel a request, we delete its resume file and clear its job description and score. When you delete your
               Dwaar profile, we cancel your open requests and do the same for all your requests. A request that closed (accepted or cancelled) loses its resume file, job description and score 90 days later. A request that is still open after 180 days is cancelled and loses them too. This clean-up runs once a day.</p>
+          </section>
+          <section>
+            <h2 className="dw-display text-xl font-medium">Payments, Plus pass and credits</h2>
+            <p className="mt-3">
+              Dwaar Plus is a pass for 30 days, currently &#8377;299, paid through Razorpay. It does not renew by itself: you renew
+              it yourself, with one tap, when you want to. A Resume Boost can also be bought (the price is shown before you pay). We keep a record of each order and
+              payment (the amount, the date, and Razorpay&apos;s order and payment numbers) so we can show your pass and look into problems. We never see or store your card details.
+              To ask about a payment, write to support@vyuhika.com.
+            </p>
+            <p className="mt-3">
+              Dwaar credits are points inside Dwaar. They are never paid out in cash and cannot be turned into money. An employee earns credits when
+              they accept a request and when a candidate tells us that the referral led to an interview or an offer. Credits can be spent on a Resume Boost.
+              Candidates are never asked to pay for a referral, and paying does not make an employee accept a request.
+            </p>
+          </section>
+          <section>
+            <h2 className="dw-display text-xl font-medium">Resume Boost and interview practice (AI)</h2>
+            <p className="mt-3">
+              For a Resume Boost, your browser reads the text of your resume again, and we send that text (without email addresses and phone numbers) and the job
+              description to Google&apos;s Gemini AI service, which writes an improved resume for that job and tips. The AI is told to use only facts from your resume, but it can make
+              mistakes, so read every line before you use it. We keep the improved resume and the tips so you can open them again, and delete them when you cancel the request and
+              90 days after the request closes. If you choose &ldquo;Replace my resume&rdquo;, the improved resume becomes the resume file on that request and the old file is deleted.
+              Interview practice sends the job title, an optional job description and your written answer to the same AI service to get questions and feedback. We do not store your answers.
+            </p>
+          </section>
+          <section>
+            <h2 className="dw-display text-xl font-medium">Latest jobs and job alerts</h2>
+            <p className="mt-3">
+              The Latest jobs list shows public job listings that we collect from the Remotive job board twice a day. The listings are theirs; we link to the original. With a Plus pass you can
+              save a set of words for job alerts. We then email you, at your sign-in email address, when new jobs match. You can turn alerts off at any time on the Jobs page.
+            </p>
+          </section>
+          <section>
+            <h2 className="dw-display text-xl font-medium">Chats, closing a chat, and feedback</h2>
+            <p className="mt-3">
+              The employee who accepted your request can close the chat. Both of you can still read a closed chat, but nobody can write in it, and it cannot be re-opened.
+              If you send feedback or report a bug with the button at the bottom right, we receive your message, the page address, the time, and your browser and window size, and your email only if you type it.
+            </p>
           </section>
           <section>
             <h2 className="dw-display text-xl font-medium">Why we collect it</h2>
@@ -100,7 +138,7 @@ export default function DwaarPrivacyPage() {
             </p>
             <p className="mt-3">
               Our database is set up so that one person cannot read another person&apos;s private data. Our providers process
-              data for us: Vercel (hosting), Supabase (database and file storage), Google (the AI check) and Resend (email).
+              data for us: Vercel (hosting), Supabase (database and file storage), Google (the AI check, Boost and interview practice), Resend (email) and Razorpay (payments).
             </p>
           </section>
           <section>
