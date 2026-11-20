@@ -11,7 +11,9 @@ import CandidateDetails from "@/components/dwaar/CandidateDetails";
 import { getCandidateExtras } from "@/lib/dwaar/candidate-extras";
 import { getContactViews } from "@/lib/dwaar/contact-views";
 import { markChatRead } from "@/lib/dwaar/notifications";
-import { getChat, getChatResume, toMessageViews } from "@/lib/dwaar/chat";
+import { getChat, getChatResume, listClosedChatIds, toMessageViews } from "@/lib/dwaar/chat";
+import { chatPreview, listMyChats } from "@/lib/dwaar/my-chats";
+import { timeAgo } from "@/lib/dwaar/format";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -44,17 +46,48 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
   const chat = await getChat(supabase, requestId);
   if (!chat) notFound();
   const { info, messages, closed } = chat;
-  const [contacts, extras, matches, resume] = await Promise.all([
+  const [contacts, extras, matches, resume, allChats, closedIds] = await Promise.all([
     getContactViews(supabase, requestId),
     info.out_is_candidate ? Promise.resolve(null) : getCandidateExtras(supabase, [requestId]),
     info.out_is_candidate ? Promise.resolve(null) : getCandidateMatches(supabase, [requestId]),
     getChatResume(supabase, requestId),
+    listMyChats(supabase),
+    listClosedChatIds(supabase),
   ]);
   await markChatRead(supabase, requestId);
   const backHref = info.out_is_candidate ? "/apps/dwaar/requests" : "/apps/dwaar/inbox";
 
   return (
     <>
+      {/* Left: everyone I chat with (wide screens only; phones use the Back link). Right: the open chat. */}
+      <aside className="dw-chatlist" aria-label="Your chats">
+        <p className="dw-chatlist-title">Chats</p>
+        <ul>
+          {allChats.map((c) => (
+            <li key={c.requestId}>
+              <Link href={`/apps/dwaar/requests/${c.requestId}/chat`} className="dw-chatlist-item" aria-current={c.requestId === requestId ? "page" : undefined}>
+                <span className="flex items-center justify-between gap-2">
+                  <span className="truncate font-semibold">{c.otherName}</span>
+                  <span className="dw-muted shrink-0 text-xs">{timeAgo(c.lastAt ?? c.acceptedAt)}</span>
+                </span>
+                <span className="dw-muted block truncate text-xs">
+                  {c.jobTitle} at {c.company}
+                  {closedIds.has(c.requestId) ? " · Closed" : ""}
+                </span>
+                <span className={`block truncate text-sm ${c.unread > 0 ? "font-semibold" : "dw-muted"}`}>
+                  {chatPreview(c)}
+                  {c.unread > 0 && c.requestId !== requestId && (
+                    <span className="dw-badge" aria-label={`${c.unread} new`}>
+                      {c.unread > 9 ? "9+" : c.unread}
+                    </span>
+                  )}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </aside>
+      <section className="dw-chatmain">
       <Link href={backHref} className="dw-back">
         <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
           <path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -111,8 +144,9 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
       </details>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <LiveChat requestId={requestId} otherName={info.out_other_name} isCandidate={info.out_is_candidate} initialMessages={toMessageViews(messages)} initialContacts={contacts} initialCanSend={info.out_can_send} initialClosed={closed} />
+        <LiveChat key={requestId} requestId={requestId} otherName={info.out_other_name} isCandidate={info.out_is_candidate} initialMessages={toMessageViews(messages)} initialContacts={contacts} initialCanSend={info.out_can_send} initialClosed={closed} />
       </div>
+      </section>
     </>
   );
 }

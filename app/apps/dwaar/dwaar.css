@@ -372,9 +372,38 @@ body:has([data-app="dwaar"]) .feedback-panel .file-chip-remove:hover { backgroun
 body:has([data-app="dwaar"]) .feedback-panel .upload-error { background: #fef3f2; border-color: #fda29b; }
 
 /* ------------------------------------------------------------ chat screen: the page stays still, only the messages scroll */
-.dw-chatpage { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 48rem; margin-inline: auto; height: calc(100dvh - 64px); padding: 12px clamp(16px, 4vw, 24px) 12px; overflow: hidden; }
+.dw-chatpage { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 48rem; margin-inline: auto; height: calc(100dvh - 64px); padding: 12px clamp(16px, 4vw, 24px); overflow: hidden; }
 body:has(.dw-chatpage) { overflow: hidden; }
 body:has(.dw-chatpage) .dw-footer { display: none; }
-.dw-chat-details { padding: 10px 14px; }
+.dw-chatlist { display: none; }
+.dw-chatmain { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; height: 100%; }
+.dw-chat-details { padding: 10px 14px; flex-shrink: 0; }
 .dw-chat-details[open] { max-height: 45dvh; overflow-y: auto; }
 .dw-chatpage .dw-card { padding: 14px; }
+/* Wide screens (laptops, Windows full screen): chat list on the left, the open chat on the right, using the whole window. */
+@media (min-width: 900px) {
+  .dw-chatpage { max-width: none; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; padding: 16px clamp(16px, 2vw, 32px); }
+  .dw-chatlist { display: flex; flex-direction: column; min-height: 0; background: var(--dw-surface); border: 1px solid var(--dw-line); border-radius: 14px; overflow: hidden; }
+  .dw-chatlist-title { padding: 14px 16px; font-weight: 700; border-bottom: 1px solid var(--dw-line); }
+  .dw-chatlist ul { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .dw-chatlist-item { display: block; padding: 12px 16px; border-bottom: 1px solid var(--dw-line); }
+  .dw-chatlist-item:hover { background: var(--dw-surface-2); }
+  .dw-chatlist-item[aria-current="page"] { background: var(--dw-primary-soft); box-shadow: inset 3px 0 0 var(--dw-primary); }
+  .dw-chatmain { max-width: 60rem; }
+  .dw-chatmain .dw-back { display: none; }
+}
+
+/* Feedback panel text: the shared text classes are fixed to the dark theme's light colours, so set dark ones here. */
+body:has([data-app="dwaar"]) .feedback-dialog,
+body:has([data-app="dwaar"]) .feedback-panel,
+body:has([data-app="dwaar"]) .feedback-panel h2,
+body:has([data-app="dwaar"]) .feedback-panel legend,
+body:has([data-app="dwaar"]) .feedback-panel label,
+body:has([data-app="dwaar"]) .feedback-panel .text-ink,
+body:has([data-app="dwaar"]) .feedback-fab { color: #0b1220; }
+body:has([data-app="dwaar"]) .feedback-panel .text-mist,
+body:has([data-app="dwaar"]) .feedback-panel .text-mist span,
+body:has([data-app="dwaar"]) .feedback-panel .file-chip-remove,
+body:has([data-app="dwaar"]) .feedback-panel p { color: #566074; }
+body:has([data-app="dwaar"]) .feedback-panel .upload-error { color: #b42318; }
+body:has([data-app="dwaar"]) .feedback-fab svg { color: #2451e6; }
