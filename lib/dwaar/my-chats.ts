@@ -17,6 +17,7 @@ export type ChatSummary = {
   lastMine: boolean | null;
   messageCount: number;
   acceptedAt: string;
+  unread: number;
 };
 
 export async function listMyChats(supabase: Db): Promise<ChatSummary[]> {
@@ -36,6 +37,7 @@ export async function listMyChats(supabase: Db): Promise<ChatSummary[]> {
     lastMine: r.out_last_mine,
     messageCount: r.out_message_count,
     acceptedAt: r.out_accepted_at,
+    unread: r.out_unread,
   }));
 }
 

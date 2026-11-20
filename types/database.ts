@@ -776,7 +776,20 @@ export type Database = {
           out_last_mine: boolean | null
           out_message_count: number
           out_accepted_at: string
+          out_unread: number
         }[]
+      }
+      dwaar_mark_chat_read: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
+      dwaar_notification_counts: {
+        Args: never
+        Returns: { out_unread: number; out_unread_chats: number; out_waiting_requests: number }[]
+      }
+      dwaar_contact_timeline: {
+        Args: { p_request_id: string }
+        Returns: { out_kind: string; out_status: string; out_asked_at: string; out_answered_at: string | null }[]
       }
       dwaar_set_resume_shared: {
         Args: { p_request_id: string; p_shared: boolean }

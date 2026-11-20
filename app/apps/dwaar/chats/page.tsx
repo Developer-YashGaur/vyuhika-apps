@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import AlertsButton from "@/components/dwaar/AlertsButton";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { chatPreview, listMyChats } from "@/lib/dwaar/my-chats";
 import { timeAgo } from "@/lib/dwaar/format";
@@ -18,6 +19,9 @@ export default function ChatsPage() {
       <p className="mb-8 max-w-2xl text-lg leading-relaxed dw-muted">
         Every employee who accepted your request, and every candidate you accepted, in one place. Open one to chat live.
       </p>
+      <div className="mb-6">
+        <AlertsButton />
+      </div>
       <Suspense fallback={<p className="dw-muted">Loading…</p>}>
         <ChatsContent />
       </Suspense>
@@ -56,13 +60,20 @@ async function ChatsContent() {
         <li key={c.requestId}>
           <Link href={`/apps/dwaar/requests/${c.requestId}/chat`} className="dw-card block" aria-label={`Open chat with ${c.otherName} about ${c.jobTitle} at ${c.company}`}>
             <p className="flex flex-wrap items-center justify-between gap-2">
-              <span className="dw-display text-lg">{c.otherName}</span>
+              <span className="dw-display text-lg">
+                {c.otherName}
+                {c.unread > 0 && (
+                  <span className="dw-badge" aria-label={`${c.unread} new`}>
+                    {c.unread > 9 ? "9+" : c.unread}
+                  </span>
+                )}
+              </span>
               <span className="dw-muted text-sm">{timeAgo(c.lastAt ?? c.acceptedAt)}</span>
             </p>
             <p className="dw-muted text-sm">
               {c.jobTitle} at {c.company} · {c.isCandidate ? "Employee who accepted you" : "Candidate you accepted"}
             </p>
-            <p className="mt-2 text-sm">{chatPreview(c)}</p>
+            <p className={`mt-2 text-sm ${c.unread > 0 ? "font-semibold" : ""}`}>{chatPreview(c)}</p>
           </Link>
         </li>
       ))}

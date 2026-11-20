@@ -511,3 +511,19 @@ textarea.dw-input { min-height: 120px; resize: vertical; }
   @page { margin: 16mm; }
 }
 .dw-alert-good { background: var(--dw-good-soft); border-color: #b7dcc7; color: var(--dw-good); }
+
+/* Notification number next to a link or a name */
+.dw-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--dw-primary, #0f4c47);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}

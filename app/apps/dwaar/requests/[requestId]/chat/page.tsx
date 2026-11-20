@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import ContactPanel from "@/components/dwaar/ContactPanel";
 import LiveChat from "@/components/dwaar/LiveChat";
 import MatchSummary from "@/components/dwaar/MatchSummary";
 import { setResumeSharedAction } from "@/app/apps/dwaar/actions";
@@ -10,7 +9,8 @@ import { getCandidateMatches } from "@/lib/dwaar/candidate-match";
 import { CHAT_NOTICE } from "@/lib/dwaar/chat-monitor";
 import CandidateDetails from "@/components/dwaar/CandidateDetails";
 import { getCandidateExtras } from "@/lib/dwaar/candidate-extras";
-import { getContactState } from "@/lib/dwaar/contact";
+import { getContactViews } from "@/lib/dwaar/contact-views";
+import { markChatRead } from "@/lib/dwaar/notifications";
 import { getChat, getChatResume, toMessageViews } from "@/lib/dwaar/chat";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -46,11 +46,12 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
   if (!chat) notFound();
   const { info, messages } = chat;
   const [contacts, extras, matches, resume] = await Promise.all([
-    getContactState(supabase, requestId),
+    getContactViews(supabase, requestId),
     info.out_is_candidate ? Promise.resolve(null) : getCandidateExtras(supabase, [requestId]),
     info.out_is_candidate ? Promise.resolve(null) : getCandidateMatches(supabase, [requestId]),
     getChatResume(supabase, requestId),
   ]);
+  await markChatRead(supabase, requestId);
   const backHref = info.out_is_candidate ? "/apps/dwaar/requests" : "/apps/dwaar/inbox";
 
   return (
@@ -96,10 +97,9 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
       )}
 
       <div className="mt-8">
-        <LiveChat requestId={requestId} otherName={info.out_other_name} initialMessages={toMessageViews(messages)} initialCanSend={info.out_can_send} />
+        <LiveChat requestId={requestId} otherName={info.out_other_name} isCandidate={info.out_is_candidate} initialMessages={toMessageViews(messages)} initialContacts={contacts} initialCanSend={info.out_can_send} />
       </div>
 
-      <ContactPanel requestId={requestId} isCandidate={info.out_is_candidate} otherName={info.out_other_name} items={contacts} />
 
     </>
   );
