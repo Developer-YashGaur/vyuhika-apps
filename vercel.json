@@ -1,6 +1,15 @@
 {
+  "regions": [
+    "syd1"
+  ],
   "crons": [
-    { "path": "/api/dwaar/jobs-refresh?run=morning", "schedule": "30 3 * * *" },
-    { "path": "/api/dwaar/jobs-refresh?run=evening", "schedule": "30 12 * * *" }
+    {
+      "path": "/api/dwaar/jobs-refresh?run=morning",
+      "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/dwaar/jobs-refresh?run=evening",
+      "schedule": "30 12 * * *"
+    }
   ]
 }
