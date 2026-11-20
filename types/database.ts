@@ -567,6 +567,20 @@ export type Database = {
         Returns: { out_used: number; out_today: number; out_free: number; out_max: number; out_cost: number; out_credits: number }[]
       }
       dwaar_record_role_search: { Args: { p_secret: string }; Returns: boolean }
+      dwaar_upsert_jobs: { Args: { p_secret: string; p_jobs: Json }; Returns: number }
+      dwaar_latest_jobs: {
+        Args: { p_query?: string | null; p_limit?: number }
+        Returns: {
+          out_id: string
+          out_title: string
+          out_company: string
+          out_location: string
+          out_description: string
+          out_url: string
+          out_source: string
+          out_posted_at: string | null
+        }[]
+      }
       dwaar_companies_with_referrers: {
         Args: never
         Returns: {
