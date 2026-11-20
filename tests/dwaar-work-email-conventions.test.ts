@@ -24,8 +24,8 @@ describe("work-email confirmation conventions", () => {
 
   it("only server code reads DWAAR_SERVER_SECRET", () => {
     const readers = all.filter((f) => readFileSync(f, "utf8").includes("DWAAR_SERVER_SECRET"));
-    // work-email.tsx confirms work emails; jobs.ts stores the twice-daily jobs feed. Both are server-only files.
-    expect(readers.sort()).toEqual(["lib/dwaar/jobs.ts", "lib/dwaar/work-email.tsx"]);
+    // work-email.tsx confirms work emails; jobs.ts stores the twice-daily jobs feed; job-alerts.tsx emails Plus job alerts. All server-only.
+    expect(readers.sort()).toEqual(["lib/dwaar/job-alerts.tsx", "lib/dwaar/jobs.ts", "lib/dwaar/work-email.tsx"]);
   });
 
   it("the new server actions re-check who is signed in before doing anything", () => {

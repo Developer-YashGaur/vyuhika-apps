@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import { buildCheckoutOptions } from "@/lib/dwaar/checkout";
 import { planPaymentsEnabled } from "@/lib/dwaar/features";
-import { FREE_DAILY_CHECKS, PLAN_DESCRIPTION, confirmPlanPayment, getMyPlan, planMessage, startPlan } from "@/lib/dwaar/plan";
+import { FREE_DAILY_CHECKS, PLAN_DESCRIPTION, daysLeft, confirmPlanPayment, getMyPlan, planMessage, startPlan } from "@/lib/dwaar/plan";
 
 const KEYS = { keyId: "rzp_test_abc123", keySecret: "s".repeat(24) };
 const SECRET = "x".repeat(40);
@@ -12,7 +12,7 @@ function fakeDb(replies: Record<string, { data: unknown; error: { code?: string 
   return { calls, db: { rpc: async (name: string, args: unknown) => (calls.push({ name, args }), replies[name]) } as never };
 }
 const order = (id = "order_ABC123") => vi.fn(async () => new Response(JSON.stringify({ id }), { status: 200 })) as unknown as typeof fetch;
-const pass = { out_pass_id: "11111111-2222-3333-4444-555555555555", out_amount_paise: 19900, out_currency: "INR", out_gateway_order_id: null };
+const pass = { out_pass_id: "11111111-2222-3333-4444-555555555555", out_amount_paise: 29900, out_currency: "INR", out_gateway_order_id: null };
 
 describe("planPaymentsEnabled", () => {
   it("is off unless DWAAR_PLAN_ENABLED is true", () => {
@@ -44,10 +44,10 @@ describe("startPlan", () => {
     const { db, calls } = fakeDb({ dwaar_start_plan: { data: [pass], error: null }, dwaar_attach_plan_order: { data: true, error: null } });
     const fetchFn = order();
     expect(await startPlan({ supabase: db, secret: SECRET, keys: KEYS, fetchFn })).toEqual({
-      kind: "ready", passId: pass.out_pass_id, gatewayOrderId: "order_ABC123", amountPaise: 19900,
+      kind: "ready", passId: pass.out_pass_id, gatewayOrderId: "order_ABC123", amountPaise: 29900,
     });
     const body = JSON.parse(((fetchFn as unknown as { mock: { calls: [string, RequestInit][] } }).mock.calls[0][1].body as string));
-    expect(body.amount).toBe(19900);
+    expect(body.amount).toBe(29900);
     expect(calls[1].args).toEqual({ p_pass_id: pass.out_pass_id, p_gateway_order_id: "order_ABC123", p_secret: SECRET });
   });
   it("reuses an order that already exists", async () => {
@@ -96,8 +96,17 @@ describe("messages and checkout text", () => {
     expect(planMessage("failed")).toContain("Nothing was charged");
   });
   it("shows the plan description in the checkout window", () => {
-    const o = buildCheckoutOptions({ keyId: KEYS.keyId, gatewayOrderId: "order_A1", amountPaise: 19900 }, { onPaid: () => {}, onDismiss: () => {} }, PLAN_DESCRIPTION);
+    const o = buildCheckoutOptions({ keyId: KEYS.keyId, gatewayOrderId: "order_A1", amountPaise: 29900 }, { onPaid: () => {}, onDismiss: () => {} }, PLAN_DESCRIPTION);
     expect(o.description).toBe(PLAN_DESCRIPTION);
-    expect(o.amount).toBe(19900);
+    expect(o.amount).toBe(29900);
+  });
+});
+
+describe("daysLeft", () => {
+  it("rounds up and never goes below zero", () => {
+    const now = Date.parse("2026-11-20T00:00:00Z");
+    expect(daysLeft("2026-11-22T12:00:00Z", now)).toBe(3);
+    expect(daysLeft("2026-11-19T00:00:00Z", now)).toBe(0);
+    expect(daysLeft(null, now)).toBeNull();
   });
 });

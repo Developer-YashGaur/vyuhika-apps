@@ -1,6 +1,7 @@
 import "server-only";
 import { timingSafeEqual } from "node:crypto";
 import { jobsFeedEnabled } from "@/lib/dwaar/features";
+import { sendJobAlerts } from "@/lib/dwaar/job-alerts";
 import { refreshJobsFeed } from "@/lib/dwaar/jobs";
 
 // Vercel calls this twice a day (see vercel.json). It sends "Authorization: Bearer <CRON_SECRET>".
@@ -17,5 +18,7 @@ export async function GET(request: Request) {
 
   const outcome = await refreshJobsFeed();
   if (!outcome.ok) return Response.json({ ok: false, reason: outcome.reason }, { status: 502 });
-  return Response.json({ ok: true, fetched: outcome.fetched, stored: outcome.stored });
+  // New jobs are in: email the Plus members whose alerts match. A failure here never fails the refresh.
+  const alerts = await sendJobAlerts();
+  return Response.json({ ok: true, fetched: outcome.fetched, stored: outcome.stored, alerts });
 }

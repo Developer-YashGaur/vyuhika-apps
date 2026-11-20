@@ -568,6 +568,19 @@ export type Database = {
       }
       dwaar_record_role_search: { Args: { p_secret: string }; Returns: boolean }
       dwaar_upsert_jobs: { Args: { p_secret: string; p_jobs: Json }; Returns: number }
+      dwaar_use_plus_ai: { Args: { p_secret: string; p_kind: string }; Returns: number }
+      dwaar_my_job_alert: { Args: never; Returns: { out_keywords: string; out_is_active: boolean }[] }
+      dwaar_set_job_alert: { Args: { p_keywords: string; p_active: boolean }; Returns: boolean }
+      dwaar_claim_job_alerts: {
+        Args: { p_secret: string; p_limit?: number }
+        Returns: { out_user_id: string; out_email: string; out_name: string; out_keywords: string; out_jobs: Json }[]
+      }
+      dwaar_report_outcome: { Args: { p_request_id: string; p_outcome: string }; Returns: boolean }
+      dwaar_request_outcome: { Args: { p_request_id: string }; Returns: string }
+      dwaar_my_earnings: {
+        Args: never
+        Returns: { out_accept_credits: number; out_outcome_credits: number; out_accepted: number; out_interviews: number; out_offers: number }[]
+      }
       dwaar_latest_jobs: {
         Args: { p_query?: string | null; p_limit?: number }
         Returns: {

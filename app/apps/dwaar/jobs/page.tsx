@@ -2,8 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import JobAlertForm from "@/components/dwaar/JobAlertForm";
 import JobCard from "@/components/dwaar/JobCard";
-import { jobsFeedEnabled } from "@/lib/dwaar/features";
+import { jobsFeedEnabled, planPaymentsEnabled } from "@/lib/dwaar/features";
+import { getMyAlert } from "@/lib/dwaar/job-alerts";
+import { getMyPlan } from "@/lib/dwaar/plan";
 import { feedCredit } from "@/lib/dwaar/jobs-feed";
 import { listLatestJobs } from "@/lib/dwaar/jobs";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
@@ -36,6 +39,12 @@ async function JobsContent({ searchParams }: { searchParams: Promise<{ q?: strin
   const jobs = await listLatestJobs(supabase, query || null, 20);
   const sources = Array.from(new Set(jobs.map((j) => j.source)));
 
+  // Job alerts are for Plus members. Everyone else sees a short note about them.
+  const { data: auth } = await supabase.auth.getUser();
+  const signedIn = Boolean(auth.user);
+  const plan = signedIn && planPaymentsEnabled() ? await getMyPlan(supabase) : null;
+  const alert = plan?.active ? await getMyAlert(supabase) : null;
+
   return (
     <>
       <form action="/apps/dwaar/jobs" method="get" role="search" className="dw-jobsearch">
@@ -47,6 +56,20 @@ async function JobsContent({ searchParams }: { searchParams: Promise<{ q?: strin
           Search jobs
         </button>
       </form>
+
+      {plan?.active ? (
+        <div className="mt-6">
+          <JobAlertForm keywords={alert?.keywords ?? ""} active={alert?.active ?? false} />
+        </div>
+      ) : signedIn && planPaymentsEnabled() ? (
+        <p className="dw-muted mt-4 text-sm">
+          Want an email when new jobs match? Job alerts are part of{" "}
+          <Link href="/apps/dwaar/plus" className="dw-link">
+            Dwaar Plus
+          </Link>
+          .
+        </p>
+      ) : null}
 
       {jobs.length === 0 ? (
         <section className="dw-card mt-6">

@@ -6,7 +6,7 @@ import PlanButton from "@/components/dwaar/PlanButton";
 import { planPaymentsEnabled } from "@/lib/dwaar/features";
 import { dwaarMetadata } from "@/lib/dwaar/metadata";
 import { getMyProfile } from "@/lib/dwaar/profile";
-import { FREE_DAILY_CHECKS, PLAN_CREDITS, PLAN_DAILY_CHECKS, PLAN_DAYS, PLAN_PRICE_RUPEES, getMyPlan } from "@/lib/dwaar/plan";
+import { FREE_DAILY_CHECKS, PLAN_CREDITS, PLAN_DAILY_CHECKS, PLAN_DAYS, PLAN_PRICE_RUPEES, daysLeft, getMyPlan } from "@/lib/dwaar/plan";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
@@ -45,6 +45,8 @@ async function PlusContent() {
   const plan = on ? await getMyPlan(supabase) : null;
   const endsOn = plan?.endsAt ? new Date(plan.endsAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : null;
 
+  const left = daysLeft(plan?.endsAt ?? null);
+
   const check = (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M5 12l5 5 9-10" />
@@ -77,14 +79,21 @@ async function PlusContent() {
             <ul className="dw-plan-list">
               <li>{check}{PLAN_DAILY_CHECKS} resume checks a day, instead of {FREE_DAILY_CHECKS}</li>
               <li>{check}{PLAN_CREDITS} credits when you buy it, for a Boost</li>
-              <li>{check}One payment, no automatic renewal</li>
+              <li>{check}Interview practice with AI feedback</li>
+              <li>{check}Job alerts by email when new jobs match</li>
+              <li>{check}One payment for {PLAN_DAYS} days, no automatic renewal</li>
             </ul>
             <div className="mt-auto pt-6">
               {!on ? (
                 <p className="dw-alert dw-alert-info">Dwaar Plus is not open yet. Please check back soon.</p>
               ) : (
                 <>
-                  {plan?.active && endsOn && <p className="dw-alert dw-alert-info mb-3">Your Plus pass is active until {endsOn}.</p>}
+                  {plan?.active && endsOn && (
+                    <p className="dw-alert dw-alert-info mb-3">
+                      Your Plus pass is active until {endsOn}.
+                      {left !== null && left <= 5 && ` It ends in ${left <= 1 ? "1 day" : `${left} days`}: add ${PLAN_DAYS} more days below to keep it going.`}
+                    </p>
+                  )}
                   <PlanButton label={plan?.active ? `Add ${PLAN_DAYS} more days · ₹${PLAN_PRICE_RUPEES}` : `Get Plus · ₹${PLAN_PRICE_RUPEES}`} />
                 </>
               )}
