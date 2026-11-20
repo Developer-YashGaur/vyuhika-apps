@@ -372,7 +372,7 @@ body:has([data-app="dwaar"]) .feedback-panel .file-chip-remove:hover { backgroun
 body:has([data-app="dwaar"]) .feedback-panel .upload-error { background: #fef3f2; border-color: #fda29b; }
 
 /* ------------------------------------------------------------ chat screen: the page stays still, only the messages scroll */
-.dw-chatpage { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; max-width: 48rem; margin-inline: auto; height: calc(100dvh - 64px); padding: 12px clamp(16px, 4vw, 24px); overflow: hidden; }
+.dw-chatpage { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); width: 100%; max-width: 48rem; margin-inline: auto; height: calc(100dvh - 64px); padding: 12px clamp(16px, 4vw, 24px); overflow: hidden; }
 body:has(.dw-chatpage) { overflow: hidden; }
 body:has(.dw-chatpage) .dw-footer { display: none; }
 .dw-chatlist { display: none; }
@@ -389,7 +389,6 @@ body:has(.dw-chatpage) .dw-footer { display: none; }
   .dw-chatlist-item { display: block; padding: 12px 16px; border-bottom: 1px solid var(--dw-line); }
   .dw-chatlist-item:hover { background: var(--dw-surface-2); }
   .dw-chatlist-item[aria-current="page"] { background: var(--dw-primary-soft); box-shadow: inset 3px 0 0 var(--dw-primary); }
-  .dw-chatmain { max-width: 60rem; }
   .dw-chatmain .dw-back { display: none; }
 }
 
