@@ -6,6 +6,7 @@ export default function DwaarFooter() {
       <div className="dw-wrap dw-footer-inner">
         <p>Dwaar, a product of Vyuhika. Intelligence, built in public.</p>
         <p className="flex flex-wrap gap-x-5 gap-y-2">
+          <Link href="/apps/dwaar/help">Help</Link>
           <Link href="/apps/dwaar/privacy">Dwaar privacy notice</Link>
           <Link href="/privacy">Privacy policy</Link>
           <Link href="/terms">Terms</Link>
