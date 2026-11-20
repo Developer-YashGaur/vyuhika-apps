@@ -370,3 +370,11 @@ body:has([data-app="dwaar"]) .feedback-panel .btn-glow:disabled { color: #566074
 body:has([data-app="dwaar"]) .feedback-panel .btn-ghost { color: #0b1220; background: #fff; border-color: #c4ccdc; backdrop-filter: none; }
 body:has([data-app="dwaar"]) .feedback-panel .file-chip-remove:hover { background: #eef1ff; }
 body:has([data-app="dwaar"]) .feedback-panel .upload-error { background: #fef3f2; border-color: #fda29b; }
+
+/* ------------------------------------------------------------ chat screen: the page stays still, only the messages scroll */
+.dw-chatpage { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 48rem; margin-inline: auto; height: calc(100dvh - 64px); padding: 12px clamp(16px, 4vw, 24px) 12px; overflow: hidden; }
+body:has(.dw-chatpage) { overflow: hidden; }
+body:has(.dw-chatpage) .dw-footer { display: none; }
+.dw-chat-details { padding: 10px 14px; }
+.dw-chat-details[open] { max-height: 45dvh; overflow-y: auto; }
+.dw-chatpage .dw-card { padding: 14px; }

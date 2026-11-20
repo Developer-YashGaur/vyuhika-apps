@@ -14,6 +14,7 @@ export type BoostResume = {
   doc: SavedResume | null; // null only when the text has no resume sections at all
   contact: ResumeContact;
   jobTitle: string;
+  requestStatus: string; // open, accepted or cancelled
   jobDescription: string | null;
   summary: string | null;
   changes: unknown;
@@ -29,12 +30,14 @@ export async function loadBoostResume(supabase: Db, user: { id: string; email?: 
     .select("improved_resume, summary, changes, profile_tips, linkedin_tips")
     .eq("request_id", requestId)
     .eq("status", "done")
+    .order("created_at", { ascending: false }) // a request can be boosted more than once: the newest one counts
+    .limit(1)
     .maybeSingle();
   if (!result?.improved_resume) return null;
 
   const [profile, request] = await Promise.all([
     getMyProfile(supabase, user.id),
-    supabase.from("dwaar_referral_requests").select("job_title, job_description").eq("id", requestId).maybeSingle(),
+    supabase.from("dwaar_referral_requests").select("job_title, job_description, status").eq("id", requestId).maybeSingle(),
   ]);
   return {
     raw: result.improved_resume,
@@ -47,6 +50,7 @@ export async function loadBoostResume(supabase: Db, user: { id: string; email?: 
       links: profile?.other_links ?? [],
     },
     jobTitle: request.data?.job_title ?? "",
+    requestStatus: request.data?.status ?? "",
     jobDescription: request.data?.job_description ?? null,
     summary: result.summary,
     changes: result.changes,
@@ -73,8 +77,9 @@ export async function scoreResume(boost: BoostResume, generate: GenerateFn | nul
 // The new score of each of my delivered Boosts, by request. Old Boosts have none, so they are left out.
 export async function listBoostScores(supabase: Db): Promise<Map<string, number>> {
   const scores = new Map<string, number>();
-  const { data } = await supabase.from("dwaar_boost_results").select("request_id, improved_resume").eq("status", "done");
+  const { data } = await supabase.from("dwaar_boost_results").select("request_id, improved_resume").eq("status", "done").order("created_at", { ascending: false });
   for (const row of data ?? []) {
+    if (scores.has(row.request_id)) continue; // the newest Boost is read first
     const score = row.improved_resume ? parseResumeDoc(row.improved_resume)?.matchScore : null;
     if (typeof score === "number") scores.set(row.request_id, score);
   }

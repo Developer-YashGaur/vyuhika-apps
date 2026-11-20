@@ -14,6 +14,7 @@ export type SpendResult =
   | { kind: "already" }
   | { kind: "no-resume" }
   | { kind: "not-enough" }
+  | { kind: "limit" }
   | { kind: "failed" };
 
 export async function spendCreditsOnBoost(supabase: Db, requestId: string): Promise<SpendResult> {
@@ -22,6 +23,7 @@ export async function spendCreditsOnBoost(supabase: Db, requestId: string): Prom
     if (error.code === "DW030") return { kind: "already" };
     if (error.code === "DW031") return { kind: "no-resume" };
     if (error.code === "DW034") return { kind: "not-enough" };
+    if (error.code === "DW035") return { kind: "limit" };
     console.error("[dwaar] spending credits on a boost failed:", error.code);
     return { kind: "failed" };
   }
@@ -31,9 +33,11 @@ export async function spendCreditsOnBoost(supabase: Db, requestId: string): Prom
 export function spendMessage(kind: Exclude<SpendResult["kind"], "paid">): string {
   switch (kind) {
     case "already":
-      return "This request already has a Boost.";
+      return "A Boost for this request is still being written. Choose your resume to finish it.";
     case "no-resume":
       return "Boost needs a resume on this request. It may have been deleted.";
+    case "limit":
+      return "This request has had 5 Boosts, which is the most allowed.";
     case "not-enough":
       return `You need ${BOOST_CREDIT_COST} credits for a Boost.`;
     default:

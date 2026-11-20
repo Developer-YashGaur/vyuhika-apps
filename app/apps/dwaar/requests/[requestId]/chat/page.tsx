@@ -22,12 +22,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function ChatPage({ params }: { params: Promise<{ requestId: string }> }) {
   return (
-    <div className="dw-wrap dw-page">
-      <div className="mx-auto max-w-3xl">
-        <Suspense fallback={<p className="dw-muted">Loading…</p>}>
-          <ChatContent params={params} />
-        </Suspense>
-      </div>
+    // A full-height chat screen: only the message list scrolls, the page itself stays still (see .dw-chatpage in dwaar.css).
+    <div className="dw-chatpage">
+      <Suspense fallback={<p className="dw-muted">Loading…</p>}>
+        <ChatContent params={params} />
+      </Suspense>
     </div>
   );
 }
@@ -62,13 +61,16 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
         </svg>
         Back
       </Link>
-      <p className="dw-eyebrow mt-8">{info.out_job_title} at {info.out_company_name}</p>
-      <h1 className="dw-title dw-display mt-2">Chat with {info.out_other_name}</h1>
-      <p role="note" className="dw-alert dw-alert-info mt-4 text-sm">{CHAT_NOTICE}</p>
-      {extras && <div className="mt-4"><CandidateDetails extras={extras.get(requestId)} /></div>}
+      <p className="dw-eyebrow">{info.out_job_title} at {info.out_company_name}</p>
+      <h1 className="dw-display text-xl leading-tight sm:text-2xl">Chat with {info.out_other_name}</h1>
+      <details className="dw-card dw-chat-details">
+        <summary className="cursor-pointer text-sm font-medium">Details, resume and rules</summary>
+        <div className="mt-3 flex flex-col gap-3">
+          <p role="note" className="dw-alert dw-alert-info text-sm">{CHAT_NOTICE}</p>
+      {extras && <div><CandidateDetails extras={extras.get(requestId)} /></div>}
 
       {!info.out_is_candidate && (
-        <div className="mt-4">
+        <div>
           <MatchSummary match={matches?.get(requestId)} />
           <p className="text-sm">
             {resume?.path ? (
@@ -84,7 +86,7 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
         </div>
       )}
       {info.out_is_candidate && resume?.hasResume && (
-        <form action={setResumeSharedAction} className="dw-card mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <form action={setResumeSharedAction} className="flex flex-wrap items-center justify-between gap-3 text-sm">
           <input type="hidden" name="requestId" value={requestId} />
           <label className="flex items-center gap-3">
             <input type="checkbox" name="shared" defaultChecked={resume.shared} className="h-4 w-4" />
@@ -96,11 +98,8 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
         </form>
       )}
 
-      <div className="mt-8">
-        <LiveChat requestId={requestId} otherName={info.out_other_name} isCandidate={info.out_is_candidate} initialMessages={toMessageViews(messages)} initialContacts={contacts} initialCanSend={info.out_can_send} initialClosed={closed} />
-      </div>
       {!info.out_is_candidate && !closed && (
-        <form action={closeChatAction} className="dw-card mt-6 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <form action={closeChatAction} className="flex flex-wrap items-center justify-between gap-3 text-sm">
           <input type="hidden" name="requestId" value={requestId} />
           <span>Finished helping? Closing the chat stops new messages. You both can still read it, and it cannot be re-opened.</span>
           <button type="submit" className="dw-btn dw-btn-quiet">
@@ -108,6 +107,12 @@ async function ChatContent({ params }: { params: Promise<{ requestId: string }> 
           </button>
         </form>
       )}
+        </div>
+      </details>
+
+      <div className="flex min-h-0 flex-1 flex-col">
+        <LiveChat requestId={requestId} otherName={info.out_other_name} isCandidate={info.out_is_candidate} initialMessages={toMessageViews(messages)} initialContacts={contacts} initialCanSend={info.out_can_send} initialClosed={closed} />
+      </div>
     </>
   );
 }

@@ -101,7 +101,7 @@ async function BoostResult({ params, searchParams }: { params: Promise<{ request
         </p>
       </section>
 
-      {doc && <ReplaceResume requestId={requestId} result={replaced ?? null} />}
+      {doc && <ReplaceResume requestId={requestId} result={replaced ?? null} open={boost.requestStatus === "open"} />}
 
       <NextChoices requestId={requestId} good={next.good} />
 

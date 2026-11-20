@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { pickBetterDraft, shouldTryAgain } from "@/lib/dwaar/deliver-boost";
 import { buildBoostPrompt } from "@/lib/dwaar/boost-writer";
 import { matchCompanyId } from "@/lib/dwaar/jobs";
+import { listMyBoosts } from "@/lib/dwaar/boost";
+import { spendCreditsOnBoost, spendMessage } from "@/lib/dwaar/credit-boost";
 import { friendlyRequestError } from "@/lib/dwaar/requests";
 import { friendlyRespondError } from "@/lib/dwaar/inbox";
 
@@ -63,5 +65,39 @@ describe("suspended accounts", () => {
   it("get a clear message instead of a generic error", () => {
     expect(friendlyRequestError("DW060")).toContain("suspended");
     expect(friendlyRespondError("DW060")).toContain("suspended");
+  });
+});
+
+function boostDb(rows: unknown[]) {
+  const chain = { select: () => chain, in: () => chain, order: async () => ({ data: rows, error: null }) };
+  return { from: () => chain } as never;
+}
+
+describe("listMyBoosts", () => {
+  it("counts finished Boosts and shows the newest finished one", async () => {
+    const boosts = await listMyBoosts(boostDb([
+      { id: "o3", request_id: "r1", status: "delivered" },
+      { id: "o2", request_id: "r1", status: "delivered" },
+      { id: "o1", request_id: "r1", status: "delivered" },
+      { id: "p1", request_id: "r2", status: "paid" },
+    ]));
+    expect(boosts.get("r1")).toEqual({ orderId: "o3", status: "delivered", count: 3 });
+    expect(boosts.get("r2")).toEqual({ orderId: "p1", status: "paid", count: 0 });
+  });
+  it("puts a Boost that is waiting for the resume first", async () => {
+    const boosts = await listMyBoosts(boostDb([
+      { id: "w", request_id: "r1", status: "paid" },
+      { id: "d", request_id: "r1", status: "delivered" },
+    ]));
+    expect(boosts.get("r1")).toEqual({ orderId: "w", status: "paid", count: 1 });
+  });
+});
+
+describe("spending credits on a repeat Boost", () => {
+  it("knows the 5-Boost limit", async () => {
+    const db = { rpc: async () => ({ data: null, error: { code: "DW035" } }) } as never;
+    const result = await spendCreditsOnBoost(db, "r1");
+    expect(result).toEqual({ kind: "limit" });
+    expect(spendMessage("limit")).toContain("5 Boosts");
   });
 });
