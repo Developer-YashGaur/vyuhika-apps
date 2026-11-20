@@ -14,7 +14,7 @@ export default function NotFound() {
       <Navbar />
       <main id="top" className="gutter flex min-h-[80svh] flex-col items-center justify-center pt-28 pb-20 text-center">
         <div className="logo-pulse">
-          <Logo variant="icon" size={112} decorative />
+          <Logo variant="icon" size={112} decorative priority />
         </div>
         <p className="mt-8 text-sm font-medium tracking-wide text-accent">Error 404</p>
         <h1 className="page-title font-display mt-3">Lost in space</h1>

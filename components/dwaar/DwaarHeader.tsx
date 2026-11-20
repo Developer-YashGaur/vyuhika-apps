@@ -2,12 +2,14 @@ import Link from "next/link";
 import { Suspense } from "react";
 import DwaarAccount from "@/components/dwaar/DwaarAccount";
 import DwaarMark from "@/components/dwaar/DwaarMark";
+import DwaarNav, { type NavLink } from "@/components/dwaar/DwaarNav";
 
-const LINKS = [
+const LINKS: NavLink[] = [
   { href: "/apps/dwaar#how", label: "How it works" },
   { href: "/apps/dwaar/find", label: "Find jobs" },
   { href: "/apps/dwaar/requests", label: "My requests" },
-  { href: "/apps/dwaar/inbox", label: "Employee desk" },
+  { href: "/apps/dwaar/chats", label: "Chats", badge: "unread" },
+  { href: "/apps/dwaar/inbox", label: "Employee desk", badge: "waiting" },
   { href: "/apps/dwaar/credits", label: "Credits" },
   { href: "/apps/dwaar/profile", label: "Profile" },
 ];
@@ -23,28 +25,12 @@ export default function DwaarHeader() {
           <span className="dw-brand-tag">Early access</span>
         </Link>
 
-        <nav aria-label="Dwaar" className="dw-nav">
-          {LINKS.map((l) => (
-            <Link key={l.href} href={l.href}>
-              {l.label}
-            </Link>
-          ))}
-        </nav>
+        <DwaarNav links={LINKS} />
 
         <Suspense fallback={null}>
           <DwaarAccount />
         </Suspense>
 
-        <details className="dw-menu">
-          <summary>Menu</summary>
-          <nav aria-label="Dwaar menu" className="dw-menu-panel">
-            {LINKS.map((l) => (
-              <Link key={l.href} href={l.href}>
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        </details>
       </div>
     </header>
   );

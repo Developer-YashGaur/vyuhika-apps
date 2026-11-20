@@ -1,19 +1,18 @@
 import type { Viewport } from "next";
-import { Fraunces, Source_Sans_3 } from "next/font/google";
+import { Inter } from "next/font/google";
 import DwaarFooter from "@/components/dwaar/DwaarFooter";
 import DwaarHeader from "@/components/dwaar/DwaarHeader";
 import "./dwaar.css";
 
-// Dwaar has its own look, fonts, header and footer. It does not share the rest of Vyuhika Apps' design.
-// Fraunces: a warm serif for headings. Source Sans 3: a clear, professional sans for everything else.
-const display = Fraunces({ subsets: ["latin"], variable: "--font-dw-display", display: "swap" });
-const body = Source_Sans_3({ subsets: ["latin"], variable: "--font-dw-body", display: "swap" });
+// Dwaar has its own look (clean, white, one blue accent), fonts, header and footer. It does not share the rest of Vyuhika Apps' design.
+// Inter: one clear, modern typeface for headings and text. It is used as the font variable below.
+const body = Inter({ subsets: ["latin"], variable: "--font-dw-body", display: "swap" });
 
-export const viewport: Viewport = { themeColor: "#0b2f2c" };
+export const viewport: Viewport = { themeColor: "#ffffff" };
 
 export default function DwaarLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div data-app="dwaar" className={`dw-root ${display.variable} ${body.variable}`}>
+    <div data-app="dwaar" className={`dw-root ${body.variable}`}>
       <a href="#dw-main" className="dw-skip">
         Skip to content
       </a>

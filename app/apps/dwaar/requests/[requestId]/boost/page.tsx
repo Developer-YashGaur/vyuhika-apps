@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import CopyButton from "@/components/dwaar/CopyButton";
+import NextChoices from "@/components/dwaar/NextChoices";
 import ResumeView from "@/components/dwaar/ResumeView";
 import { boostNextStep } from "@/lib/dwaar/boost-next";
 import { loadBoostResume } from "@/lib/dwaar/boost-resume";
@@ -92,17 +93,14 @@ async function BoostResult({ params, searchParams }: { params: Promise<{ request
             Download PDF
           </a>
           <CopyButton text={copyText} label="Copy as text" />
-          {next.good && (
-            <Link href="/apps/dwaar/requests" className="dw-btn dw-btn-quiet">
-              Continue with my request
-            </Link>
-          )}
         </div>
         <p className="mt-3 text-sm leading-relaxed">
           The PDF is named with your name and the role you applied for. This was written by an AI from your own
           resume, so read every line and keep only what is true. Replace each [placeholder] with your real details.
         </p>
       </section>
+
+      <NextChoices requestId={requestId} good={next.good} />
 
       <section id="resume-preview" className="scroll-mt-24 lg:col-span-2">
         <h2 className="dw-display mb-3 text-xl font-medium">Preview of your resume</h2>

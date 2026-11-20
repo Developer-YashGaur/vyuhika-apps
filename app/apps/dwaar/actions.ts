@@ -10,6 +10,9 @@ import { candidateDetailsComplete } from "@/lib/dwaar/profile-details";
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
 import { getChat, sendMessage, toMessageViews, type ChatMessageView } from "@/lib/dwaar/chat";
+import type { ContactView } from "@/lib/dwaar/chat-timeline";
+import { getContactViews } from "@/lib/dwaar/contact-views";
+import { getNotificationCounts, markChatRead, type NotificationCounts } from "@/lib/dwaar/notifications";
 import { monitorMessage } from "@/lib/dwaar/chat-monitor";
 import { answerContact, askContact } from "@/lib/dwaar/contact";
 import { redeemInvite } from "@/lib/dwaar/invites";
@@ -348,7 +351,7 @@ export async function checkBoostScoreAction(formData: FormData): Promise<void> {
 // ---- The chat after a request is accepted ----
 
 export type ChatFormState = { message: string | null; sent: boolean; messages?: ChatMessageView[] };
-export type ChatPollState = { messages: ChatMessageView[]; canSend: boolean } | null;
+export type ChatPollState = { messages: ChatMessageView[]; contacts: ContactView[]; canSend: boolean } | null;
 
 // Live updates: the chat page asks for the messages every few seconds. Only the two people in the chat get anything.
 export async function loadChatAction(requestId: string): Promise<ChatPollState> {
@@ -357,8 +360,10 @@ export async function loadChatAction(requestId: string): Promise<ChatPollState> 
   const { data } = await supabase.auth.getUser();
   if (!data.user) return null;
   try {
-    const chat = await getChat(supabase, requestId);
-    return chat ? { messages: toMessageViews(chat.messages), canSend: chat.info.out_can_send } : null;
+    const [chat, contacts] = await Promise.all([getChat(supabase, requestId), getContactViews(supabase, requestId)]);
+    if (!chat) return null;
+    await markChatRead(supabase, requestId); // the person has the chat open, so what they see now is read
+    return { messages: toMessageViews(chat.messages), contacts, canSend: chat.info.out_can_send };
   } catch {
     return null;
   }
@@ -381,6 +386,15 @@ export async function sendMessageAction(requestId: string, _previous: ChatFormSt
   if (typeof body === "string") after(async () => { await monitorMessage({ supabase, secret, generate }, requestId, body); });
   const chat = await getChat(supabase, requestId).catch(() => null);
   return { message: null, sent: true, messages: chat ? toMessageViews(chat.messages) : undefined };
+}
+
+// The top bar asks for the notification numbers every few seconds. null means signed out (nothing to show).
+export async function getNotificationCountsAction(): Promise<NotificationCounts | null> {
+  if (!supabaseConfigured()) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) return null;
+  return getNotificationCounts(supabase);
 }
 
 // The candidate switches sharing of their resume with the employee on or off.
