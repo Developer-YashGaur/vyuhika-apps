@@ -39,7 +39,7 @@ export default function HowItWorks() {
         ))}
       </ol>
       <p className="dw-muted mt-6 max-w-2xl text-sm">
-        Employees see your match score and which skills matched, never your resume. Your email is never shared. After an employee accepts, you send one message inside Dwaar. You can cancel a
+        Employees see your match score and which skills matched. Your email is never shared. After an employee accepts, you can chat live inside Dwaar, and that employee can see your resume (you can switch this off). You can cancel a
         request at any time, and requests close by themselves after 30 days.
       </p>
     </section>

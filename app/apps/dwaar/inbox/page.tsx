@@ -109,7 +109,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
       <h2 className="dw-display text-xl">Waiting for you</h2>
       <p className="mt-2 max-w-2xl dw-muted">
         Candidates asking for a referral at {company}. You see their name, headline, LinkedIn, skills, the job and an AI match score for this job. You do not see their resume. After you accept, you can ask in the chat for their phone number or email.
-        If you accept, they can send you one message in Dwaar. Email addresses are never shared.
+        If you accept, you can chat with them live in Dwaar and see their resume. Email addresses are never shared.
       </p>
 
       {inbox.length === 0 ? (
@@ -152,7 +152,7 @@ async function InboxContent({ searchParams }: { searchParams: Promise<Params> })
 
       <h2 className="dw-display mt-14 text-xl">People you accepted</h2>
       {accepted.length === 0 ? (
-        <p className="mt-3 max-w-2xl dw-muted">When you accept a request, the candidate can send you one message. You reply here. Emails are never shared.</p>
+        <p className="mt-3 max-w-2xl dw-muted">When you accept a request, you can chat with the candidate live and open their resume. Emails are never shared.</p>
       ) : (
         <ul className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {accepted.map((r) => {

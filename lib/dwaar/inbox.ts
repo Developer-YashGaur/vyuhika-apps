@@ -38,7 +38,7 @@ export async function listAccepted(supabase: Db): Promise<AcceptedItem[]> {
 
 // What the inbox page says after an answer.
 export const ANSWER_NOTES: Record<Answer, string> = {
-  accepted: "You accepted the request. The candidate can now write you one message. It will appear under \"People you accepted\".",
+  accepted: "You accepted the request. You can now chat live with the candidate and see their resume. Find them under \"People you accepted\".",
   dismissed: "Removed from your list. Other employees at your company still see it.",
   unavailable: "That request is no longer open. Someone else may have taken it, or the candidate cancelled it.",
 };

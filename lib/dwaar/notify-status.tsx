@@ -6,14 +6,15 @@ import type { EmailSettings } from "@/lib/email/settings";
 import type { SendEmailFn } from "@/lib/feedback/deliver";
 import type { Database } from "@/types/database";
 
-// Sends the emails for status changes: a request was accepted, a chat message arrived, a reply arrived.
+// Sends the email for the one status change that needs it: a request was accepted. Chat messages send no email.
 // The DATABASE keeps the list of what happened and who is told (never message text); here we only send what it hands
 // back for the signed-in person's own requests. This never throws: a failed email must not undo the action.
 
 type Db = SupabaseClient<Database>;
 type Deps = { secret: string; send: SendEmailFn; settings: EmailSettings };
 
-const KINDS: StatusKind[] = ["accepted", "message", "reply", "contact_asked", "contact_answered"];
+// Only "accepted" is emailed. Chat messages and contact requests are live in the chat, so they send no email.
+const KINDS: StatusKind[] = ["accepted"];
 
 // "Your request was sent": a confirmation to the candidate right after they ask. It says only the job and company.
 export async function sendRequestSentEmail(

@@ -60,3 +60,18 @@ describe("getChat", () => {
     expect(chat?.messages).toHaveLength(1);
   });
 });
+
+import { getChatResume, toMessageViews } from "@/lib/dwaar/chat";
+
+describe("live chat helpers", () => {
+  it("turns database messages into plain data for the browser", () => {
+    expect(toMessageViews([{ out_id: 7, out_mine: true, out_body: "hi", out_created_at: "2026-11-20T10:00:00Z" }])).toEqual([{ id: 7, mine: true, body: "hi", at: "2026-11-20T10:00:00Z" }]);
+  });
+  it("reads resume sharing, and returns null when the database refuses or returns nothing", async () => {
+    const rpc = (reply: unknown) => ({ rpc: async () => reply }) as never;
+    const shared = await getChatResume(rpc({ data: [{ out_is_candidate: false, out_shared: true, out_has_resume: true, out_path: "u/r.pdf" }], error: null }), "r");
+    expect(shared).toEqual({ isCandidate: false, shared: true, hasResume: true, path: "u/r.pdf" });
+    expect(await getChatResume(rpc({ data: [], error: null }), "r")).toBe(null);
+    expect(await getChatResume(rpc({ data: null, error: { code: "42501" } }), "r")).toBe(null);
+  });
+});

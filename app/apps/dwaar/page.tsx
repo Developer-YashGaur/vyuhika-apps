@@ -11,7 +11,7 @@ export const metadata = dwaarPublicMetadata;
 
 const POINTS = [
   "A free resume match score before you ask anyone",
-  "Employees see your headline and the job, never your resume",
+  "Employees see your headline and the job. Your resume is shown only to the employee who accepts",
   "Your email is never shared with employees",
 ];
 
