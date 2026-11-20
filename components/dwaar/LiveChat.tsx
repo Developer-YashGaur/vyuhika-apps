@@ -38,8 +38,8 @@ export default function LiveChat({ requestId, otherName, isCandidate, initialMes
     if (next.messages) setMessages(next.messages);
     return next;
   }, initialState);
-  const bottom = useRef<HTMLLIElement>(null);
-  const count = useRef(initialMessages.length + initialContacts.length * 2);
+  const list = useRef<HTMLUListElement>(null);
+  const count = useRef(-1);
 
   async function refresh() {
     const result = await loadChatAction(requestId);
@@ -79,9 +79,10 @@ export default function LiveChat({ requestId, otherName, isCandidate, initialMes
 
   const timeline = buildTimeline(messages, contacts, isCandidate, otherName);
 
-  // Scroll to the newest item when one arrives (not on first load).
+  // Only the message list scrolls. It starts at the newest item and follows new ones (the page itself never jumps).
   useEffect(() => {
-    if (timeline.length > count.current) bottom.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+    const el = list.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: count.current === -1 ? "auto" : "smooth" });
     count.current = timeline.length;
   }, [timeline.length]);
 
@@ -102,7 +103,7 @@ export default function LiveChat({ requestId, otherName, isCandidate, initialMes
 
   return (
     <div>
-      <ul className="flex max-h-[28rem] flex-col gap-3 overflow-y-auto pr-1" aria-label="Messages" role="log" aria-live="polite">
+      <ul ref={list} className="flex h-[min(60dvh,34rem)] min-h-[16rem] flex-col gap-3 overflow-y-auto overscroll-contain pr-1" aria-label="Messages" role="log" aria-live="polite" tabIndex={0}>
         {timeline.length === 0 && <li className="dw-muted">No messages yet. Say hello.</li>}
         {timeline.map((e) =>
           e.type === "message" ? (
@@ -145,12 +146,11 @@ export default function LiveChat({ requestId, otherName, isCandidate, initialMes
             </li>
           ),
         )}
-        <li ref={bottom} aria-hidden="true" />
       </ul>
 
       {canSend ? (
         <form
-          className="dw-card mt-6 flex flex-col gap-3"
+          className="dw-card sticky bottom-0 z-10 mt-4 flex flex-col gap-3 shadow-lg"
           action={(formData) => {
             formAction(formData);
             setText("");
