@@ -9,7 +9,7 @@ import { deleteMyProfile, getMyProfile, listCompanyOptions, saveMyProfile } from
 import { candidateDetailsComplete } from "@/lib/dwaar/profile-details";
 import { parseProfileForm, type FieldErrors } from "@/lib/dwaar/profile-form";
 import { parseRequestForm, type RequestFieldErrors } from "@/lib/dwaar/request-form";
-import { getChat, sendMessage, toMessageViews, type ChatMessageView } from "@/lib/dwaar/chat";
+import { closeChat, getChat, sendMessage, toMessageViews, type ChatMessageView } from "@/lib/dwaar/chat";
 import type { ContactView } from "@/lib/dwaar/chat-timeline";
 import { getContactViews } from "@/lib/dwaar/contact-views";
 import { getNotificationCounts, markChatRead, type NotificationCounts } from "@/lib/dwaar/notifications";
@@ -28,6 +28,7 @@ import { INTERVIEW_MESSAGES, practiceFeedback, practiceQuestions, type Feedback 
 import { removeMyResumes } from "@/lib/dwaar/resumes";
 import { boostMessage, confirmBoostPayment, startBoost } from "@/lib/dwaar/boost";
 import { loadBoostResume, scoreResume } from "@/lib/dwaar/boost-resume";
+import { resumeToPdf } from "@/lib/dwaar/pdf";
 import { deliverBoost, deliverMessage } from "@/lib/dwaar/deliver-boost";
 import { boostPaymentsEnabled, inviteRewardsEnabled, planPaymentsEnabled } from "@/lib/dwaar/features";
 import { razorpayKeys } from "@/lib/dwaar/razorpay";
@@ -351,10 +352,40 @@ export async function checkBoostScoreAction(formData: FormData): Promise<void> {
   redirect(`/apps/dwaar/requests/${requestId}/boost?${score === null ? "score=failed" : `score=${score}`}#resume-preview`);
 }
 
+// The candidate swaps the resume on this request for the improved one from their Boost. The PDF is made here from the
+// saved Boost, uploaded to the person's own folder, the request is pointed at it, and then the old file is deleted.
+// Anything that goes wrong leaves the old resume exactly as it was.
+export async function replaceResumeAction(formData: FormData): Promise<void> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  const requestId = formData.get("requestId");
+  if (typeof requestId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId)) redirect("/apps/dwaar/requests");
+  const back = `/apps/dwaar/requests/${requestId}/boost`;
+  const boost = await loadBoostResume(supabase, data.user, requestId);
+  if (!boost?.doc) redirect("/apps/dwaar/requests");
+
+  const bytes = resumeToPdf(boost.doc, boost.contact);
+  const path = `${data.user.id}/${crypto.randomUUID()}.pdf`;
+  const upload = await supabase.storage.from(RESUME_BUCKET).upload(path, bytes, { contentType: "application/pdf", upsert: false });
+  if (upload.error) redirect(`${back}?replaced=failed`);
+
+  const swapped = await supabase.rpc("dwaar_replace_my_resume", { p_request_id: requestId, p_new_path: path });
+  if (swapped.error) {
+    await supabase.storage.from(RESUME_BUCKET).remove([path]); // nothing points at the new file, so do not keep it
+    redirect(`${back}?replaced=${swapped.error.code === "DW051" ? "closed" : "failed"}`);
+  }
+  const oldPath = swapped.data;
+  if (oldPath && oldPath !== path) await supabase.storage.from(RESUME_BUCKET).remove([oldPath]);
+  revalidatePath("/apps/dwaar/requests");
+  redirect(`${back}?replaced=ok`);
+}
+
 // ---- The chat after a request is accepted ----
 
 export type ChatFormState = { message: string | null; sent: boolean; messages?: ChatMessageView[] };
-export type ChatPollState = { messages: ChatMessageView[]; contacts: ContactView[]; canSend: boolean } | null;
+export type ChatPollState = { messages: ChatMessageView[]; contacts: ContactView[]; canSend: boolean; closed: boolean } | null;
 
 // Live updates: the chat page asks for the messages every few seconds. Only the two people in the chat get anything.
 export async function loadChatAction(requestId: string): Promise<ChatPollState> {
@@ -366,7 +397,7 @@ export async function loadChatAction(requestId: string): Promise<ChatPollState> 
     const [chat, contacts] = await Promise.all([getChat(supabase, requestId), getContactViews(supabase, requestId)]);
     if (!chat) return null;
     await markChatRead(supabase, requestId); // the person has the chat open, so what they see now is read
-    return { messages: toMessageViews(chat.messages), contacts, canSend: chat.info.out_can_send };
+    return { messages: toMessageViews(chat.messages), contacts, canSend: chat.info.out_can_send, closed: chat.closed };
   } catch {
     return null;
   }
@@ -389,6 +420,21 @@ export async function sendMessageAction(requestId: string, _previous: ChatFormSt
   if (typeof body === "string") after(async () => { await monitorMessage({ supabase, secret, generate }, requestId, body); });
   const chat = await getChat(supabase, requestId).catch(() => null);
   return { message: null, sent: true, messages: chat ? toMessageViews(chat.messages) : undefined };
+}
+
+// The employee who accepted the request closes the chat. Both people can still read it; nobody can write in it any more.
+export async function closeChatAction(formData: FormData): Promise<void> {
+  if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/apps/dwaar");
+  const requestId = formData.get("requestId");
+  if (typeof requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(requestId)) redirect("/apps/dwaar/chats");
+  await closeChat(supabase, requestId);
+  revalidatePath(`/apps/dwaar/requests/${requestId}/chat`);
+  revalidatePath("/apps/dwaar/chats");
+  revalidatePath("/apps/dwaar/requests");
+  redirect(`/apps/dwaar/requests/${requestId}/chat`);
 }
 
 // The top bar asks for the notification numbers every few seconds. null means signed out (nothing to show).

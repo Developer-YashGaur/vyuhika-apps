@@ -24,12 +24,14 @@ type Props = {
   initialMessages: ChatMessageView[];
   initialContacts: ContactView[];
   initialCanSend: boolean;
+  initialClosed: boolean;
 };
 
-export default function LiveChat({ requestId, otherName, isCandidate, initialMessages, initialContacts, initialCanSend }: Props) {
+export default function LiveChat({ requestId, otherName, isCandidate, initialMessages, initialContacts, initialCanSend, initialClosed }: Props) {
   const [messages, setMessages] = useState(initialMessages);
   const [contacts, setContacts] = useState(initialContacts);
   const [canSend, setCanSend] = useState(initialCanSend);
+  const [closed, setClosed] = useState(initialClosed);
   const [text, setText] = useState("");
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, startTransition] = useTransition();
@@ -47,6 +49,7 @@ export default function LiveChat({ requestId, otherName, isCandidate, initialMes
       setMessages((old) => (result.messages.length === old.length && result.messages.at(-1)?.id === old.at(-1)?.id ? old : result.messages));
       setContacts(result.contacts);
       setCanSend(result.canSend);
+      setClosed(result.closed);
     }
   }
 
@@ -63,6 +66,7 @@ export default function LiveChat({ requestId, otherName, isCandidate, initialMes
           setMessages((old) => (result.messages.length === old.length && result.messages.at(-1)?.id === old.at(-1)?.id ? old : result.messages));
           setContacts((old) => (JSON.stringify(old) === JSON.stringify(result.contacts) ? old : result.contacts));
           setCanSend(result.canSend);
+          setClosed(result.closed);
         }
       } finally {
         running = false;
@@ -198,7 +202,11 @@ export default function LiveChat({ requestId, otherName, isCandidate, initialMes
         </form>
       ) : (
         <p role="status" className="dw-alert dw-alert-info mt-6">
-          This chat is full. Please contact each other with the phone and email buttons.
+          {closed
+            ? isCandidate
+              ? `${otherName} closed this chat. You can still read it. You can ask another employee for a referral any time.`
+              : "You closed this chat. Both of you can still read it, but no new messages can be sent."
+            : "This chat is full. Please contact each other with the phone and email buttons."}
         </p>
       )}
       <p role="status" className={note ? (note.ok ? "dw-ok-text mt-3 text-sm" : "dw-bad-text mt-3 text-sm") : "sr-only"}>

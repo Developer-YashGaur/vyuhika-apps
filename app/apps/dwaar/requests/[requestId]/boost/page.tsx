@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import CopyButton from "@/components/dwaar/CopyButton";
 import NextChoices from "@/components/dwaar/NextChoices";
+import ReplaceResume from "@/components/dwaar/ReplaceResume";
 import ResumeView from "@/components/dwaar/ResumeView";
 import { boostNextStep } from "@/lib/dwaar/boost-next";
 import { loadBoostResume } from "@/lib/dwaar/boost-resume";
@@ -18,7 +19,7 @@ export const metadata = dwaarMetadata;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export default function BoostResultPage({ params, searchParams }: { params: Promise<{ requestId: string }>; searchParams: Promise<{ score?: string }> }) {
+export default function BoostResultPage({ params, searchParams }: { params: Promise<{ requestId: string }>; searchParams: Promise<{ score?: string; replaced?: string }> }) {
   return (
     <div className="dw-wrap dw-page">
         <Link href="/apps/dwaar/requests" className="dw-back">
@@ -35,10 +36,10 @@ export default function BoostResultPage({ params, searchParams }: { params: Prom
   );
 }
 
-async function BoostResult({ params, searchParams }: { params: Promise<{ requestId: string }>; searchParams: Promise<{ score?: string }> }) {
+async function BoostResult({ params, searchParams }: { params: Promise<{ requestId: string }>; searchParams: Promise<{ score?: string; replaced?: string }> }) {
   await connection();
   const { requestId } = await params;
-  const { score } = await searchParams;
+  const { score, replaced } = await searchParams;
   if (!UUID.test(requestId)) notFound();
   if (!supabaseConfigured()) redirect("/apps/dwaar?error=setup");
   const supabase = await createClient();
@@ -50,7 +51,7 @@ async function BoostResult({ params, searchParams }: { params: Promise<{ request
   const { doc, contact } = boost;
 
   const analyses = await listMyAnalyses(supabase);
-  const before = analyses.find((a) => a.requestId === requestId && a.status === "done")?.score ?? null;
+  const before = doc?.originalScore ?? analyses.find((a) => a.requestId === requestId && a.status === "done")?.score ?? null;
   const checked = /^\d{1,3}$/.test(score ?? "") ? Math.min(100, Number(score)) : null;
   const after = doc?.matchScore ?? checked;
   const next = boostNextStep(after ?? before, after === null ? null : before);
@@ -99,6 +100,8 @@ async function BoostResult({ params, searchParams }: { params: Promise<{ request
           resume, so read every line and keep only what is true. Replace each [placeholder] with your real details.
         </p>
       </section>
+
+      {doc && <ReplaceResume requestId={requestId} result={replaced ?? null} />}
 
       <NextChoices requestId={requestId} good={next.good} />
 

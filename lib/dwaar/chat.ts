@@ -11,7 +11,7 @@ export const MESSAGE_MAX = 600;
 
 export type ChatInfo = Database["public"]["Functions"]["dwaar_chat_info"]["Returns"][number];
 export type ChatMessage = Database["public"]["Functions"]["dwaar_chat_messages"]["Returns"][number];
-export type SendStatus = "sent" | "not_allowed" | "not_yet" | "limit";
+export type SendStatus = "sent" | "not_allowed" | "not_yet" | "limit" | "closed";
 
 export const CHAT_MESSAGES = {
   empty: "Please write a message first.",
@@ -19,6 +19,7 @@ export const CHAT_MESSAGES = {
   contact: "Please do not type emails or phone numbers here. Use the phone and email buttons under the chat instead.",
   not_allowed: "You cannot write in this chat.",
   not_yet: "Please wait for the candidate to write first.",
+  closed: "This chat was closed, so no new messages can be sent.",
   limit: "You are sending messages very fast, or this chat is full. Please wait a minute and try again.",
   failed: "Something went wrong. Please try again in a moment.",
 } as const;
@@ -44,19 +45,36 @@ export async function sendMessage(supabase: Db, requestId: string, raw: unknown)
   const { data, error } = await supabase.rpc("dwaar_send_message", { p_request_id: requestId, p_body: checked.text });
   if (error) return { ok: false, message: error.code === "DW040" ? CHAT_MESSAGES.tooLong : CHAT_MESSAGES.failed };
   if (data === "sent") return { ok: true };
-  if (data === "not_allowed" || data === "not_yet" || data === "limit") return { ok: false, message: CHAT_MESSAGES[data] };
+  if (data === "not_allowed" || data === "not_yet" || data === "limit" || data === "closed") return { ok: false, message: CHAT_MESSAGES[data] };
   return { ok: false, message: CHAT_MESSAGES.failed };
 }
 
 // null when the person has no access to this chat (the database returns nothing).
-export async function getChat(supabase: Db, requestId: string): Promise<{ info: ChatInfo; messages: ChatMessage[] } | null> {
-  const [info, messages] = await Promise.all([
+export async function getChat(supabase: Db, requestId: string): Promise<{ info: ChatInfo; messages: ChatMessage[]; closed: boolean } | null> {
+  const [info, messages, closedIds] = await Promise.all([
     supabase.rpc("dwaar_chat_info", { p_request_id: requestId }),
     supabase.rpc("dwaar_chat_messages", { p_request_id: requestId }),
+    supabase.rpc("dwaar_closed_chats"),
   ]);
   if (info.error || messages.error) throw new Error("Could not load the chat.");
   const first = info.data?.[0];
-  return first ? { info: first, messages: messages.data ?? [] } : null;
+  if (!first) return null;
+  const closed = (closedIds.data ?? []).includes(requestId);
+  // A closed chat can be read but not written in.
+  return { info: closed ? { ...first, out_can_send: false } : first, messages: messages.data ?? [], closed };
+}
+
+// The employee who accepted a request closes the chat. Only they can; the database checks.
+export async function closeChat(supabase: Db, requestId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("dwaar_close_chat", { p_request_id: requestId });
+  if (error) console.error("[dwaar] could not close the chat", { code: error.code });
+  return !error && data === true;
+}
+
+// The request ids of my chats that are closed (as the candidate or as the employee).
+export async function listClosedChatIds(supabase: Db): Promise<Set<string>> {
+  const { data } = await supabase.rpc("dwaar_closed_chats");
+  return new Set(data ?? []);
 }
 
 // What the chat page and the live updates send to the browser (plain data).

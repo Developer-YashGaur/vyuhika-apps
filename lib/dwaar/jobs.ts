@@ -68,3 +68,15 @@ export async function refreshJobsFeed(env: Record<string, string | undefined> = 
   if (error) return { ok: false, reason: "store_failed" };
   return { ok: true, fetched: jobs.length, stored: data ?? 0 };
 }
+
+// Finds the Dwaar company that a job's company name refers to, so "Ask for a referral" can pick it. Only a clear match counts:
+// the names must be equal after removing capitals, spaces, punctuation and endings like "Inc" or "Pvt Ltd". No guessing.
+const ENDINGS = /\b(inc|llc|ltd|limited|pvt|private|corp|corporation|co|gmbh|plc)\b\.?/g;
+const plain = (name: string) => name.toLowerCase().replace(ENDINGS, " ").replace(/[^a-z0-9]+/g, "");
+
+export function matchCompanyId(jobCompany: string, companies: { id: string; name: string }[]): string {
+  const wanted = plain(jobCompany);
+  if (wanted.length < 2) return "";
+  const hits = companies.filter((c) => plain(c.name) === wanted);
+  return hits.length === 1 ? hits[0]!.id : "";
+}

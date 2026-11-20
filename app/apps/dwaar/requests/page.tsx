@@ -8,6 +8,7 @@ import CreditBoostButton from "@/components/dwaar/CreditBoostButton";
 import BoostForm from "@/components/dwaar/BoostForm";
 import OutcomeButtons from "@/components/dwaar/OutcomeButtons";
 import RequestCard from "@/components/dwaar/RequestCard";
+import { listClosedChatIds } from "@/lib/dwaar/chat";
 import { getOutcome, type Outcome } from "@/lib/dwaar/earnings";
 import ScoreCard from "@/components/dwaar/ScoreCard";
 import { listMyBoosts, type MyBoost } from "@/lib/dwaar/boost";
@@ -58,10 +59,16 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/apps/dwaar");
-  const profile = await getMyProfile(supabase, data.user.id);
+  // Everything is asked at the same time (one trip, not five). If there is no profile we send the person to make one.
+  const [profile, requests, analyses, boosts, boostScores, closedChats] = await Promise.all([
+    getMyProfile(supabase, data.user.id),
+    listMyRequests(supabase),
+    listMyAnalyses(supabase),
+    listMyBoosts(supabase),
+    listBoostScores(supabase),
+    listClosedChatIds(supabase),
+  ]);
   if (!profile) redirect("/apps/dwaar/profile");
-
-  const [requests, analyses, boosts, boostScores] = await Promise.all([listMyRequests(supabase), listMyAnalyses(supabase), listMyBoosts(supabase), listBoostScores(supabase)]);
   // If a request has waited 24 hours with no answer, the database hands it to the next 5 employees. It decides when
   // (this does nothing earlier), so asking on every visit is safe. It runs after the page is sent.
   const secret = serverSecret();
@@ -110,10 +117,10 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
           </Link>
         </section>
       ) : (
-        <ul className="dw-grid">
+        <ul className="dw-rows">
           {requests.map((r) => (
             <li key={r.out_id}>
-              <RequestItem request={r} analysis={analysisById.get(r.out_id)} boost={boosts.get(r.out_id)} boostScore={boostScores.get(r.out_id) ?? null} boostOn={boostOn} credits={credits} outcome={outcomes.get(r.out_id) ?? ""} />
+              <RequestItem request={r} analysis={analysisById.get(r.out_id)} boost={boosts.get(r.out_id)} boostScore={boostScores.get(r.out_id) ?? null} boostOn={boostOn} credits={credits} outcome={outcomes.get(r.out_id) ?? ""} chatClosed={closedChats.has(r.out_id)} />
             </li>
           ))}
         </ul>
@@ -122,7 +129,7 @@ async function RequestsContent({ searchParams }: { searchParams: Promise<Params>
   );
 }
 
-function RequestItem({ request: r, analysis, boost, boostScore, boostOn, credits, outcome }: { request: MyRequest; analysis?: Analysis; boost?: MyBoost; boostScore: number | null; boostOn: boolean; credits: number; outcome: Outcome }) {
+function RequestItem({ request: r, analysis, boost, boostScore, boostOn, credits, outcome, chatClosed }: { request: MyRequest; analysis?: Analysis; boost?: MyBoost; boostScore: number | null; boostOn: boolean; credits: number; outcome: Outcome; chatClosed: boolean }) {
   const stamp = statusStamp(r.out_status);
   return (
     <RequestCard
@@ -145,9 +152,9 @@ function RequestItem({ request: r, analysis, boost, boostScore, boostOn, credits
       {r.out_note && <p className="dw-muted text-sm italic">&ldquo;{r.out_note}&rdquo;</p>}
       {r.out_status === "accepted" && (
         <p className="text-sm">
-          <strong>{r.out_accepted_by_name}</strong> accepted your request. You can chat with them live.{" "}
+          <strong>{r.out_accepted_by_name}</strong> accepted your request. {chatClosed ? "They closed the chat; you can still read it." : "You can chat with them live."}{" "}
           <Link href={`/apps/dwaar/requests/${r.out_id}/chat`} className="dw-link">
-            Open chat
+            {chatClosed ? "Read chat" : "Open chat"}
           </Link>
         </p>
       )}
@@ -163,10 +170,14 @@ function RequestItem({ request: r, analysis, boost, boostScore, boostOn, credits
         <BoostForm orderId={boost.orderId} />
       ) : (
         r.out_has_resume && (
-          <>
+          <div className="dw-boost-box">
+            <p className="text-sm">
+              <strong>Resume Boost.</strong> We rewrite your resume for this job, show the new score, and let you swap it onto this request.
+            </p>
             {credits >= BOOST_CREDIT_COST && <CreditBoostButton requestId={r.out_id} credits={credits} />}
             {boostOn && <BoostButton requestId={r.out_id} />}
-          </>
+            {!boostOn && credits < BOOST_CREDIT_COST && <p className="dw-muted text-sm">Boost opens soon. It will appear here as a button.</p>}
+          </div>
         )
       )}
       <div className="flex flex-wrap items-center gap-3">

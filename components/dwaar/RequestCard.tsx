@@ -26,10 +26,13 @@ export default function RequestCard({
       <div className="dw-req-head">
         <CompanyMonogram name={tileName ?? company} />
         <div className="min-w-0 flex-1">
-          <h3 className="dw-req-title dw-display">{title}</h3>
-          <p className="dw-req-sub">{company}</p>
-          {meta && <p className="dw-req-meta">{meta}</p>}
-          <p className="dw-req-meta">Ref {number}</p>
+          <h3 className="dw-req-title dw-display" title={title}>
+            {title}
+          </h3>
+          <p className="dw-req-sub" title={company}>
+            {company}
+          </p>
+          <p className="dw-req-meta">{[meta, `Ref ${number}`].filter(Boolean).join(" · ")}</p>
         </div>
         {status && <span className={`dw-status dw-status-${tone}`}>{status}</span>}
       </div>

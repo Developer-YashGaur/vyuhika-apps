@@ -23,7 +23,8 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
-  await supabase.auth.getUser(); // this call refreshes an expiring session
+  // Refreshes an expiring session. getClaims checks the signed token on this server when it can, instead of a trip to the auth server on every page.
+  await supabase.auth.getClaims();
   return response;
 }
 
