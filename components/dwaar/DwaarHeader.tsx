@@ -25,7 +25,20 @@ export default function DwaarHeader() {
           <span className="dw-brand-tag">Early access</span>
         </Link>
 
-        <DwaarNav links={LINKS} />
+        {/* The nav reads the current page address, so it loads in its own <Suspense>. Until then the plain links show. */}
+        <Suspense
+          fallback={
+            <nav aria-label="Dwaar" className="dw-nav">
+              {LINKS.map((l) => (
+                <Link key={l.href} href={l.href}>
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
+          }
+        >
+          <DwaarNav links={LINKS} />
+        </Suspense>
 
         <Suspense fallback={null}>
           <DwaarAccount />
